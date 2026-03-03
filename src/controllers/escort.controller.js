@@ -1197,7 +1197,8 @@ export async function fetchFilterHomescortscontroller(request, response) {
             page = 1,
             limit = 20,
         } = request.query; // query params se filter lenge
-
+        
+        console.log("request qurey: ", request.query);
         const query = {};
 
         if (role) query.role = role;
@@ -1227,6 +1228,11 @@ export async function fetchFilterHomescortscontroller(request, response) {
             .lean();
 
         const total = await EscortModel.countDocuments(query);
+        
+
+
+        console.log("escortslist: ",escortList);
+        onsole.log("total data: ", total);
 
         if (!escortList || escortList.length === 0) {
             return response.status(404).json({
