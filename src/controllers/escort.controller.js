@@ -16,6 +16,7 @@ import deleteVideoCloudinary from "../utils/deleteVideoCloudinary.js";
 import ServiceModel from "../models/escortserviceModel.js";
 import RatesModel from "../models/escortratesModel.js";
 import ClientModel from "../models/clientModel.js";
+import { uploadMediaCloudinary } from "../utils/uploadMediaCloudinary.js";
 
 // Escort Register controll
 export async function registerEscortcontroller(request, response) {
@@ -618,7 +619,6 @@ export async function uploadAvatarcontroller(request, response) {
             { escortId },
             {
                 avatar: avatarUpload.secure_url,
-
             },
             { new: true }
         );
@@ -1181,7 +1181,7 @@ export async function fetchFiltercityescortscontroller(request, response) {
     }
 }
 
-
+// filter home escorts
 export async function fetchFilterHomescortscontroller(request, response) {
     try {
         const {
@@ -1197,7 +1197,7 @@ export async function fetchFilterHomescortscontroller(request, response) {
             page = 1,
             limit = 15,
         } = request.query; // query params se filter lenge
-        
+
         console.log("request qurey: ", request.query);
         const query = {};
 
@@ -1224,14 +1224,14 @@ export async function fetchFilterHomescortscontroller(request, response) {
         const escortList = await EscortModel.find(query)
             .skip(skip)
             .limit(parseInt(limit))
-            .select("name city country gender account_type adverties_category highlights avatar rateFrom")
+            .select("escortId name city country gender account_type adverties_category highlights avatar rateFrom")
             .lean();
 
         const total = await EscortModel.countDocuments(query);
-        
 
 
-        console.log("escortslist: ",escortList);
+
+        console.log("escortslist: ", escortList);
         console.log("total data: ", total);
 
         if (!escortList || escortList.length === 0) {
@@ -1263,7 +1263,7 @@ export async function fetchFilterHomescortscontroller(request, response) {
     }
 }
 
-
+// advance search 
 export const advanceSearchController = async (request, response) => {
     try {
         const filters = request.query; // ?city=DELHI&country=INDIA&incall=true...
@@ -1387,6 +1387,81 @@ export const advanceSearchController = async (request, response) => {
         console.log("Advance Search Error:", error);
         response.status(500).json({
             message: "Advance search failed",
+            success: false,
+            error: true,
+        });
+    }
+};
+
+// NewsandTour 
+export const createNewsTourcontroller = async (request, response) => {
+    try {
+        const {
+            escortId,
+            name,
+            title,
+            description,
+        } = request.body;
+
+        if (!escortId || !name || !title || !description) {
+            return response.status(400).json({
+                message: "Required fields missing",
+                success: false,
+                error: true,
+            });
+        }
+
+        // ✅ file check
+        if (!request.files || request.files.length === 0) {
+            return response.status(400).json({
+                message: "At least 1 Media file required",
+                success: false,
+                error: true,
+            });
+        }
+
+        if (request.files.length > 3) {
+            return response.status(400).json({
+                message: "Maximum 3 media allowed",
+                success: false,
+                error: true,
+            });
+        }
+
+        // ✅ upload all media to cloudinary
+        const mediaUploads = await Promise.all(
+            request.files.map(async (file) => {
+                const result = await uploadMediaCloudinary(
+                    file,
+                    "newsandtour/post"
+                );
+
+                return {
+                    url: result.secure_url,
+                    type: result.resource_type || (file.mimetype.startsWith("video") ? "video" : "image"), // image or video
+                };
+            })
+        );
+
+        const post = await NewsAndTourModel.create({
+            escortId,
+            name,
+            title,
+            description,
+            status: "active",
+            media: mediaUploads,
+        });
+
+        return response.status(201).json({
+            message: "NewsAndTour created successfully",
+            success: true,
+            error: false,
+            data: post,
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Server error",
             success: false,
             error: true,
         });
