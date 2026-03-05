@@ -17,6 +17,7 @@ import ServiceModel from "../models/escortserviceModel.js";
 import RatesModel from "../models/escortratesModel.js";
 import ClientModel from "../models/clientModel.js";
 import { uploadMediaCloudinary } from "../utils/uploadMediaCloudinary.js";
+import NewsAndTourModel from "../models/newsandtourModel.js";
 
 // Escort Register controll
 export async function registerEscortcontroller(request, response) {
