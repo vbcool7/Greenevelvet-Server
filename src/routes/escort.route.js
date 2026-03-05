@@ -35,7 +35,7 @@ escortRouter.get("/advance-search-escorts", advanceSearchController)
 
 escortRouter.post("/create-newsandtour", upload.array("media", 3), createNewsTourcontroller)
 escortRouter.get("/fetch-escort-newsandtour", fetchEscortNewsTourcontroller);
-escortRouter.post("/update-newstour", upload.array("media", 3), updateNewsTourController);
+escortRouter.patch("/update-newstour", upload.array("media", 3), updateNewsTourController);
 
 
 export default escortRouter;

@@ -1534,7 +1534,7 @@ export const updateNewsTourController = async (request, response) => {
         }
 
         const post = await NewsAndTourModel.findById(_id);
-        
+
         console.log("post: ", post);
 
         if (!post) {
@@ -1547,17 +1547,29 @@ export const updateNewsTourController = async (request, response) => {
 
         let mediaUploads = post.media;
 
-        // ✅ if new media uploaded
-        if (request.files && request.files.length > 0) {
+        if (request.files && request.files?.length > 0) {
+
+            if (request.files.length > 3) {
+                return response.status(400).json({
+                    message: "Maximum 3 media allowed",
+                    success: false,
+                    error: true
+                });
+            }
 
             // delete old media from cloudinary
-            for (let m of post.media) {
+            if (post.media && post.media?.length > 0) {
+                for (let m of post.media) {
 
-                const publicId = m.url.split("/").pop().split(".")[0];
-
-                await cloudinary.uploader.destroy(`newsandtour/post/${publicId}`, {
-                    resource_type: m.type === "video" ? "video" : "image"
-                });
+                    if (m.public_id) {
+                        await cloudinary.uploader.destroy(
+                            m.public_id,
+                            {
+                                resource_type: m.type === "video" ? "video" : "image"
+                            }
+                        );
+                    }
+                }
             }
 
             // upload new media
@@ -1571,7 +1583,12 @@ export const updateNewsTourController = async (request, response) => {
 
                     return {
                         url: result.secure_url,
-                        type: result.resource_type || (file.mimetype.startsWith("video") ? "video" : "image")
+                        public_id: result.public_id,
+                        type: result.resource_type || (
+                            file.mimetype.startsWith("video")
+                                ? "video"
+                                : "image"
+                        )
                     };
                 })
             );
@@ -1581,8 +1598,8 @@ export const updateNewsTourController = async (request, response) => {
         const updatedPost = await NewsAndTourModel.findByIdAndUpdate(
             _id,
             {
-                title,
-                description,
+                title: title || post.title,
+                description: description || post.description,
                 media: mediaUploads
             },
             { new: true }
@@ -1596,6 +1613,9 @@ export const updateNewsTourController = async (request, response) => {
         });
 
     } catch (error) {
+
+        console.log("updateNewsTourController error:", error);
+
         return response.status(500).json({
             message: error.message || "server error",
             success: false,
