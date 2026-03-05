@@ -1523,6 +1523,8 @@ export const updateNewsTourController = async (request, response) => {
 
         const { _id, title, description } = request.body;
 
+        console.log("request.body: ", request.body);
+
         if (!_id) {
             return response.status(400).json({
                 message: "Post _id required",
@@ -1532,6 +1534,8 @@ export const updateNewsTourController = async (request, response) => {
         }
 
         const post = await NewsAndTourModel.findById(_id);
+        
+        console.log("post: ", post);
 
         if (!post) {
             return response.status(404).json({
