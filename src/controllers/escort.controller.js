@@ -1700,6 +1700,8 @@ export const fetchAllNewsTourController = async (request, response) => {
 
         const { country, city } = request.query;
 
+        console.log("request.query: ", request.query);
+
         if (!country) {
             return response.status(400).json({
                 message: "Country is required",
@@ -1718,10 +1720,14 @@ export const fetchAllNewsTourController = async (request, response) => {
             query.city = city;
         }
 
+        console.log("query: ", query);
+
         const posts = await NewsAndTourModel
             .find(query)
             .sort({ createdAt: -1 })
             .limit(10)
+
+        console.log("posts: ", posts);
 
         return response.status(200).json({
             message: "Posts fetched successfully",
