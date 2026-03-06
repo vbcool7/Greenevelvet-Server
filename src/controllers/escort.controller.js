@@ -1763,7 +1763,6 @@ export const fetchSelectNewsTourController = async (request, response) => {
             });
         }
 
-        console.log("query: ", query);
 
         const post = await NewsAndTourModel.findById(_id);
 
@@ -1777,8 +1776,7 @@ export const fetchSelectNewsTourController = async (request, response) => {
         });
 
     } catch (error) {
-        console.log("error: ", response.data.message);
-        
+
         return response.status(500).json({
             message: error.message || "Server error",
             success: false,
