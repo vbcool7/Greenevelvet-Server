@@ -39,7 +39,7 @@ escortRouter.get("/filter-city-escorts", fetchFiltercityescortscontroller);
 escortRouter.get("/advance-search-escorts", advanceSearchController)
 
 // NewsTour (full CURD operation)
-escortRouter.post("/create-newsandtour", upload.array("media", 3), createNewsTourcontroller)
+escortRouter.post("/create-newsandtour", upload.array("media", 3), createNewsTourcontroller);
 escortRouter.get("/fetch-escort-newsandtour", fetchEscortNewsTourcontroller);
 escortRouter.patch("/update-newstour", upload.array("media", 3), updateNewsTourController);
 escortRouter.post("/delete-newstour", deleteNewsTourController);
