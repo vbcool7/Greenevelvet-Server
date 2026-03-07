@@ -74,6 +74,7 @@ export async function loginUsercontroller(request, response) {
             success: true,
             error: false,
             data: {
+                _id: user._id,
                 escortId: role === "Escort" ? user.escortId : null,
                 clientId: role === "Client" ? user.clientId : null,
                 role: role,
