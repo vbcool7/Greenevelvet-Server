@@ -47,6 +47,6 @@ escortRouter.get("/fetch-all-newstour", fetchAllNewsTourController);
 
 escortRouter.get("/fetch-selected-newstour", fetchSelectNewsTourController);
 
-escortRouter.post("/create-newstour-comment", addNewstourCommentController)
+escortRouter.post("/create-newstour-comment", upload.single("media"), addNewstourCommentController)
 escortRouter.post("/create-newstour-like", toggleNewstourLikeController)
 export default escortRouter;

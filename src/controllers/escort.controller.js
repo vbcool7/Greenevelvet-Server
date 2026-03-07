@@ -1833,6 +1833,7 @@ export const toggleNewstourLikeController = async (request, response) => {
                 success: true,
                 error: false
             });
+
         }
 
         const like = await NewstourLikesModel.create({
@@ -1866,7 +1867,6 @@ export const toggleNewstourLikeController = async (request, response) => {
 };
 
 export const addNewstourCommentController = async (request, response) => {
-
     try {
 
         const { postId, userId, comment } = request.body;
@@ -1881,22 +1881,41 @@ export const addNewstourCommentController = async (request, response) => {
             });
         }
 
-        if (!comment) {
+        if (!comment && !request.file) {
             return response.status(400).json({
-                message: "please add comment",
+                message: "please add comment or media",
                 success: false,
                 error: true
             });
         }
 
+        let mediaData = null;
+
+        // ================= MEDIA UPLOAD =================
+        if (request.file) {
+
+            const uploadResult = await uploadMediaCloudinary(
+                request.file,
+                "escort-app/newstour/comments"
+            );
+
+            mediaData = {
+                url: uploadResult.secure_url,
+                type: uploadResult.resource_type === "video" ? "video" : "image"
+            };
+        }
+
+        // ================= CREATE COMMENT =================
         const newComment = await NewstourCommentsModel.create({
             postId,
             userId,
-            comment
+            comment,
+            media: mediaData
         });
 
         console.log("comments : ", newComment);
 
+        // ================= UPDATE POST =================
         await NewsAndTourModel.updateOne(
             { _id: postId },
             { $push: { newstourComments: newComment._id } }
