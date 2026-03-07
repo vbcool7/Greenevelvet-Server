@@ -1936,6 +1936,8 @@ export const addNewstourCommentController = async (request, response) => {
         });
 
     } catch (error) {
+        console.log("error", error);
+        console.log("STACK:", error.stack);
 
         return response.status(500).json({
             message: error.message || "Server error",
