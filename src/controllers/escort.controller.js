@@ -22,6 +22,7 @@ import { request } from "http";
 import { response } from "express";
 import NewstourLikesModel from "../models/newstourLikesModel.js";
 import NewstourCommentsModel from "../models/newstourCommentsModel.js";
+import { error } from "console";
 
 // Escort Register controll
 export async function registerEscortcontroller(request, response) {
@@ -1875,6 +1876,7 @@ export const toggleNewstourLikeController = async (request, response) => {
     }
 };
 
+// add NewsandTour Comments
 export const addNewstourCommentController = async (request, response) => {
     try {
 
@@ -1990,5 +1992,43 @@ export const getNewstourLikesUsersController = async (request, response) => {
 
     }
 };
+
+export const fetchSelectedNewsTourComments = async (request, response) => {
+    try {
+        const { postId } = request.query;
+        console.log("fetch commets query: ", request.query);
+
+        if (!postId) {
+            return response.status(400).json({
+                message: "postId required...!",
+                success: false,
+                error: true,
+            })
+        }
+
+        const postComments = NewstourCommentsModel.find(postId)
+            .sort({ createdAt: -1 })
+            .populate({
+                path: "userId",
+                select: "name avatar"
+            });
+
+        console.log("fetch commets postComments: ", postComments);
+
+        return response.status(200).json({
+            message: "Fetch comments",
+            success: true,
+            error: false,
+            data: postComments
+        })
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Server error",
+            success: false,
+            error: true,
+        })
+    }
+}
 
 

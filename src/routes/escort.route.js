@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addNewstourCommentController, advanceSearchController, changeMobilenumber, createNewsTourcontroller, deleteNewsTourController, escortdetailscontroller, escortLogincontroller, escortRatescontroller, escortServicescontroller, escortUploadverification, fetchAllNewsTourController, fetchEscortdetailscontroller, fetchEscortNewsTourcontroller, fetchFiltercityescortscontroller, fetchFilterHomescortscontroller, fetchSelectNewsTourController, logoutEscortcontroller, registerEscortcontroller, sendOtpcontroller, toggleNewstourLikeController, updateHighlightscontroller, updateNewsTourController, uploadAvatarcontroller, uploadImagescontroller, uploadVideoscontroller, verifiedEscortcontroller, verifyEmailcontroller, verifyMobileotp } from '../controllers/escort.controller.js'
+import { addNewstourCommentController, advanceSearchController, changeMobilenumber, createNewsTourcontroller, deleteNewsTourController, escortdetailscontroller, escortLogincontroller, escortRatescontroller, escortServicescontroller, escortUploadverification, fetchAllNewsTourController, fetchEscortdetailscontroller, fetchEscortNewsTourcontroller, fetchFiltercityescortscontroller, fetchFilterHomescortscontroller, fetchSelectedNewsTourComments, fetchSelectNewsTourController, logoutEscortcontroller, registerEscortcontroller, sendOtpcontroller, toggleNewstourLikeController, updateHighlightscontroller, updateNewsTourController, uploadAvatarcontroller, uploadImagescontroller, uploadVideoscontroller, verifiedEscortcontroller, verifyEmailcontroller, verifyMobileotp } from '../controllers/escort.controller.js'
 import upload from "../middleware/multer.js";
 import { protect } from "../middleware/auth.js";
 
@@ -49,4 +49,12 @@ escortRouter.get("/fetch-selected-newstour", fetchSelectNewsTourController);
 
 escortRouter.post("/create-newstour-comment", upload.single("media"), addNewstourCommentController)
 escortRouter.post("/create-newstour-like", toggleNewstourLikeController)
+
+escortRouter.get("/fetch-selected-newstour-comments", fetchSelectedNewsTourComments)
+
+
+
+
+
+
 export default escortRouter;
