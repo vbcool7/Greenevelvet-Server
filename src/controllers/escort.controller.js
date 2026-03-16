@@ -18,8 +18,6 @@ import RatesModel from "../models/escortratesModel.js";
 import ClientModel from "../models/clientModel.js";
 import { uploadMediaCloudinary } from "../utils/uploadMediaCloudinary.js";
 import NewsAndTourModel from "../models/newsandtourModel.js";
-import { request } from "http";
-import { response } from "express";
 import NewstourLikesModel from "../models/newstourLikesModel.js";
 import NewstourCommentsModel from "../models/newstourCommentsModel.js";
 import BlogModel from "../models/blogModel.js";
@@ -2069,9 +2067,6 @@ export const createBlog = async (request, response) => {
             { $push: { blog: post._id } }
         );
 
-
-        console.log("blog Data:", post);
-
         return response.status(201).json({
             message: "News & Tour post created successfully",
             success: true,
@@ -2089,12 +2084,6 @@ export const createBlog = async (request, response) => {
         });
     }
 };
-
-
-
-
-
-
 
 // fetch All NewsTour posts by Country and city
 export const fetchAllBlogs = async (request, response) => {
@@ -2128,10 +2117,18 @@ export const fetchAllBlogs = async (request, response) => {
             .find(query)
             .sort({ createdAt: -1 })
             .limit(24)
-            .populate("blogComments")
-            .populate("blogLikes");
+            .populate("BlogComments")
+            .populate("BlogLikes");
 
         console.log("posts: ", posts);
+
+        if (!posts) {
+            return response.status(404).json({
+                message: "posts not available",
+                success: false,
+                error: true
+            });
+        }
 
         return response.status(200).json({
             message: "Blogs fetched successfully",
@@ -2150,6 +2147,8 @@ export const fetchAllBlogs = async (request, response) => {
 
     }
 };
+
+
 
 // fetch selected NewsTour by post Id
 export const fetchSelectBlog = async (request, response) => {

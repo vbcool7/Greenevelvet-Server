@@ -52,9 +52,8 @@ escortRouter.get("/fetch-selected-newstour-comments", fetchSelectedNewsTourComme
 
 // Blog (full CURD operation)
 escortRouter.post("/create-blog", upload.array("media", 3),createBlog);
-
-
 escortRouter.get("/fetch-all-blogs",fetchAllBlogs)
+
 escortRouter.get("/fetch-selected-blog",fetchSelectBlog)
 escortRouter.post("/create-blog-like",toggleBlogLike)
 escortRouter.post("/create-blog-comment",upload.single("media"),addBlogComment)
