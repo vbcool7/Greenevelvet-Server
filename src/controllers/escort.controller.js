@@ -2014,9 +2014,9 @@ export const createBlog = async (request, response) => {
             });
         }
 
-        if (request.files.length > 3) {
+        if (request.files.length > 1) {
             return response.status(400).json({
-                message: "Maximum 3 media files allowed",
+                message: "Maximum 1 media files allowed",
                 success: false,
                 error: true,
             });
@@ -2066,7 +2066,7 @@ export const createBlog = async (request, response) => {
         // ✅ push post id into escort model
         await EscortModel.findOneAndUpdate(
             { escortId },
-            { $push: { newsTour: post._id } }
+            { $push: { blog: post._id } }
         );
 
 
@@ -2089,6 +2089,12 @@ export const createBlog = async (request, response) => {
         });
     }
 };
+
+
+
+
+
+
 
 // fetch All NewsTour posts by Country and city
 export const fetchAllBlogs = async (request, response) => {

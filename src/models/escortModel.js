@@ -253,7 +253,7 @@ const EscortSchema = new mongoose.Schema({
     blog: [
         {
             type: mongoose.Schema.ObjectId,
-            ref: "Blogs"
+            ref: "blog"
         }
     ],
     newsTour: [
