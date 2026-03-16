@@ -2068,7 +2068,7 @@ export const createBlog = async (request, response) => {
         );
 
         return response.status(201).json({
-            message: "News & Tour post created successfully",
+            message: "Blog created successfully",
             success: true,
             error: false,
             data: post
@@ -2116,15 +2116,13 @@ export const fetchAllBlogs = async (request, response) => {
         const posts = await BlogModel
             .find(query)
             .sort({ createdAt: -1 })
-            .limit(24)
-            .populate("BlogComments")
-            .populate("BlogLikes");
+            .limit(24);
 
         console.log("posts: ", posts);
 
-        if (!posts) {
+        if (!posts.length) {
             return response.status(404).json({
-                message: "posts not available",
+                message: "blogs not available",
                 success: false,
                 error: true
             });
