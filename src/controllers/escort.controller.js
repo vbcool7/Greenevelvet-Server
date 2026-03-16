@@ -1992,7 +1992,7 @@ export const fetchSelectedNewsTourComments = async (request, response) => {
 export const createBlog = async (request, response) => {
     try {
 
-        const { escortId, name, city, country, title, description } = request.body;
+        const { escortId, userId, userType, name, city, country, title, description } = request.body;
 
 
         if (!escortId || !title || !description) {
@@ -2050,6 +2050,8 @@ export const createBlog = async (request, response) => {
         // ✅ create post
         const post = await BlogModel.create({
             escortId,
+            userId,
+            userType,
             city,
             country,
             name,
@@ -2116,7 +2118,11 @@ export const fetchAllBlogs = async (request, response) => {
         const posts = await BlogModel
             .find(query)
             .sort({ createdAt: -1 })
-            .limit(24);
+            .limit(24)
+            .populate({
+                path: "userId",
+                select: "name avatar"
+            })
 
         console.log("posts: ", posts);
 

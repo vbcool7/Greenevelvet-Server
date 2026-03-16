@@ -7,6 +7,18 @@ const blogSchema = new mongoose.Schema({
         index: true
     },
 
+    userId: {
+        type: String,
+        required: true,
+        refPath: "userType"
+    },
+
+    userType: {
+        type: String,
+        required: true,
+        enum: ["Client", "Escort"]
+    },
+
     country: {
         type: String,
         index: true
