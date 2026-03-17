@@ -22,6 +22,9 @@ import NewstourLikesModel from "../models/newstourLikesModel.js";
 import NewstourCommentsModel from "../models/newstourCommentsModel.js";
 import BlogModel from "../models/blogModel.js";
 import BlogCommentsModel from "../models/blogCommentsModel.js";
+import BlogLikesModel from "../models/blogLikesModel.js";
+
+
 
 // Escort Register controll
 export async function registerEscortcontroller(request, response) {
