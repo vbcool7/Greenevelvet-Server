@@ -2153,13 +2153,15 @@ export const fetchAllBlogs = async (request, response) => {
 };
 
 // fetch selected NewsTour by post Id
+
 export const fetchSelectBlog = async (request, response) => {
     try {
 
         const { _id } = request.query;
 
-        console.log("request.query: ", request.query);
+        console.log("request.query:", request.query);
 
+        // check id exist
         if (!_id) {
             return response.status(400).json({
                 message: "_id is required",
@@ -2177,7 +2179,14 @@ export const fetchSelectBlog = async (request, response) => {
                 select: "name avatar"
             });
 
-        console.log("post: ", post);
+        // check blog exist
+        if (!post) {
+            return response.status(404).json({
+                message: "Blog not found",
+                success: false,
+                error: true
+            });
+        }
 
         return response.status(200).json({
             message: "Blog fetched successfully",
@@ -2188,12 +2197,13 @@ export const fetchSelectBlog = async (request, response) => {
 
     } catch (error) {
 
+        console.error("fetchSelectBlog error:", error);
+
         return response.status(500).json({
             message: error.message || "Server error",
             success: false,
             error: true
         });
-
     }
 };
 
