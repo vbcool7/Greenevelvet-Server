@@ -2152,8 +2152,6 @@ export const fetchAllBlogs = async (request, response) => {
     }
 };
 
-
-
 // fetch selected NewsTour by post Id
 export const fetchSelectBlog = async (request, response) => {
     try {
@@ -2171,9 +2169,9 @@ export const fetchSelectBlog = async (request, response) => {
         }
 
         const post = await BlogModel.findById(_id)
-            .populate("blogLikes")
+            .populate("BlogLikes")
             .populate({
-                path: "blogComments",
+                path: "BlogComments",
                 populate: {
                     path: "userId",
                     select: "name avatar"
@@ -2199,6 +2197,9 @@ export const fetchSelectBlog = async (request, response) => {
 
     }
 };
+
+
+
 
 // Toggle NewsTour Like controller
 export const toggleBlogLike = async (request, response) => {
