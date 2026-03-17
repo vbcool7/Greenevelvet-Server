@@ -2168,14 +2168,13 @@ export const fetchSelectBlog = async (request, response) => {
             });
         }
 
-        const post = await BlogModel.findById(_id)
+        const post = await BlogModel
+            .findById(_id)
             .populate("BlogLikes")
+            .populate("BlogComments")
             .populate({
-                path: "BlogComments",
-                populate: {
-                    path: "userId",
-                    select: "name avatar"
-                }
+                path: "userId",
+                select: "name avatar"
             });
 
         console.log("post: ", post);
