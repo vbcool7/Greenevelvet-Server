@@ -54,7 +54,7 @@ escortRouter.get("/fetch-selected-newstour-comments", fetchSelectedNewsTourComme
 escortRouter.post("/create-blog", upload.array("media", 3),createBlog);
 escortRouter.patch("/update-blog", upload.array("media", 3), updateBlog);
 escortRouter.post("/delete-blog", deleteBlog);
-escortRouter.post("/block-blog-comments", blockBlogComments);
+escortRouter.patch("/block-blog-comments", blockBlogComments);
 escortRouter.get("/fetch-all-blogs",fetchAllBlogs);
 escortRouter.get("/fetch-escort-blog", fetchEscortBlog);
 escortRouter.get("/fetch-selected-blog",fetchSelectBlog);
