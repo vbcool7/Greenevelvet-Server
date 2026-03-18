@@ -65,6 +65,11 @@ const blogSchema = new mongoose.Schema({
         },
     ],
 
+    isCommentsBlocked: {
+        type: Boolean,
+        default: false,
+    },
+
     blogLikes: [
         {
             type: mongoose.Schema.Types.ObjectId,

@@ -2266,6 +2266,65 @@ export const deleteBlog = async (request, response) => {
     }
 };
 
+// Block blog commnets 
+export const blockBlogComments = async (request, response) => {
+    try {
+
+        const { _id, userId } = request.body;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "Blog _id required",
+                success: false,
+                error: true
+            });
+        }
+
+        const blog = await BlogModel.findById(_id);
+
+        if (!blog) {
+            return response.status(404).json({
+                message: "Blog not found",
+                success: false,
+                error: true
+            });
+        }
+
+        // ✅ OWNER CHECK (IMPORTANT 🔥)
+        if (blog.userId.toString() !== req.userId) {
+            return res.status(403).json({
+                success: false,
+                message: "Unauthorized"
+            });
+        }
+
+        // ✅ TOGGLE LOGIC
+        blog.isCommentsBlocked = !blog.isCommentsBlocked;
+
+        await blog.save();
+
+        return response.status(200).json({
+            message: blog.isCommentsBlocked
+                ? "Comments blocked successfully"
+                : "Comments unblocked successfully",
+            success: true,
+            error: false,
+            data: blog
+        });
+
+    } catch (error) {
+
+        console.log("deleteNewsTourController error:", error);
+
+        return response.status(500).json({
+            message: error.message || "Server error",
+            success: false,
+            error: true
+        });
+
+    }
+};
+
 // fetch All Blog posts by Country and city
 export const fetchAllBlogs = async (request, response) => {
     try {

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addBlogComment, addNewstourCommentController, advanceSearchController, changeMobilenumber, createBlog, createNewsTourcontroller, deleteBlog, deleteNewsTourController, escortdetailscontroller, escortLogincontroller, escortRatescontroller, escortServicescontroller, escortUploadverification, fetchAllBlogs, fetchAllNewsTourController, fetchEscortBlog, fetchEscortdetailscontroller, fetchEscortNewsTourcontroller, fetchFiltercityescortscontroller, fetchFilterHomescortscontroller, fetchSelectBlog, fetchSelectedBlogComments, fetchSelectedNewsTourComments, fetchSelectNewsTourController, logoutEscortcontroller, registerEscortcontroller, sendOtpcontroller, toggleBlogLike, toggleNewstourLikeController, updateBlog, updateHighlightscontroller, updateNewsTourController, uploadAvatarcontroller, uploadImagescontroller, uploadVideoscontroller, verifiedEscortcontroller, verifyEmailcontroller, verifyMobileotp } from '../controllers/escort.controller.js'
+import { addBlogComment, addNewstourCommentController, advanceSearchController, blockBlogComments, changeMobilenumber, createBlog, createNewsTourcontroller, deleteBlog, deleteNewsTourController, escortdetailscontroller, escortLogincontroller, escortRatescontroller, escortServicescontroller, escortUploadverification, fetchAllBlogs, fetchAllNewsTourController, fetchEscortBlog, fetchEscortdetailscontroller, fetchEscortNewsTourcontroller, fetchFiltercityescortscontroller, fetchFilterHomescortscontroller, fetchSelectBlog, fetchSelectedBlogComments, fetchSelectedNewsTourComments, fetchSelectNewsTourController, logoutEscortcontroller, registerEscortcontroller, sendOtpcontroller, toggleBlogLike, toggleNewstourLikeController, updateBlog, updateHighlightscontroller, updateNewsTourController, uploadAvatarcontroller, uploadImagescontroller, uploadVideoscontroller, verifiedEscortcontroller, verifyEmailcontroller, verifyMobileotp } from '../controllers/escort.controller.js'
 import upload from "../middleware/multer.js";
 import { protect } from "../middleware/auth.js";
 
@@ -54,12 +54,13 @@ escortRouter.get("/fetch-selected-newstour-comments", fetchSelectedNewsTourComme
 escortRouter.post("/create-blog", upload.array("media", 3),createBlog);
 escortRouter.patch("/update-blog", upload.array("media", 3), updateBlog);
 escortRouter.post("/delete-blog", deleteBlog);
-escortRouter.get("/fetch-all-blogs",fetchAllBlogs)
-escortRouter.get("/fetch-escort-blog", fetchEscortBlog)
-escortRouter.get("/fetch-selected-blog",fetchSelectBlog)
-escortRouter.post("/create-blog-like",toggleBlogLike)
-escortRouter.post("/create-blog-comment",upload.single("media"),addBlogComment)
-escortRouter.get("/fetch-selected-blog-comments",fetchSelectedBlogComments)
+escortRouter.post("/block-blog-comments", blockBlogComments);
+escortRouter.get("/fetch-all-blogs",fetchAllBlogs);
+escortRouter.get("/fetch-escort-blog", fetchEscortBlog);
+escortRouter.get("/fetch-selected-blog",fetchSelectBlog);
+escortRouter.post("/create-blog-like",toggleBlogLike);
+escortRouter.post("/create-blog-comment",upload.single("media"),addBlogComment);
+escortRouter.get("/fetch-selected-blog-comments",fetchSelectedBlogComments);
 
 
 export default escortRouter;
