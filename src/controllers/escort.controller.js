@@ -2957,3 +2957,75 @@ export const fetchSelectBooking = async (request, response) => {
         });
     }
 };
+
+// cancel booking / availability
+export const cancelBooking = async (request, response) => {
+    try {
+
+        const { _id } = request.body;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "Booking ID is required",
+                success: false,
+                error: true
+            });
+        }
+
+        const booking = await BookingModel.findByIdAndUpdate(
+            _id,
+            { status: "cancel" },
+            { new: true }
+        );
+
+        return response.status(200).json({
+            message: "Booking updated successfully",
+            success: true,
+            error: false,
+            data: booking
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Server error",
+            success: false,
+            error: true
+        });
+    }
+};
+
+// change status => complete 
+export const complteBooking = async (request, response) => {
+    try {
+
+        const { _id } = request.body;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "Booking ID is required",
+                success: false,
+                error: true
+            });
+        }
+
+        const booking = await BookingModel.findByIdAndUpdate(
+            _id,
+            { status: "completed" },
+            { new: true }
+        );
+
+        return response.status(200).json({
+            message: "Booking updated successfully",
+            success: true,
+            error: false,
+            data: booking
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Server error",
+            success: false,
+            error: true
+        });
+    }
+};

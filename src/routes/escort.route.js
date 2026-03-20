@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addBlogComment, addBooking, addNewstourCommentController, advanceSearchController, blockBlogComments, changeMobilenumber, createBlog, createNewsTourcontroller, deleteBlog, deleteBooking, deleteNewsTourController, escortdetailscontroller, escortLogincontroller, escortRatescontroller, escortServicescontroller, escortUploadverification, fetchAllBlogs, fetchAllNewsTourController, fetchBookings, fetchEscortBlog, fetchEscortdetailscontroller, fetchEscortNewsTourcontroller, fetchFiltercityescortscontroller, fetchFilterHomescortscontroller, fetchSelectBlog, fetchSelectBooking, fetchSelectedBlogComments, fetchSelectedNewsTourComments, fetchSelectNewsTourController, logoutEscortcontroller, registerEscortcontroller, sendOtpcontroller, toggleBlogLike, toggleNewstourLikeController, updateBlog, updateBooking, updateHighlightscontroller, updateNewsTourController, uploadAvatarcontroller, uploadImagescontroller, uploadVideoscontroller, verifiedEscortcontroller, verifyEmailcontroller, verifyMobileotp } from '../controllers/escort.controller.js'
+import { addBlogComment, addBooking, addNewstourCommentController, advanceSearchController, blockBlogComments, cancelBooking, changeMobilenumber, complteBooking, createBlog, createNewsTourcontroller, deleteBlog, deleteBooking, deleteNewsTourController, escortdetailscontroller, escortLogincontroller, escortRatescontroller, escortServicescontroller, escortUploadverification, fetchAllBlogs, fetchAllNewsTourController, fetchBookings, fetchEscortBlog, fetchEscortdetailscontroller, fetchEscortNewsTourcontroller, fetchFiltercityescortscontroller, fetchFilterHomescortscontroller, fetchSelectBlog, fetchSelectBooking, fetchSelectedBlogComments, fetchSelectedNewsTourComments, fetchSelectNewsTourController, logoutEscortcontroller, registerEscortcontroller, sendOtpcontroller, toggleBlogLike, toggleNewstourLikeController, updateBlog, updateBooking, updateHighlightscontroller, updateNewsTourController, uploadAvatarcontroller, uploadImagescontroller, uploadVideoscontroller, verifiedEscortcontroller, verifyEmailcontroller, verifyMobileotp } from '../controllers/escort.controller.js'
 import upload from "../middleware/multer.js";
 import { protect } from "../middleware/auth.js";
 
@@ -68,5 +68,7 @@ escortRouter.get("/fetch-escort-bookings",fetchBookings)
 escortRouter.patch("/update-booking",updateBooking)
 escortRouter.post("/delete-booking",deleteBooking)
 escortRouter.get("/fetch-select-booking",fetchSelectBooking)
+escortRouter.post("/cancel-booking",cancelBooking)
+escortRouter.post("/complete-booking",complteBooking)
 
 export default escortRouter;
