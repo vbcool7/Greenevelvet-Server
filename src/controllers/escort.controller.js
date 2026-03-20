@@ -2673,83 +2673,103 @@ export const fetchSelectedBlogComments = async (request, response) => {
 
 // add booking
 export const addBooking = async (request, response) => {
-    try {
+  try {
+    const {
+      userId,
+      escortId,
+      date,
+      startTime,
+      endTime,
+      isAllDay,
+      status,
+      title,
+      notAvailable,
+      type, // booking | availability
+    } = request.body;
 
-        const {
-            userId,
-            escortId,
-            date,
-            startTime,
-            endTime,
-            isAllDay,
-            status,
-            title,
-            notAvailable,
-            type,
-        } = request.body;
-
-        // ✅ Basic validation
-        if (!userId || !escortId || !date) {
-            return response.status(400).json({
-                message: "Required fields missing",
-                success: false,
-                error: true
-            });
-        }
-
-        // ✅ Time fix (All Day)
-        const start = isAllDay ? "00:00" : startTime;
-        const end = isAllDay ? "23:59" : endTime;
-
-        // ✅ Conflict Check
-        const isConflict = await BookingModel.findOne({
-            escortId,
-            date,
-            $or: [
-                {
-                    startTime: { $lt: end },
-                    endTime: { $gt: start }
-                }
-            ]
-        });
-
-        if (isConflict) {
-            return response.status(400).json({
-                message: "Time slot already booked",
-                success: false,
-                error: true
-            });
-        }
-
-        // ✅ Create Booking
-        const booking = await BookingModel.create({
-            userId,
-            escortId,
-            date,
-            startTime: start,
-            endTime: end,
-            isAllDay,
-            status,
-            title,
-            notAvailable,
-            type
-        });
-
-        return response.status(201).json({
-            message: "Booking added successfully",
-            success: true,
-            error: false,
-            data: booking
-        });
-
-    } catch (error) {
-
-        return response.status(500).json({
-            message: error.message || "Server error",
-            success: false,
-            error: true
-        });
+    // ✅ Basic validation
+    if (!userId || !escortId || !date || !type) {
+      return response.status(400).json({
+        message: "Required fields missing",
+        success: false,
+        error: true,
+      });
     }
+
+    // ✅ Time Handling
+    let start = startTime;
+    let end = endTime;
+
+    if (isAllDay || notAvailable) {
+      start = "00:00";
+      end = "23:59";
+    }
+
+    // ✅ Time validation (only when needed)
+    if (!isAllDay && !notAvailable && start >= end) {
+      return response.status(400).json({
+        message: "End time must be greater than start time",
+        success: false,
+        error: true,
+      });
+    }
+
+    // ✅ Conflict Check (IMPORTANT LOGIC 🔥)
+    let conflictQuery = {
+      escortId,
+      date,
+      startTime: { $lt: end },
+      endTime: { $gt: start },
+    };
+
+    // 👉 अगर full day block है (notAvailable)
+    if (notAvailable) {
+      conflictQuery = { escortId, date };
+    }
+
+    const isConflict = await BookingModel.findOne(conflictQuery);
+
+    if (isConflict) {
+      return response.status(400).json({
+        message:
+          type === "availability"
+            ? "Time slot already blocked"
+            : "Time slot already booked",
+        success: false,
+        error: true,
+      });
+    }
+
+    // ✅ Create Booking / Availability
+    const booking = await BookingModel.create({
+      userId,
+      escortId,
+      date,
+      startTime: start,
+      endTime: end,
+      isAllDay,
+      status: status || "pending",
+      title,
+      notAvailable,
+      type,
+    });
+
+    return response.status(201).json({
+      message:
+        type === "booking"
+          ? "Booking added successfully"
+          : "Availability added successfully",
+      success: true,
+      error: false,
+      data: booking,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || "Server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // fetch booking
