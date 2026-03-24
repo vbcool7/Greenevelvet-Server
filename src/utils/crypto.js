@@ -1,4 +1,7 @@
 import crypto from "crypto";
+import dotenv from "dotenv";
+dotenv.config({ path: "./.env" });
+
 
 const SECRET = process.env.CRYPTO_SECRET;
 
