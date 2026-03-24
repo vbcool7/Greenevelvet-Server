@@ -25,7 +25,6 @@ import BlogCommentsModel from "../models/blogCommentsModel.js";
 import BlogLikesModel from "../models/blogLikesModel.js";
 import BookingModel from "../models/bookingModel.js";
 import TourModel from "../models/tourModel.js";
-import { error } from "console";
 
 
 
@@ -1229,6 +1228,9 @@ export async function fetchFilterHomescortscontroller(request, response) {
             ];
         }
         const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        // Only escorts with avatar
+        query.avatar = { $exists: true, $ne: null, $ne: "" };
 
         const escortList = await EscortModel.find(query)
             .skip(skip)
