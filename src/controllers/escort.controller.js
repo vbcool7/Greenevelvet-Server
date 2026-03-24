@@ -25,6 +25,7 @@ import BlogCommentsModel from "../models/blogCommentsModel.js";
 import BlogLikesModel from "../models/blogLikesModel.js";
 import BookingModel from "../models/bookingModel.js";
 import TourModel from "../models/tourModel.js";
+import { decrypt, encrypt } from "../utils/crypto.js";
 
 
 
@@ -33,6 +34,9 @@ export async function registerEscortcontroller(request, response) {
     try {
 
         const { name, email, password, mobile, country, city, account_classification, account_type, adverties_category } = request.body
+
+        const mobileEncrypted = encrypt(request.body.mobile);
+
         console.log(request.body);
 
         if (!name || !email || !password || !mobile) {
@@ -76,7 +80,7 @@ export async function registerEscortcontroller(request, response) {
             name,
             email,
             password: hashPassword,
-            mobile,
+            mobile: mobileEncrypted,
             country,
             city,
             account_classification,
@@ -150,6 +154,9 @@ export async function changeMobilenumber(request, response) {
     try {
         const { escortId, mobile } = request.body;
 
+        const mobileEncrypted = encrypt(request.body.mobile);
+
+
         if (!escortId || !mobile) {
             return response.status(400).json({
                 message: "EscortId and mobile is required",
@@ -161,7 +168,7 @@ export async function changeMobilenumber(request, response) {
         const updateMobile = await EscortModel.findOneAndUpdate(
             { escortId },
             {
-                mobile: mobile,
+                mobile: mobileEncrypted,
                 isMobileVerified: false,
             }
         )
@@ -3462,4 +3469,44 @@ export async function fetchHomeSliderEscorts(request, response) {
     }
 }
 
+// ===========================================< Get Escort Contact >=====================================================
+
+export const getEscortContact = async (request, response) => {
+    try {
+        const { escortId, type } = request.body;
+
+        const escort = await EscortModel.findById(escortId);
+
+        if (!escort || !escort.mobile) {
+            return response.status(404).json({
+                message: "Contact not available",
+                success: false,
+                error: true
+            });
+        }
+
+        const mobile = decrypt(escort.mobile);
+
+        let link = "";
+
+        if (type === "call") link = `tel:${mobile}`;
+        if (type === "sms") link = `sms:${mobile}`;
+        if (type === "whatsapp") link = `https://wa.me/${mobile}`;
+
+        return response.json({
+            message: "fetched contact",
+            success: true,
+            error: false,
+            link,
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Server error",
+            success: false,
+            error: true
+
+        });
+    }
+};
 
