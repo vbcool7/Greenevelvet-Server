@@ -3475,7 +3475,7 @@ export const getEscortContact = async (request, response) => {
     try {
         const { escortId, type } = request.body;
 
-        const escort = await EscortModel.findById(escortId);
+        const escort = await EscortModel.findOne(escortId);
 
         if (!escort || !escort.mobile) {
             return response.status(404).json({
