@@ -3473,9 +3473,9 @@ export async function fetchHomeSliderEscorts(request, response) {
 
 export const getEscortContact = async (request, response) => {
     try {
-        const { escortId, type } = request.body;
+        const { _id, type } = request.body;
 
-        const escort = await EscortModel.findOne(escortId);
+        const escort = await EscortModel.findById(_id);
 
         if (!escort || !escort.mobile) {
             return response.status(404).json({
@@ -3485,7 +3485,11 @@ export const getEscortContact = async (request, response) => {
             });
         }
 
-        const mobile = decrypt(escort.mobile);
+        let mobile = escort.mobile;
+
+        if (typeof mobile === "string" && mobile.startsWith("enc:")) {
+            mobile = decrypt(mobile.replace("enc:", ""));
+        }
 
         let link = "";
 
