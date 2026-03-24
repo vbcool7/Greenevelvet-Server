@@ -1314,7 +1314,12 @@ export const advanceSearchController = async (request, response) => {
             };
         }
 
-        filters.avatar = { $exists: true, $ne: null, $ne: "" };
+        query.avatar = {
+            $exists: true,
+            $ne: null,
+            $type: "string",
+            $ne: ""
+        };
 
         // ---------- Aggregation Pipeline ----------
         let pipeline = [
