@@ -15,7 +15,7 @@ const SECRET_KEY = crypto
     .createHash("sha256")
     .update(SECRET)
     .digest("base64")
-    .substring(0, 32);
+    .substring();
 
 const IV = Buffer.alloc(16, 0); // simple IV (can randomize later)
 
