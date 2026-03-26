@@ -1,4 +1,4 @@
-import { reverseGeo } from "../service/geoService";
+import { reverseGeo } from "../service/geoService.js";
 
 // POST: /api/geo/latlng
 export const getGeoFromLatLng = async (req, res) => {

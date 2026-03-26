@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getGeoFromLatLng } from "../controllers/geoController";
+import { getGeoFromLatLng } from "../controllers/geoController.js";
 
 const geoRouter = Router()
 
