@@ -3090,8 +3090,8 @@ export const addTour = async (request, response) => {
         }
 
         // 🔴 Convert to Date (IMPORTANT)
-        // const start = new Date(startDate);
-        // const end = new Date(endDate);
+        const start = new Date(startDate);
+        const end = new Date(endDate);
 
         // 🔴 Date validation
         if (start > end) {
