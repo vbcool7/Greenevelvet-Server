@@ -38,7 +38,7 @@ const tourSchema = new mongoose.Schema(
 
         status: {
             type: String,
-            enum: ["upcoming", "ongoing", "completed", "canceled"],
+            enum: ["upcoming", "ongoing", "completed", "cancelled"],
             default: "upcoming",
         },
     },

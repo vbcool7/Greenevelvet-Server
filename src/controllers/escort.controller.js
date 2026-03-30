@@ -3167,11 +3167,17 @@ export const getToursByDate = async (request, response) => {
         const start = new Date(startDate);
         const end = new Date(endDate);
 
-        const tours = await TourModel.find({
+        let query = {
             escortId,
             startDate: { $lte: end },
             endDate: { $gte: start },
-        });
+        };
+
+        if (status && status !== "all") {
+            query.status = status;
+        }
+
+        const tours = await TourModel.find(query);
 
         return response.status(200).json({
             message: "Tours fetched for selected date",
@@ -3191,6 +3197,7 @@ export const getToursByDate = async (request, response) => {
         });
     }
 };
+
 // update tour
 export const updateTour = async (request, response) => {
     try {
@@ -3386,7 +3393,7 @@ export const cancelTour = async (request, response) => {
         // ❗ already cancelled check
         if (existingTour.status === "cancelled") {
             return response.status(400).json({
-                message: "Tour is already cancelled",
+                message: "Tour is already Cancelled",
                 success: false,
                 error: true,
             });
