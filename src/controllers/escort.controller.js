@@ -3311,7 +3311,7 @@ export const deleteTour = async (request, response) => {
         }
 
         // 🔐 Optional: Ownership check (VERY IMPORTANT)
-        if (existingTour.userId.toString() !== request.userId) {
+        if (existingTour.userId.toString() !== userId) {
             return response.status(403).json({
                 message: "Unauthorized to delete this tour",
                 success: false,
