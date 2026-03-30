@@ -3375,7 +3375,7 @@ export const cancelTour = async (request, response) => {
         }
 
         // 🔐 ownership check
-        if (existingTour.userId.toString() !== request.userId) {
+        if (existingTour.userId.toString() !== userId) {
             return response.status(403).json({
                 message: "Unauthorized to cancel this tour",
                 success: false,
