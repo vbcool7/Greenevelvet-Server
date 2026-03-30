@@ -3558,3 +3558,140 @@ export const getEscortContact = async (request, response) => {
     }
 };
 
+// ===========================================================<Escort profile :  update , edit , hide , delete >==========================================================================================
+
+export async function updateEscortProfile(request, response) {
+    try {
+        const { _id, name, onlineStatus, displayConatct, notifications } = request.body;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "User id required",
+                success: false,
+                error: true
+            });
+        }
+
+        // ✅ only defined fields
+        const updateData = {};
+        if (name !== undefined) updateData.name = name;
+        if (onlineStatus !== undefined) updateData.onlineStatus = onlineStatus;
+        if (displayConatct !== undefined) updateData.displayConatct = displayConatct;
+        if (notifications !== undefined) updateData.notifications = notifications;
+
+        const updatedEscort = await EscortModel.findByIdAndUpdate(
+            _id,
+            { $set: updateData },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedEscort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: "Profile updated successfully",
+            success: true,
+            error: false,
+            data: updatedEscort
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            error: true,
+            success: false
+        });
+    }
+}
+
+export async function hideEscortProfile(request, response) {
+    try {
+        const { _id } = request.body;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "User id required",
+                success: false,
+                error: true
+            });
+        }
+
+        const updatedEscort = await EscortModel.findByIdAndUpdate(
+            _id,
+            { $set: { isVisible: false } }, // ✅ hide
+            { new: true }
+        );
+
+        if (!updatedEscort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: "Profile hidden successfully",
+            success: true,
+            error: false,
+            data: updatedEscort
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            error: true,
+            success: false
+        });
+    }
+}
+
+export async function deleteEscortProfile(request, response) {
+    try {
+        const { _id } = request.body;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "User id required",
+                success: false,
+                error: true
+            });
+        }
+
+        // ✅ delete escort
+        const deletedEscort = await EscortModel.findByIdAndDelete(_id);
+
+        if (!deletedEscort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+ 
+        await BlogModel.deleteMany({ userId: _id });
+        await ServiceModel.deleteMany({ userId: _id });
+        await RatesModel.deleteMany({ userId: _id });
+        await NewsAndTourModel.deleteMany({ userId: _id });
+        await TourModel.deleteMany({ userId: _id });
+        await BookingModel.deleteMany({ userId: _id });
+
+        return response.status(200).json({
+            message: "Escort profile and related data deleted",
+            success: true,
+            error: false
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
