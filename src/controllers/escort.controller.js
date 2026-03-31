@@ -3560,6 +3560,7 @@ export const getEscortContact = async (request, response) => {
 
 // ===========================================================<Escort profile :  update , edit , hide , delete >==========================================================================================
 
+// edit and update escort account details 
 export async function updateEscortProfile(request, response) {
     try {
         const { _id, name, onlineStatus, displayConatct, notifications } = request.body;
@@ -3609,9 +3610,10 @@ export async function updateEscortProfile(request, response) {
     }
 }
 
+// Hide un hide escort profile
 export async function hideEscortProfile(request, response) {
     try {
-        const { _id } = request.body;
+        const { _id, isVisible } = request.body;
 
         if (!_id) {
             return response.status(400).json({
@@ -3623,7 +3625,7 @@ export async function hideEscortProfile(request, response) {
 
         const updatedEscort = await EscortModel.findByIdAndUpdate(
             _id,
-            { $set: { isVisible: false } }, // ✅ hide
+            { $set: { isVisible: isVisible } }, // ✅ dynamic value
             { new: true }
         );
 
@@ -3636,7 +3638,7 @@ export async function hideEscortProfile(request, response) {
         }
 
         return response.status(200).json({
-            message: "Profile hidden successfully",
+            message: `Profile ${isVisible ? "visible" : "hidden"} successfully`,
             success: true,
             error: false,
             data: updatedEscort
@@ -3651,6 +3653,7 @@ export async function hideEscortProfile(request, response) {
     }
 }
 
+//  permanent delete escort profile
 export async function deleteEscortProfile(request, response) {
     try {
         const { _id } = request.body;
@@ -3673,7 +3676,7 @@ export async function deleteEscortProfile(request, response) {
                 error: true
             });
         }
- 
+
         await BlogModel.deleteMany({ userId: _id });
         await ServiceModel.deleteMany({ userId: _id });
         await RatesModel.deleteMany({ userId: _id });
