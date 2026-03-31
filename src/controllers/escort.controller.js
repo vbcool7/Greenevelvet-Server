@@ -853,7 +853,7 @@ export async function uploadVideoscontroller(request, response) {
 // fetch all verified escorts
 export async function verifiedEscortcontroller(request, response) {
     try {
-        const { role, isVerified } = request.query;
+        const { role, isVerified, isVisible } = request.query;
 
         let filter = {};
 
@@ -861,6 +861,9 @@ export async function verifiedEscortcontroller(request, response) {
 
         if (isVerified !== undefined)
             filter.isVerified = isVerified === "true";
+
+        if (isVisible !== undefined)
+            filter.isVisible = isVisible === "true";
 
         const escorts = await EscortModel.find(filter);
 
@@ -1117,6 +1120,7 @@ export async function fetchFiltercityescortscontroller(request, response) {
             query.name = { $regex: filters.name, $options: "i" };
         }
         if (filters.isVerified === true) query.isVerified = true;
+        if (filters.isVisible === true) query.isVisible = true;
         if (filters.incall === true) query.incall = true;
         if (filters.outcall === true) query.outcall = true;
         if (filters.fmt === true) query.fmt = true;
@@ -1209,6 +1213,7 @@ export async function fetchFilterHomescortscontroller(request, response) {
     try {
         const {
             isVerified,
+            isVisible,
             role,
             country,
             city,
@@ -1225,6 +1230,7 @@ export async function fetchFilterHomescortscontroller(request, response) {
 
         if (role) query.role = role;
         if (isVerified) query.isVerified = isVerified === "true"; // query params are strings
+        if (isVisible) query.isVisible = isVisible === "true";
 
         if (country) query.country = country.toUpperCase();
         if (city) query.city = city.toUpperCase();
@@ -1292,6 +1298,7 @@ export const advanceSearchController = async (request, response) => {
 
         // ---------- booleans ----------
         if (filters.isVerified === "true") query.isVerified = true;
+        if (filters.isVisible === "true") query.isVisible = true;
         if (filters.isAvailable === "true") query.isAvailable = true;
         if (filters.tour === "true") query.tour = true;
         if (filters.video === "true") query.video = true;
@@ -3426,7 +3433,7 @@ export const cancelTour = async (request, response) => {
 
 export async function fetchHomeSliderEscorts(request, response) {
     try {
-        const { role, isVerified, country, city } = request.query;
+        const { role, isVerified, country, city, isVisible } = request.query;
 
         let filter = {};
 
@@ -3443,6 +3450,9 @@ export async function fetchHomeSliderEscorts(request, response) {
 
         if (isVerified !== undefined)
             filter.isVerified = isVerified === "true";
+
+        if (isVisible !== undefined)
+            filter.isVisible = isVisible === "true";
 
         // Only escorts with avatar
         filter.avatar = { $exists: true, $ne: null, $ne: "" };
@@ -3489,6 +3499,14 @@ export const getEscortContact = async (request, response) => {
         if (!escort || !escort.mobile) {
             return response.status(404).json({
                 message: "Contact not available",
+                success: false,
+                error: true
+            });
+        }
+
+        if (escort.displayContact === false) {
+            return response.status(403).json({
+                message: "This escort has disabled contact access",
                 success: false,
                 error: true
             });
@@ -3563,7 +3581,7 @@ export const getEscortContact = async (request, response) => {
 // edit and update escort account details 
 export async function updateEscortProfile(request, response) {
     try {
-        const { _id, name, onlineStatus, displayConatct, notifications } = request.body;
+        const { _id, name, onlineStatus, displayContact, notifications } = request.body;
 
         if (!_id) {
             return response.status(400).json({
@@ -3577,7 +3595,7 @@ export async function updateEscortProfile(request, response) {
         const updateData = {};
         if (name !== undefined) updateData.name = name;
         if (onlineStatus !== undefined) updateData.onlineStatus = onlineStatus;
-        if (displayConatct !== undefined) updateData.displayConatct = displayConatct;
+        if (displayContact !== undefined) updateData.displayContact = displayContact;
         if (notifications !== undefined) updateData.notifications = notifications;
 
         const updatedEscort = await EscortModel.findByIdAndUpdate(
