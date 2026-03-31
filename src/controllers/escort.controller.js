@@ -527,7 +527,7 @@ export async function escortLogincontroller(request, response) {
 
 }
 
-// Escorts fetch 
+// Fetch Escort details 
 export async function fetchEscortdetailscontroller(request, response) {
     try {
         const { escortId } = request.query;
@@ -547,13 +547,26 @@ export async function fetchEscortdetailscontroller(request, response) {
             .populate("services")
             .populate("rates")
 
-        if (escortDetails.length === 0) {
+        if (!escortDetails) {
             return response.status(400).json({
                 message: "escorts not found",
                 error: true,
                 success: false
             })
         }
+        let mobile = escortDetails.mobile;
+
+        try {
+            if (mobile?.startsWith("enc:")) {
+                mobile = decrypt(mobile.replace("enc:", ""));
+            } else {
+                mobile = decrypt(mobile);
+            }
+        } catch {
+            mobile = "";
+        }
+
+        escortDetails.mobile = mobile;
 
         return response.status(200).json({
             message: "Escort details fetched",
@@ -3706,6 +3719,103 @@ export async function deleteEscortProfile(request, response) {
             message: "Escort profile and related data deleted",
             success: true,
             error: false
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
+
+//  edit escort profile details 
+export async function editEscortProfileDetails(request, response) {
+    try {
+        const {
+            _id,
+            name,
+            landline,
+            website,
+            social,
+            age,
+            height,
+            gender,
+            sexuality,
+            eyeColor,
+            bustSize,
+            hairColor,
+            hairStyle,
+            dressSize,
+            ethnicity,
+            speakingLanguage,
+            preferData,
+            about,
+            country,
+            city
+        } = request.body;
+
+        // ✅ REQUIRED CHECK
+        if (!_id) {
+            return response.status(400).json({
+                message: "User id required",
+                success: false,
+                error: true
+            });
+        }
+
+        // ✅ PREPARE UPDATE OBJECT (ONLY VALID DATA)
+        const updateData = {};
+
+        if (name !== undefined) updateData.name = name;
+        if (landline !== undefined) updateData.landline = landline;
+        if (website !== undefined) updateData.website = website;
+        if (social !== undefined) updateData.social = social;
+
+        if (age !== undefined) updateData.age = Number(age); // 🔥 number safe
+        if (height !== undefined) updateData.height = height;
+
+        if (gender !== undefined) updateData.gender = gender;
+        if (sexuality !== undefined) updateData.sexuality = sexuality;
+
+        if (eyeColor !== undefined) updateData.eyeColor = eyeColor;
+        if (bustSize !== undefined) updateData.bustSize = bustSize;
+
+        if (hairColor !== undefined) updateData.hairColor = hairColor;
+        if (hairStyle !== undefined) updateData.hairStyle = hairStyle;
+
+        if (dressSize !== undefined) updateData.dressSize = dressSize;
+        if (ethnicity !== undefined) updateData.ethnicity = ethnicity;
+
+        if (Array.isArray(speakingLanguage)) updateData.speakingLanguage = speakingLanguage; // 🔥 safe
+        if (Array.isArray(preferData)) updateData.preferData = preferData;
+
+        if (about !== undefined) updateData.about = about;
+
+        if (country !== undefined) updateData.country = country;
+        if (city !== undefined) updateData.city = city;
+
+        // ✅ UPDATE USER
+        const updatedEscort = await EscortModel.findByIdAndUpdate(
+            _id,
+            { $set: updateData },
+            { new: true }
+        );
+
+        if (!updatedEscort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: "Profile updated successfully",
+            success: true,
+            error: false,
+            data: updatedEscort
         });
 
     } catch (error) {
