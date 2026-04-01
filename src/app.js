@@ -5,6 +5,7 @@ import clientRouter from "./routes/client.route.js"
 import adminRouter from "./routes/admin.route.js";
 import loginRouter from "./routes/login.route.js";
 import geoRouter from "./routes/geo.route.js";
+import visitRouter from "./routes/visits.route.js";
 
 const app = express();
 
@@ -28,12 +29,15 @@ app.get("/", (req, res) => {
     });
 });
 
+app.set("trust proxy", true);
+
 /* Routes */
 app.use('/geo', geoRouter);
 app.use('/admin', adminRouter);
 app.use('/escort', escortRouter);
 app.use('/client', clientRouter);
 app.use('/user', loginRouter);
+app.use('/visit', visitRouter);
 
 
 /* Global Error Handler */
