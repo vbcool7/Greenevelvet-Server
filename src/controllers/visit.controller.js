@@ -79,6 +79,7 @@ export const getVisitStats = async (request, response) => {
         console.log("request query", request.query);
 
         const escortId = request.user._id;
+        
         console.log("request user id", request.user._id);
 
         const now = new Date();
