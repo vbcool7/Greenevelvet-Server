@@ -75,7 +75,7 @@ export const addVisit = async (request, response) => {
 export const getVisitStats = async (request , response) => {
     try {
         const { type = "week" } = request.query;
-        const escortId = request.user.id;
+        const escortId = request.user._id;
 
         const now = new Date();
         let startDate;
