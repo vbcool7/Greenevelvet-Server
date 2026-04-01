@@ -5,10 +5,7 @@ import VisitsModel from "../models/visitsModel.js";
 // Add visit
 export const addVisit = async (request, response) => {
     try {
-        const { escortId, type, city, country } = request.body;
-
-        // ✅ logged-in user (secure)
-        const visitorId = request.user ? request.user.id : null;
+        const { escortId, type, city, country, visitorId } = request.body;
 
         // ✅ IP detection (library)
         const ip = requestIp.getClientIp(request);
