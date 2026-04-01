@@ -72,10 +72,14 @@ export const addVisit = async (request, response) => {
 };
 
 // fetch visits
-export const getVisitStats = async (request , response) => {
+export const getVisitStats = async (request, response) => {
     try {
         const { type = "week" } = request.query;
+
+        console.log("request query", request.query);
+
         const escortId = request.user._id;
+        console.log("request user id", request.user._id);
 
         const now = new Date();
         let startDate;
