@@ -88,7 +88,7 @@ escortRouter.post("/contact-link", rateLimit(5, 6000), getEscortContact);
 escortRouter.patch("/update-profile", updateEscortProfile);
 escortRouter.patch("/hide-profile", hideEscortProfile);
 escortRouter.post("/delete-profile", deleteEscortProfile);
-escortRouter.patch("/edit-escort-profile-details", protect("Escort"), editEscortProfileDetails);
+escortRouter.patch("/edit-escort-profile-details", editEscortProfileDetails);
 
 
 export default escortRouter;
