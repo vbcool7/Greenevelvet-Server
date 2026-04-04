@@ -68,7 +68,7 @@ export const addVisit = async (request, response) => {
     }
 };
 
-// fetch visits
+
 
 // ✅ ISO WEEK FUNCTION
 function getISOWeekNumber(date) {
@@ -84,6 +84,7 @@ function getISOWeekNumber(date) {
     );
 }
 
+// fetch visits
 export const getVisitStats = async (request, response) => {
     try {
         const { type = "week", _id } = request.query;
@@ -279,6 +280,92 @@ export const getVisitStats = async (request, response) => {
         response.status(500).json({
             success: false,
             message: "Error fetching stats",
+        });
+    }
+};
+
+//  last 30 days total of all stats 
+export const totalVisitStats = async (request, response) => {
+    try {
+        const { _id } = request.query;
+
+        if (!_id || !mongoose.Types.ObjectId.isValid(_id)) {
+            return response.status(400).json({
+                success: false,
+                message: "Invalid or missing escortId",
+            });
+        }
+
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+        const data = await VisitsModel.aggregate([
+            {
+                $match: {
+                    escortId: new mongoose.Types.ObjectId(_id),
+                    date: { $gte: thirtyDaysAgo, $lte: now },
+                },
+            },
+            {
+                $facet: {
+                    totalVisitors: [
+                        { $match: { type: "profile_view" } },
+                        { $count: "count" },
+                    ],
+                    uniqueVisitors: [
+                        { $match: { type: "profile_view", visitorId: { $ne: null } } },
+                        { $group: { _id: "$visitorId" } },
+                        { $count: "count" },
+                    ],
+                    callClicks: [
+                        { $match: { type: "call_click" } },
+                        { $count: "count" },
+                    ],
+                    whatsappClicks: [
+                        { $match: { type: "whatsapp_click" } },
+                        { $count: "count" },
+                    ],
+                    smsClicks: [
+                        { $match: { type: "sms_click" } },
+                        { $count: "count" },
+                    ],
+                    websiteClicks: [
+                        { $match: { type: "website_click" } },
+                        { $count: "count" },
+                    ],
+                    newsandtourClicks: [
+                        { $match: { type: "newsandtour_click" } },
+                        { $count: "count" },
+                    ],
+                    blogClicks: [
+                        { $match: { type: "blog_click" } },
+                        { $count: "count" },
+                    ],
+                },
+            },
+        ]);
+
+        const result = data[0];
+
+        response.json({
+            success: true,
+            data: {
+                totalVisitors: result.totalVisitors[0]?.count || 0,
+                uniqueVisitors: result.uniqueVisitors[0]?.count || 0,
+                callClicks: result.callClicks[0]?.count || 0,
+                whatsappClicks: result.whatsappClicks[0]?.count || 0,
+                smsClicks: result.smsClicks[0]?.count || 0,
+                websiteClicks: result.websiteClicks[0]?.count || 0,
+                newsandtourClicks: result.newsandtourClicks[0]?.count || 0,
+                blogClicks: result.blogClicks[0]?.count || 0,
+            },
+        });
+
+    } catch (error) {
+        console.error("totalVisitStats error:", error);
+        response.status(500).json({
+            success: false,
+            message: "Error fetching total visit stats",
         });
     }
 };
