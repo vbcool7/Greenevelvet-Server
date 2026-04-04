@@ -71,7 +71,7 @@ export const addVisit = async (request, response) => {
 // fetch visits
 export const getVisitStats = async (request, response) => {
     try {
-        const { type = "week", escortId } = request.query;
+        const { type = "week", _id } = request.query;
 
         console.log("request query", request.query);
 
@@ -101,7 +101,7 @@ export const getVisitStats = async (request, response) => {
         const data = await VisitsModel.aggregate([
             {
                 $match: {
-                    escortId: new mongoose.Types.ObjectId(escortId),
+                    escortId: new mongoose.Types.ObjectId(_id),
                     date: { $gte: startDate, $lte: now },
                 },
             },
