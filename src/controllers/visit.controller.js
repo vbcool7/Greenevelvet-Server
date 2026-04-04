@@ -78,31 +78,33 @@ export const getVisitStats = async (request, response) => {
         const now = new Date();
         let startDate;
 
-        // ✅ date range
+        // ✅ DATE RANGE
         if (type === "day") {
             startDate = new Date();
             startDate.setHours(0, 0, 0, 0);
-        } else if (type === "week") {
+        }
+        else if (type === "week") {
             startDate = new Date();
             startDate.setDate(now.getDate() - 6);
             startDate.setHours(0, 0, 0, 0);
-        } else {
+        }
+        else {
             startDate = new Date();
             startDate.setDate(1);
             startDate.setHours(0, 0, 0, 0);
         }
 
-        // ✅ grouping
+        // ✅ GROUPING
         let groupId;
 
         if (type === "day") {
-            groupId = { $dayOfWeek: "$date" };   // Mon–Sun
+            groupId = { $dayOfWeek: "$date" };   // 1–7
         }
         else if (type === "week") {
-            groupId = { $week: "$date" };        // Week 1–4
+            groupId = { $isoWeek: "$date" };     // safer than $week
         }
         else if (type === "month") {
-            groupId = { $month: "$date" };       // Jan–Dec
+            groupId = { $month: "$date" };       // 1–12
         }
 
         const data = await VisitsModel.aggregate([
@@ -112,10 +114,9 @@ export const getVisitStats = async (request, response) => {
                     date: { $gte: startDate, $lte: now },
                 },
             },
-
             {
                 $facet: {
-                    // 🔥 CHART → ONLY profile_view
+                    // 🔥 CHART
                     chartData: [
                         { $match: { type: "profile_view" } },
                         {
@@ -127,13 +128,11 @@ export const getVisitStats = async (request, response) => {
                         { $sort: { _id: 1 } },
                     ],
 
-                    // 🔥 TOTAL VISITS
                     totalVisitors: [
                         { $match: { type: "profile_view" } },
                         { $count: "count" },
                     ],
 
-                    // 🔥 UNIQUE VISITORS (ONLY logged users)
                     uniqueVisitors: [
                         {
                             $match: {
@@ -149,7 +148,6 @@ export const getVisitStats = async (request, response) => {
                         { $count: "count" },
                     ],
 
-                    // 🔥 OTHER COUNTS
                     callClicks: [
                         { $match: { type: "call_click" } },
                         { $count: "count" },
@@ -185,43 +183,58 @@ export const getVisitStats = async (request, response) => {
 
         const result = data[0];
 
-        // 🔥 label formatting
+        // ✅ STEP 1: FORMAT LABELS
         const formattedChart = result.chartData.map((item) => {
             let name = item._id;
 
-            // DAY → Mon-Sun
-            let finalChart = [];
-
             if (type === "day") {
                 const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-                finalChart = days.map(day => {
-                    const found = formattedChart.find(item => item.name === day);
-                    return { name: day, visits: found ? found.visits : 0 };
-                });
+                name = days[item._id - 1];
             }
 
             if (type === "week") {
-                const weeks = ["Week 1", "Week 2", "Week 3", "Week 4"];
-                finalChart = weeks.map(week => {
-                    const found = formattedChart.find(item => item.name === week);
-                    return { name: week, visits: found ? found.visits : 0 };
-                });
+                name = `Week ${item._id}`;
             }
 
             if (type === "month") {
                 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                finalChart = months.map(month => {
-                    const found = formattedChart.find(item => item.name === month);
-                    return { name: month, visits: found ? found.visits : 0 };
-                });
+                name = months[item._id - 1];
             }
-            
+
             return {
                 name,
                 visits: item.visits,
             };
         });
 
+        // ✅ STEP 2: FILL MISSING DATA
+        let finalChart = [];
+
+        if (type === "day") {
+            const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            finalChart = days.map(day => {
+                const found = formattedChart.find(item => item.name === day);
+                return { name: day, visits: found ? found.visits : 0 };
+            });
+        }
+
+        else if (type === "week") {
+            const weeks = ["Week 1", "Week 2", "Week 3", "Week 4"];
+            finalChart = weeks.map(week => {
+                const found = formattedChart.find(item => item.name === week);
+                return { name: week, visits: found ? found.visits : 0 };
+            });
+        }
+
+        else if (type === "month") {
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            finalChart = months.map(month => {
+                const found = formattedChart.find(item => item.name === month);
+                return { name: month, visits: found ? found.visits : 0 };
+            });
+        }
+
+        // ✅ RESPONSE
         response.json({
             success: true,
             data: {
