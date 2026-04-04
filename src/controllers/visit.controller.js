@@ -101,7 +101,9 @@ export const getVisitStats = async (request, response) => {
             groupId = { $dayOfWeek: "$date" };   // 1–7
         }
         else if (type === "week") {
-            groupId = { $isoWeek: "$date" };     // safer than $week
+            groupId = {
+                $dateToString: { format: "%Y-%m-%d", date: "$date" }
+            };
         }
         else if (type === "month") {
             groupId = { $month: "$date" };       // 1–12
@@ -202,7 +204,7 @@ export const getVisitStats = async (request, response) => {
             }
 
             return {
-                name,
+                name: item._id,
                 visits: item.visits,
             };
         });
@@ -219,12 +221,23 @@ export const getVisitStats = async (request, response) => {
         }
 
         else if (type === "week") {
-            const weeks = ["Week 1", "Week 2", "Week 3", "Week 4"];
-            finalChart = weeks.map(week => {
-                const found = formattedChart.find(item => item.name === week);
-                return { name: week, visits: found ? found.visits : 0 };
-            });
+            finalChart = [];
+
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(now.getDate() - i);
+
+                const dateStr = d.toISOString().split("T")[0];
+
+                const found = formattedChart.find(item => item.name === dateStr);
+
+                finalChart.push({
+                    name: d.toLocaleDateString("en-US", { weekday: "short" }), // Mon, Tue
+                    visits: found ? found.visits : 0
+                });
+            }
         }
+
 
         else if (type === "month") {
             const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
