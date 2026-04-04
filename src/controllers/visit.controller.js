@@ -96,16 +96,15 @@ export const getVisitStats = async (request, response) => {
         let groupId;
 
         if (type === "day") {
-            groupId = { $hour: "$date" };
+            groupId = { $dayOfWeek: "$date" };   // Mon–Sun
         }
         else if (type === "week") {
-            groupId = { $dayOfWeek: "$date" };
+            groupId = { $week: "$date" };        // Week 1–4
         }
-        else {
-            groupId = { $week: "$date" };
+        else if (type === "month") {
+            groupId = { $month: "$date" };       // Jan–Dec
         }
 
-        
         const data = await VisitsModel.aggregate([
             {
                 $match: {
@@ -190,19 +189,33 @@ export const getVisitStats = async (request, response) => {
         const formattedChart = result.chartData.map((item) => {
             let name = item._id;
 
-            if (type === "week") {
-                const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-                name = days[item._id - 1];
-            }
+            // DAY → Mon-Sun
+            let finalChart = [];
 
             if (type === "day") {
-                name = `${item._id}:00`;
+                const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+                finalChart = days.map(day => {
+                    const found = formattedChart.find(item => item.name === day);
+                    return { name: day, visits: found ? found.visits : 0 };
+                });
+            }
+
+            if (type === "week") {
+                const weeks = ["Week 1", "Week 2", "Week 3", "Week 4"];
+                finalChart = weeks.map(week => {
+                    const found = formattedChart.find(item => item.name === week);
+                    return { name: week, visits: found ? found.visits : 0 };
+                });
             }
 
             if (type === "month") {
-                name = `Week ${item._id}`;
+                const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                finalChart = months.map(month => {
+                    const found = formattedChart.find(item => item.name === month);
+                    return { name: month, visits: found ? found.visits : 0 };
+                });
             }
-
+            
             return {
                 name,
                 visits: item.visits,
@@ -212,7 +225,7 @@ export const getVisitStats = async (request, response) => {
         response.json({
             success: true,
             data: {
-                chartData: formattedChart,
+                chartData: finalChart,
                 totalVisitors: result.totalVisitors[0]?.count || 0,
                 uniqueVisitors: result.uniqueVisitors[0]?.count || 0,
                 callClicks: result.callClicks[0]?.count || 0,
