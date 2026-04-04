@@ -69,6 +69,21 @@ export const addVisit = async (request, response) => {
 };
 
 // fetch visits
+
+// ✅ ISO WEEK FUNCTION
+function getISOWeekNumber(date) {
+    const tempDate = new Date(date.getTime());
+    tempDate.setHours(0, 0, 0, 0);
+
+    tempDate.setDate(tempDate.getDate() + 3 - (tempDate.getDay() + 6) % 7);
+
+    const week1 = new Date(tempDate.getFullYear(), 0, 4);
+
+    return 1 + Math.round(
+        ((tempDate - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7
+    );
+}
+
 export const getVisitStats = async (request, response) => {
     try {
         const { type = "week", _id } = request.query;
@@ -85,7 +100,7 @@ export const getVisitStats = async (request, response) => {
         }
         else if (type === "week") {
             startDate = new Date();
-            startDate.setDate(now.getDate() - 6);
+            startDate.setDate(now.getDate() - 27); // ✅ last 4 weeks
             startDate.setHours(0, 0, 0, 0);
         }
         else {
@@ -98,15 +113,13 @@ export const getVisitStats = async (request, response) => {
         let groupId;
 
         if (type === "day") {
-            groupId = { $dayOfWeek: "$date" };   // 1–7
+            groupId = { $dayOfWeek: "$date" };
         }
         else if (type === "week") {
-            groupId = {
-                $dateToString: { format: "%Y-%m-%d", date: "$date" }
-            };
+            groupId = { $isoWeek: "$date" };   // ✅ correct
         }
         else if (type === "month") {
-            groupId = { $month: "$date" };       // 1–12
+            groupId = { $month: "$date" };
         }
 
         const data = await VisitsModel.aggregate([
@@ -118,7 +131,6 @@ export const getVisitStats = async (request, response) => {
             },
             {
                 $facet: {
-                    // 🔥 CHART
                     chartData: [
                         { $match: { type: "profile_view" } },
                         {
@@ -142,11 +154,7 @@ export const getVisitStats = async (request, response) => {
                                 visitorId: { $ne: null },
                             },
                         },
-                        {
-                            $group: {
-                                _id: "$visitorId",
-                            },
-                        },
+                        { $group: { _id: "$visitorId" } },
                         { $count: "count" },
                     ],
 
@@ -204,12 +212,12 @@ export const getVisitStats = async (request, response) => {
             }
 
             return {
-                name: item._id,
+                name,
                 visits: item.visits,
             };
         });
 
-        // ✅ STEP 2: FILL MISSING DATA
+        // ✅ STEP 2: FINAL CHART
         let finalChart = [];
 
         if (type === "day") {
@@ -221,23 +229,25 @@ export const getVisitStats = async (request, response) => {
         }
 
         else if (type === "week") {
-            finalChart = [];
+            const currentWeek = getISOWeekNumber(now);
 
-            for (let i = 6; i >= 0; i--) {
-                const d = new Date();
-                d.setDate(now.getDate() - i);
+            const weeks = [
+                currentWeek - 3,
+                currentWeek - 2,
+                currentWeek - 1,
+                currentWeek
+            ];
 
-                const dateStr = d.toISOString().split("T")[0];
+            finalChart = weeks.map(weekNum => {
+                const label = `Week ${weekNum}`;
+                const found = formattedChart.find(item => item.name === label);
 
-                const found = formattedChart.find(item => item.name === dateStr);
-
-                finalChart.push({
-                    name: d.toLocaleDateString("en-US", { weekday: "short" }), // Mon, Tue
+                return {
+                    name: label,
                     visits: found ? found.visits : 0
-                });
-            }
+                };
+            });
         }
-
 
         else if (type === "month") {
             const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
