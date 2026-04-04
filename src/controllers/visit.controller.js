@@ -94,10 +94,18 @@ export const getVisitStats = async (request, response) => {
 
         // ✅ grouping
         let groupId;
-        if (type === "day") groupId = { $hour: "$date" };
-        else if (type === "week") groupId = { $dayOfWeek: "$date" };
-        else groupId = { $week: "$date" };
 
+        if (type === "day") {
+            groupId = { $hour: "$date" };
+        }
+        else if (type === "week") {
+            groupId = { $dayOfWeek: "$date" };
+        }
+        else {
+            groupId = { $week: "$date" };
+        }
+
+        
         const data = await VisitsModel.aggregate([
             {
                 $match: {
