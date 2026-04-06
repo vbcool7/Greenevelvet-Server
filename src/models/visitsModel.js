@@ -18,7 +18,7 @@ const visitsSchema = new mongoose.Schema(
 
         type: {
             type: String,
-            enum: ["profile_view", "call_click", "sms_click", "blog_view", "newsandtour_view", "whatsapp_click", "website_click"],
+            enum: ["profile_view", "call_click", "message_click", "blog_view", "newsandtour_view", "whatsapp_click", "website_click"],
             default: "profile_view",
         },
 
