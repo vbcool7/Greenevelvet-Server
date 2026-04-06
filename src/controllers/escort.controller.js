@@ -1445,7 +1445,7 @@ export const advanceSearchController = async (request, response) => {
 export const createNewsTourcontroller = async (request, response) => {
     try {
 
-        const { escortId, name, city, country, title, description } = request.body;
+        const { escortId, userId, name, city, country, title, description } = request.body;
 
 
         if (!escortId || !title || !description) {
@@ -1503,6 +1503,7 @@ export const createNewsTourcontroller = async (request, response) => {
         // ✅ create post
         const post = await NewsAndTourModel.create({
             escortId,
+            userId,
             city,
             country,
             name,

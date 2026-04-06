@@ -6,6 +6,12 @@ const newsTourSchema = new mongoose.Schema({
         required: true,
         index: true
     },
+    userId: {
+        type: String,
+        required: true,
+        ref: "Escort",
+        index: true
+    },
 
     country: {
         type: String,
