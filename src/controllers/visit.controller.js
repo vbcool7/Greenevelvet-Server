@@ -170,7 +170,7 @@ export const getVisitStats = async (request, response) => {
                     ],
 
                     smsClicks: [
-                        { $match: { type: "sms_click" } },
+                        { $match: { type: "message_click" } },
                         { $count: "count" },
                     ],
 
@@ -326,7 +326,7 @@ export const totalVisitStats = async (request, response) => {
                         { $count: "count" },
                     ],
                     smsClicks: [
-                        { $match: { type: "sms_click" } },
+                        { $match: { type: "message_click" } },
                         { $count: "count" },
                     ],
                     websiteClicks: [
