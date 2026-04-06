@@ -68,8 +68,6 @@ export const addVisit = async (request, response) => {
     }
 };
 
-
-
 // ✅ ISO WEEK FUNCTION
 function getISOWeekNumber(date) {
     const tempDate = new Date(date.getTime());
@@ -180,12 +178,12 @@ export const getVisitStats = async (request, response) => {
                     ],
 
                     newsandtourClicks: [
-                        { $match: { type: "newsandtour_click" } },
+                        { $match: { type: "newsandtour_view" } },
                         { $count: "count" },
                     ],
 
                     blogClicks: [
-                        { $match: { type: "blog_click" } },
+                        { $match: { type: "blog_view" } },
                         { $count: "count" },
                     ],
                 },
@@ -334,11 +332,11 @@ export const totalVisitStats = async (request, response) => {
                         { $count: "count" },
                     ],
                     newsandtourClicks: [
-                        { $match: { type: "newsandtour_click" } },
+                        { $match: { type: "newsandtour_view" } },
                         { $count: "count" },
                     ],
                     blogClicks: [
-                        { $match: { type: "blog_click" } },
+                        { $match: { type: "blog_view" } },
                         { $count: "count" },
                     ],
                 },
