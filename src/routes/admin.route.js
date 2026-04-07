@@ -12,7 +12,7 @@ adminRouter.get("/admin-data", protect("Admin"), async (request, response) => {
 });
 
 
-adminRouter.get("/fetch-escorts", fetchEscortcontroller)
+adminRouter.get("/fetch-unverified-escorts", fetchEscortcontroller)
 adminRouter.get("/fetch-escort-details", fetchEscortdetailscontroller)
 adminRouter.patch("/escort-update", updateEscortcontroller)
 adminRouter.delete("/escort-delete", deleteEscortcontroller)

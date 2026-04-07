@@ -67,6 +67,8 @@ export async function fetchEscortcontroller(request, response) {
     try {
         const { role, isEmailVerified, isVerified } = request.query;
 
+        console.log("request query unverified : ", request.query);
+
         let filter = {};
 
         if (role) filter.role = role;
@@ -80,6 +82,8 @@ export async function fetchEscortcontroller(request, response) {
         filter.$nor = [
             { status: "Active", isEmailVerified: true }
         ];
+
+        console.log("filter :", filter)
 
 
         const escorts = await EscortModel.find(filter);
