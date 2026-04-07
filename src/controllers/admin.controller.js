@@ -64,7 +64,12 @@ export async function adminlogincontroller(request, response) {
             success: true,
             error: false,
             data: {
-                token: token
+                token: token,
+                admin: {
+                    _id: admin._id,
+                    username: admin.username,
+                    role: admin.role
+                }
             }
         });
 
