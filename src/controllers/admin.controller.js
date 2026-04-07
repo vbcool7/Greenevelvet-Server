@@ -11,7 +11,7 @@ export async function adminlogincontroller(request, response) {
 
         if (!username || !password) {
             return response.status(400).json({
-                message: "Provide username and password",
+                message: "Invalid username or password",
                 success: false,
                 error: true
             })
@@ -19,16 +19,24 @@ export async function adminlogincontroller(request, response) {
         const admin = await AdminModel.findOne({ username }).select("+password");
 
         if (!admin) {
-            return response.status(400).json({
+            return response.status(401).json({
                 message: "Unauthorised access",
                 success: false,
                 error: true
             })
         }
 
+        if (admin.role !== "admin") {
+            return response.status(403).json({
+                message: "Access denied",
+                success: false,
+                error: true
+            });
+        }
+
         const checkPassword = await bcryptjs.compare(password, admin.password)
         if (!checkPassword) {
-            return response.status(400).json({
+            return response.status(401).json({
                 message: "check your password",
                 success: false,
                 error: true
@@ -43,6 +51,13 @@ export async function adminlogincontroller(request, response) {
             process.env.JWT_SECRET,
             { expiresIn: "3d" }
         );
+
+        response.cookie("token", token, {
+            httpOnly: true,
+            secure: true, // production me true
+            sameSite: "strict",
+            maxAge: 3 * 24 * 60 * 60 * 1000 // 3 days
+        });
 
         return response.json({
             message: "Login successful",
