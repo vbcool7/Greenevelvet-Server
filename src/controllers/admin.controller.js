@@ -73,15 +73,8 @@ export async function fetchEscortcontroller(request, response) {
 
         if (role) filter.role = role;
 
-        if (isEmailVerified !== undefined)
-            filter.isEmailVerified = isEmailVerified === "true";
-
-        if (isVerified !== undefined)
-            filter.isVerified = isVerified === "false";
-
-        filter.$nor = [
-            { status: "Active", isEmailVerified: true }
-        ];
+        filter.isEmailVerified = true;
+        filter.isVerified = false;
 
         console.log("filter :", filter)
 
