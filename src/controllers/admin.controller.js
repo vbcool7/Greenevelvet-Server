@@ -26,7 +26,7 @@ export async function adminlogincontroller(request, response) {
             })
         }
 
-        if (admin.role !== "admin") {
+        if (admin.role !== "Admin") {
             return response.status(403).json({
                 message: "Access denied",
                 success: false,
