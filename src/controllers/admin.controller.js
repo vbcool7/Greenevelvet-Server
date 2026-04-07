@@ -65,17 +65,17 @@ export async function adminlogincontroller(request, response) {
 // fetch escorts
 export async function fetchEscortcontroller(request, response) {
     try {
-        const { role, isVerified } = request.query;
+        const { role, isEmailVerified } = request.query;
 
         let filter = {};
 
         if (role) filter.role = role;
 
-        if (isVerified !== undefined)
-            filter.isVerified = isVerified === "true";
+        if (isEmailVerified !== undefined)
+            filter.isEmailVerified = isEmailVerified === "true";
 
         filter.$nor = [
-            { status: "Active", isVerified: true }
+            { status: "Active", isEmailVerified: true }
         ];
 
 
