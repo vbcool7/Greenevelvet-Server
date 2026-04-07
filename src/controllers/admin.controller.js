@@ -46,7 +46,7 @@ export async function adminlogincontroller(request, response) {
         const token = jwt.sign(
             {
                 _id: admin._id,
-                role: admin.role || "admin"
+                role: admin.role || "Admin"
             },
             process.env.JWT_SECRET,
             { expiresIn: "3d" }
