@@ -81,19 +81,12 @@ export async function fetchEscortcontroller(request, response) {
 
         const escorts = await EscortModel.find(filter);
 
-        if (escorts.length === 0) {
-            return response.status(400).json({
-                message: "escorts not found",
-                error: true,
-                success: false
-            })
-        }
 
         return response.status(200).json({
-            message: "Escort list fetched",
+            message: escorts.length ? "Escort list fetched" : "No escorts found",
             error: false,
             success: true,
-            data: escorts
+            data: escorts || [],
         })
 
     } catch (error) {
