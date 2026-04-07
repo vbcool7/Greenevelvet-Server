@@ -65,9 +65,9 @@ export async function adminlogincontroller(request, response) {
 // fetch escorts
 export async function fetchEscortcontroller(request, response) {
     try {
-        const { role, isEmailVerified, isVerified } = request.query;
+        const { role } = request.query;
 
-        console.log("request query unverified : ", request.query);
+        console.log("request query unverified new : ", request.query);
 
         let filter = {};
 
@@ -76,7 +76,7 @@ export async function fetchEscortcontroller(request, response) {
         filter.isEmailVerified = true;
         filter.isVerified = false;
 
-        console.log("filter :", filter)
+        console.log("filter new :", filter)
 
 
         const escorts = await EscortModel.find(filter);
