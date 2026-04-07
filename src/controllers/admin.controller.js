@@ -82,6 +82,53 @@ export async function adminlogincontroller(request, response) {
     }
 }
 
+// logout controll
+export async function adminlogoutcontroller(request, response) {
+    try {
+        const adminId = request.admin?._id; // 🔥 token se aayega
+
+        if (!adminId) {
+            return response.status(401).json({
+                message: "Unauthorized",
+                success: false,
+                error: true
+            });
+        }
+
+        const admin = await AdminModel.findById(adminId);
+
+        if (!admin) {
+            return response.status(404).json({
+                message: "Admin not found",
+                success: false,
+                error: true
+            });
+        }
+
+        // optional (if using refresh token system)
+        admin.refresh_token = "";
+        admin.onlineStatus = false;
+
+        await admin.save();
+
+        // 🔥 cookie remove karo (IMPORTANT)
+        response.clearCookie("token");
+
+        return response.status(200).json({
+            message: "Logged out successfully",
+            success: true,
+            error: false
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
+
 // fetch escorts
 export async function fetchEscortcontroller(request, response) {
     try {
