@@ -85,9 +85,9 @@ export async function adminlogincontroller(request, response) {
 // logout controll
 export async function adminlogoutcontroller(request, response) {
     try {
-        const adminId = request.admin?._id;
-        
-        console.log("admin_id:", adminId);
+        const adminId = request.user?._id;
+
+        console.log("admin logout user?_id:", adminId);
 
         if (!adminId) {
             return response.status(401).json({
