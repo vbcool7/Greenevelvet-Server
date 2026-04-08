@@ -107,13 +107,13 @@ export async function adminlogoutcontroller(request, response) {
             });
         }
 
-        // optional (if using refresh token system)
-        admin.refresh_token = "";
-        admin.onlineStatus = false;
+        await AdminModel.findByIdAndUpdate(adminId, {
+            $set: {
+                onlineStatus: false,
+                refresh_token: ""
+            }
+        });
 
-        await admin.save();
-
-        // 🔥 cookie remove karo (IMPORTANT)
         response.clearCookie("token");
 
         return response.status(200).json({
