@@ -151,7 +151,8 @@ export async function fetchEscortcontroller(request, response) {
         console.log("filter new :", filter)
 
 
-        const escorts = await EscortModel.find(filter);
+        const escorts = await EscortModel.find(filter)
+            .sort({ createdAt: -1 });
 
 
         return response.status(200).json({
@@ -396,7 +397,8 @@ export async function fetchClients(request, response) {
 
         if (role) filter.role = role;
 
-        const clients = await ClientModel.find(filter);
+        const clients = await ClientModel.find(filter)
+            .sort({ createdAt: -1 });
 
 
         return response.status(200).json({
