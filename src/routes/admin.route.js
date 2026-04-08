@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { adminlogincontroller, adminlogoutcontroller, deleteClient, deleteEscortcontroller, fetchClientdetails, fetchClients, fetchEscortcontroller, fetchEscortdetailscontroller, updateClient, updateEscortcontroller, verifiedEscortcontroller } from '../controllers/admin.controller.js';
+import { adminlogincontroller, adminlogoutcontroller, deleteClient, deleteEscortcontroller, deleteTour, fetchClientdetails, fetchClients, fetchEscortcontroller, fetchEscortdetailscontroller, fetchTourDetails, fetchTours, updateClient, updateEscortcontroller, verifiedEscortcontroller } from '../controllers/admin.controller.js';
 import { protect } from '../middleware/auth.js';
 
 const adminRouter = Router();
@@ -24,7 +24,12 @@ adminRouter.get("/fetch-verified-escorts", verifiedEscortcontroller)
 adminRouter.get("/fetch-clients", fetchClients)
 adminRouter.get("/fetch-client-details", fetchClientdetails)
 adminRouter.patch("/update-client", updateClient)
-adminRouter.post("/delete-client", deleteClient)
+adminRouter.delete("/delete-client", deleteClient)
+
+// tours curd operation
+adminRouter.get("/fetch-tours", fetchTours)
+adminRouter.get("/fetch-tour-details", fetchTourDetails)
+adminRouter.delete("/delete-tour", deleteTour)
 
 
 export default adminRouter

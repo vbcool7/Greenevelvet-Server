@@ -4,6 +4,8 @@ import AdminModel from "../models/adminModel.js";
 import EscortModel from "../models/escortModel.js";
 import ClientModel from "../models/clientModel.js";
 import { sendMail } from "../utils/sendMail.js";
+import TourModel from '../models/tourModel.js';
+import { request } from 'express';
 
 // Admin login
 export async function adminlogincontroller(request, response) {
@@ -549,7 +551,7 @@ export async function updateClient(request, response) {
     }
 }
 
-//  delete escort 
+//  delete client
 export async function deleteClient(request, response) {
     try {
         const { _id } = request.body;
@@ -585,5 +587,108 @@ export async function deleteClient(request, response) {
             success: false,
             error: true,
         })
+    }
+}
+
+// fetch tours
+export async function fetchTours(request, response) {
+    try {
+
+        const tours = await TourModel.find()
+            .sort({ createdAt: -1 });
+
+        return response.status(200).json({
+            message: tours.length ? "tours list fetched" : "No tour found",
+            error: false,
+            success: true,
+            data: tours || [],
+        })
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            error: true,
+            success: false
+        })
+    }
+}
+
+// fetch tour details
+export async function fetchTourDetails(request, response) {
+    try {
+        const { _id } = request.query;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "Tour ID is required",
+                success: false,
+                error: true
+            });
+        }
+
+        const tour = await TourModel.findById(_id);
+
+        if (!tour) {
+            return response.status(404).json({
+                message: "Tour not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: "tours list fetched",
+            success: true,
+            error: false,
+            data: tour
+        });
+
+    } catch (error) {
+        console.log("FETCH TOUR DETAILS ERROR:", error);
+
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
+
+// delete tour
+export async function deleteTour(request, response) {
+    try {
+        const { _id } = request.body;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "Tour ID required",
+                success: false,
+                error: true
+            });
+        }
+
+        const deleted = await TourModel.findByIdAndDelete(_id);
+
+        if (!deleted) {
+            return response.status(404).json({
+                message: "Tour not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: "Tour deleted successfully",
+            success: true,
+            error: false
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+
+        });
     }
 }
