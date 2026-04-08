@@ -4,7 +4,7 @@ import { protect } from '../middleware/auth.js';
 const adminRouter = Router()
 
 adminRouter.post("/login", adminlogincontroller);
-adminRouter.post("/logout", adminlogoutcontroller);
+adminRouter.post("/logout", protect("Admin"), adminlogoutcontroller);
 
 // Protected example route
 adminRouter.get("/admin-data", protect("Admin"), async (request, response) => {
