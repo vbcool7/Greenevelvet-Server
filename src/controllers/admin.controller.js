@@ -88,8 +88,6 @@ export async function adminlogoutcontroller(request, response) {
     try {
         const adminId = request.user?._id;
 
-        console.log("admin logout user?_id:", adminId);
-
         if (!adminId) {
             return response.status(401).json({
                 message: "Unauthorized",
@@ -139,8 +137,6 @@ export async function fetchEscortcontroller(request, response) {
     try {
         const { role } = request.query;
 
-        console.log("request query unverified new : ", request.query);
-
         let filter = {};
 
         if (role) filter.role = role;
@@ -148,12 +144,8 @@ export async function fetchEscortcontroller(request, response) {
         filter.isEmailVerified = true;
         filter.isVerified = false;
 
-        console.log("filter new :", filter)
-
-
         const escorts = await EscortModel.find(filter)
             .sort({ createdAt: -1 });
-
 
         return response.status(200).json({
             message: escorts.length ? "Escort list fetched" : "No escorts found",
@@ -362,7 +354,8 @@ export async function verifiedEscortcontroller(request, response) {
         if (isVerified !== undefined)
             filter.isVerified = isVerified === "true";
 
-        const escorts = await EscortModel.find(filter);
+        const escorts = await EscortModel.find(filter)
+            .sort({ createdAt: -1 });
 
         if (escorts.length === 0) {
             return response.status(400).json({
