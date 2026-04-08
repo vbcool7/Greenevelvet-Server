@@ -460,7 +460,7 @@ export async function updateClient(request, response) {
         const { _id, action, reason } = request.body;
 
         if (!_id || !action) {
-            return res.status(400).json({
+            return response.status(400).json({
                 message: "Client ID and action are required",
                 success: false
             });
