@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import AdminModel from "../models/adminModel.js";
 
-export const protect = async (req, res, next) => {
+export const Protect = async (req, res, next) => {
   try {
     // 🔹 1. Header check
     const authHeader = req.headers.authorization;
