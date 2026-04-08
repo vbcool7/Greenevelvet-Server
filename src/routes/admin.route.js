@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { adminlogincontroller, deleteEscortcontroller, fetchEscortcontroller, fetchEscortdetailscontroller, updateEscortcontroller, verifiedEscortcontroller } from '../controllers/admin.controller.js';
+import { adminlogincontroller, adminlogoutcontroller, deleteEscortcontroller, fetchEscortcontroller, fetchEscortdetailscontroller, updateEscortcontroller, verifiedEscortcontroller } from '../controllers/admin.controller.js';
 import { protect } from '../middleware/auth.js';
 const adminRouter = Router()
 
-adminRouter.post("/login", adminlogincontroller)
+adminRouter.post("/login", adminlogincontroller);
+adminRouter.post("/logout", adminlogoutcontroller);
 
 // Protected example route
 adminRouter.get("/admin-data", protect("Admin"), async (request, response) => {

@@ -85,7 +85,9 @@ export async function adminlogincontroller(request, response) {
 // logout controll
 export async function adminlogoutcontroller(request, response) {
     try {
-        const adminId = request.admin?._id; // 🔥 token se aayega
+        const adminId = request.admin?._id;
+        
+        console.log("admin_id:", adminId);
 
         if (!adminId) {
             return response.status(401).json({
