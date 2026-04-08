@@ -123,6 +123,8 @@ export async function adminlogoutcontroller(request, response) {
         });
 
     } catch (error) {
+        console.log("LOGOUT ERROR FULL:", error);
+
         return response.status(500).json({
             message: error.message || "Internal server error",
             success: false,
