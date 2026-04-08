@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
-import AdminModel from "../models/admin.model.js";
-import EscortModel from "../models/escort.model.js";
-import ClientModel from "../models/client.model.js";
+import AdminModel from "../models/adminModel.js";
+import EscortModel from "../models/escortModel.js";
+import ClientModel from "../models/clientModel.js";
 
 export const protect = (roles = []) => async (req, res, next) => {
   try {
