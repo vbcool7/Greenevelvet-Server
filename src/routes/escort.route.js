@@ -9,7 +9,7 @@ const escortRouter = Router()
 escortRouter.post("/login", escortLogincontroller)
 
 // Protected example route
-escortRouter.get("/escort-data", protect("Escort"), async (request, response) => {
+escortRouter.get("/escort-data", protect(["Escort"]), async (request, response) => {
     response.json({ success: true, data: request.user });
 });
 

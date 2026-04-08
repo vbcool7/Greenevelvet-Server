@@ -11,7 +11,7 @@ export async function adminlogincontroller(request, response) {
 
         if (!username || !password) {
             return response.status(400).json({
-                message: "Invalid username or password",
+                message: "Username or Password required",
                 success: false,
                 error: true
             })
@@ -54,7 +54,7 @@ export async function adminlogincontroller(request, response) {
 
         response.cookie("token", token, {
             httpOnly: true,
-            secure: true, // production me true
+            secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
             maxAge: 3 * 24 * 60 * 60 * 1000 // 3 days
         });
@@ -75,7 +75,7 @@ export async function adminlogincontroller(request, response) {
 
     } catch (error) {
         return response.status(500).json({
-            message: error.message || error,
+            message: error.message || "Internal server error",
             success: false,
             error: true
         })

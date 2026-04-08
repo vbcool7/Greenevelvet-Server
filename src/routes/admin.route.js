@@ -1,15 +1,14 @@
 import { Router } from 'express';
 import { adminlogincontroller, adminlogoutcontroller, deleteEscortcontroller, fetchEscortcontroller, fetchEscortdetailscontroller, updateEscortcontroller, verifiedEscortcontroller } from '../controllers/admin.controller.js';
-import { Protect } from '../middleware/auth.js';
-
+import { protect } from '../middleware/auth.js';
 
 const adminRouter = Router();
 
 adminRouter.post("/login", adminlogincontroller);
-adminRouter.post("/logout", Protect, adminlogoutcontroller);
+adminRouter.post("/logout", protect(["Admin"]), adminlogoutcontroller);
 
 // Protected example route
-adminRouter.get("/admin-data", Protect, async (request, response) => {
+adminRouter.get("/admin-data", protect(["Admin"]), async (request, response) => {
     // req.user me Admin ka data aayega
     response.json({ success: true, data: request.user });
 });
