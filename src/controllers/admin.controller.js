@@ -659,6 +659,7 @@ export async function deleteTour(request, response) {
     try {
         const { _id } = request.body;
 
+        
         if (!_id) {
             return response.status(400).json({
                 message: "Tour ID required",
