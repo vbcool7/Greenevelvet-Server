@@ -1,7 +1,8 @@
-import AdminModel from "../models/adminModel.js";
 import bcryptjs from 'bcryptjs';
 import jwt from "jsonwebtoken";
+import AdminModel from "../models/adminModel.js";
 import EscortModel from "../models/escortModel.js";
+import ClientModel from "../models/clientModel.js";
 import { sendMail } from "../utils/sendMail.js";
 
 // Admin login
@@ -289,10 +290,12 @@ export async function updateEscortcontroller(request, response) {
             });
         }
 
-        await sendMail(escort.email, emailSubject, emailHtml);
+        if (escort.email) {
+            await sendMail(escort.email, emailSubject, emailHtml);
+        }
 
         return response.status(200).json({
-            message: "Escort updated successful and email sent",
+            message: `Escort ${action} successful and email sent`,
             success: true,
             error: false,
             data: updatedEscort
@@ -380,6 +383,212 @@ export async function verifiedEscortcontroller(request, response) {
             message: error.message || error,
             error: true,
             success: false
+        })
+    }
+}
+
+// fetch clients
+export async function fetchClients(request, response) {
+    try {
+        const { role } = request.query;
+
+        let filter = {};
+
+        if (role) filter.role = role;
+
+        const clients = await ClientModel.find(filter);
+
+
+        return response.status(200).json({
+            message: clients.length ? "clients list fetched" : "No clients found",
+            error: false,
+            success: true,
+            data: clients || [],
+        })
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            error: true,
+            success: false
+        })
+    }
+}
+
+// fetch client-details
+export async function fetchClientdetails(request, response) {
+    try {
+        const { _id } = request.query;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "client Id is missing",
+                success: false,
+                error: true
+            })
+        }
+
+        const client = await ClientModel.findById({ _id });
+
+        if (!client) {
+            return response.status(404).json({
+                message: "client not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: "client details fetched",
+            success: true,
+            error: false,
+            data: client
+        })
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        })
+    }
+}
+
+// update client
+export async function updateClient(request, response) {
+    try {
+        const { _id, action, reason } = request.body;
+
+        if (!_id || !action) {
+            return res.status(400).json({
+                message: "Client ID and action are required",
+                success: false
+            });
+        }
+
+        const client = await ClientModel.findById({ _id });
+
+        if (!client) {
+            return response.status(404).json({
+                message: "client Id not found",
+                success: false,
+                error: true
+            })
+        }
+
+        let updateData = {};
+        let emailSubject = "";
+        let emailHtml = "";
+
+        if (action === "Active") {
+            updateData = {
+                status: "Active",
+                reason: ""
+            };
+            const verifyLink = `http://localhost:5174/login`
+
+            emailSubject = "Account Activated  ✅ - GreeneVelvet";
+            emailHtml = `
+            <h2>Hello ${client.name}</h2>
+            <p>Your account has been activated by admin.</p>
+            <p>You can now continue using the platform.</p>
+            <a href="${verifyLink}" 
+            style="display:inline-block;padding:12px 20px;
+            background:#0a7cff;color:#fff;text-decoration:none;
+            border-radius:5px;">
+            Login
+            </a>
+            `;
+        }
+
+        else if (action === "Suspended") {
+            updateData = {
+                isVerified: false,
+                status: "Suspended",
+                reason: reason || "Violation of platform policies"
+            };
+
+            emailSubject = "Account Suspended ❌ - GreeneVelvet";
+            emailHtml = `
+            <h2>Hello ${client.name}</h2>
+            <p>Your account has been suspended by admin.</p>
+            <p><b>Reason:</b> ${updateData.reason}</p>
+            `;
+        }
+
+        else {
+            return response.status(400).json({
+                message: "action is undefined!",
+                success: false,
+                error: true
+            });
+        }
+
+        console.log("updateData", updateData);
+
+        const updatedClient = await ClientModel.findByIdAndUpdate(
+            _id,
+            { $set: updateData },
+            { new: true }
+        );
+
+        if (client.email) {
+            await sendMail(client.email, emailSubject, emailHtml);
+        }
+
+        return response.status(200).json({
+            message: `Client ${action} successfully`,
+            success: true,
+            error: false,
+            data: updatedClient
+        })
+
+    } catch (error) {
+        console.log("UPDATE CLIENT ERROR:", error);
+
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        })
+    }
+}
+
+//  delete escort 
+export async function deleteClient(request, response) {
+    try {
+        const { _id } = request.body;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "client Id is required",
+                success: false,
+                error: true
+            })
+        }
+
+        const deletedClient = await ClientModel.findByIdAndDelete({ _id })
+
+        if (!deletedClient) {
+            return response.status(404).json({
+                message: "Client not found",
+                success: false,
+                error: true
+            })
+        }
+
+        return response.status(200).json({
+            message: "Client delete successfull",
+            success: true,
+            error: false,
+            data: deletedClient
+        })
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true,
         })
     }
 }

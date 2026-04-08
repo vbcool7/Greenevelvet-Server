@@ -11,7 +11,8 @@ const ClientSchema = new mongoose.Schema({
     name: {
         type: String,
         required: [true, "Provide name"],
-        trim: true
+        trim: true,
+        index: true,
     },
     email: {
         type: String,
@@ -50,12 +51,16 @@ const ClientSchema = new mongoose.Schema({
         }
     ],
 
-
     /* ================= STATUS ================= */
     status: {
         type: String,
         enum: ["Active", "Inactive", "Suspended"],
         default: "Active"
+    },
+
+    isVerified: {
+        type: Boolean,
+        default: true,
     },
 
     /* ============================== Hide / Visible ============================== */
@@ -136,8 +141,6 @@ const ClientSchema = new mongoose.Schema({
         }
     ],
 
-
-
     /* ================= GALLERY ================= */
     avatar: {
         type: String,
@@ -148,7 +151,6 @@ const ClientSchema = new mongoose.Schema({
     totalBookings: {
         type: Number,
         default: 0,
-
     },
     givenReviews: {
         type: Number,

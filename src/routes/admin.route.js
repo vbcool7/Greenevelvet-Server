@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { adminlogincontroller, adminlogoutcontroller, deleteEscortcontroller, fetchEscortcontroller, fetchEscortdetailscontroller, updateEscortcontroller, verifiedEscortcontroller } from '../controllers/admin.controller.js';
+import { adminlogincontroller, adminlogoutcontroller, deleteClient, deleteEscortcontroller, fetchClientdetails, fetchClients, fetchEscortcontroller, fetchEscortdetailscontroller, updateClient, updateEscortcontroller, verifiedEscortcontroller } from '../controllers/admin.controller.js';
 import { protect } from '../middleware/auth.js';
 
 const adminRouter = Router();
@@ -13,11 +13,18 @@ adminRouter.get("/admin-data", protect(["Admin"]), async (request, response) => 
     response.json({ success: true, data: request.user });
 });
 
-
+// escorts curd operation
 adminRouter.get("/fetch-unverified-escorts", fetchEscortcontroller)
 adminRouter.get("/fetch-escort-details", fetchEscortdetailscontroller)
 adminRouter.patch("/escort-update", updateEscortcontroller)
 adminRouter.delete("/escort-delete", deleteEscortcontroller)
 adminRouter.get("/fetch-verified-escorts", verifiedEscortcontroller)
+
+// clients curd operation
+adminRouter.get("/fetch-clients", fetchClients)
+adminRouter.get("/fetch-client-details", fetchClientdetails)
+adminRouter.patch("/update-client", updateClient)
+adminRouter.post("/delete-client", deleteClient)
+
 
 export default adminRouter
