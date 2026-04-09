@@ -676,7 +676,6 @@ export async function deleteTour(request, response) {
     try {
         const { _id } = request.body;
 
-
         if (!_id) {
             return response.status(400).json({
                 message: "Tour ID required",
@@ -685,15 +684,33 @@ export async function deleteTour(request, response) {
             });
         }
 
-        const deleted = await TourModel.findByIdAndDelete(_id);
+        const tour = await TourModel.findById(_id);
 
-        if (!deleted) {
+        if (!tour) {
             return response.status(404).json({
                 message: "Tour not found",
                 success: false,
-                error: true
+                error: true,
             });
         }
+
+        const today = new Date();
+        const start = new Date(tour.startDate);
+        const end = new Date(tour.endDate);
+
+        today.setHours(0,0,0,0);
+        start.setHours(0,0,0,0);
+        end.setHours(0,0,0,0);
+
+        if (start <= today && end >= today) {
+            return response.status(400).json({
+                message: "Cannot delete an ongoing tour",
+                success: false,
+                error: true,
+            });
+        }
+
+        await tour.deleteOne();
 
         return response.status(200).json({
             message: "Tour deleted successfully",
@@ -706,10 +723,8 @@ export async function deleteTour(request, response) {
             message: error.message || "Internal server error",
             success: false,
             error: true
-
         });
     }
 }
-
 //=================================================================<  >================================================================
 
