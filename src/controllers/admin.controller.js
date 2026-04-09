@@ -749,16 +749,16 @@ export async function fetchBlogs(request, response) {
 
         const formattedBlogs = blogs.map(blog => ({
             ...blog.toObject(),
-            escortName: blog.userId?.name
+            userName: blog.userId?.name
         }));
 
         console.log("formatted blogs", formattedBlogs);
 
         return response.status(200).json({
-            message: formattedBlogs.length ? "Blogs list fetched" : "No tour found",
+            message: formattedBlogs.length ? "Blogs list fetched" : "No blog found",
             error: false,
             success: true,
-            data: formattedBlogs || [],
+            data: formattedBlogs
         })
 
     } catch (error) {

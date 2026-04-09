@@ -40,7 +40,7 @@ adminRouter.delete("/delete-blog", deleteBlog)
 // newsandtours fetch and delete
 adminRouter.get("/fetch-newsandtours", fetchNewsandtours)
 adminRouter.get("/fetch-newsandtour-details", fetchNewsandtourDetails)
-adminRouter.patch("/update-newstour-status", updateNewsandtourStatus)
+adminRouter.patch("/update-newsandtour-status", updateNewsandtourStatus)
 adminRouter.delete("/delete-newsandtour", deleteNewsandtour)
 
 
