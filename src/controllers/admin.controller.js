@@ -742,10 +742,14 @@ export async function fetchBlogs(request, response) {
             .populate("userId", "name")
             .sort({ createdAt: -1 });
 
+        console.log("blogs", blogs);
+
+
         const formattedBlogs = blogs.map(blog => ({
             ...blog.toObject(),
             escortName: blog.userId?.name
         }));
+        console.log("formatted blogs", formattedBlogs);
 
         return response.status(200).json({
             message: formattedBlogs.length ? "Blogs list fetched" : "No tour found",
@@ -755,6 +759,8 @@ export async function fetchBlogs(request, response) {
         })
 
     } catch (error) {
+        console.log("blog catch error", error);
+
         return response.status(500).json({
             message: error.message || "Internal server error",
             error: true,
