@@ -134,6 +134,8 @@ export async function adminlogoutcontroller(request, response) {
     }
 }
 
+//============================================================< Escorts >======================================================================
+
 // fetch escorts
 export async function fetchEscortcontroller(request, response) {
     try {
@@ -383,6 +385,8 @@ export async function verifiedEscortcontroller(request, response) {
     }
 }
 
+//==========================================================< Clients >======================================================================
+
 // fetch clients
 export async function fetchClients(request, response) {
     try {
@@ -590,18 +594,25 @@ export async function deleteClient(request, response) {
     }
 }
 
+//============================================================< Tours >==========================================================================
 // fetch tours
 export async function fetchTours(request, response) {
     try {
 
         const tours = await TourModel.find()
+            .populate("userId", "name")
             .sort({ createdAt: -1 });
 
+        const formattedTours = tours.map(tour => ({
+            ...tour.toObject(),
+            escortName: tour.userId?.name
+        }));
+
         return response.status(200).json({
-            message: tours.length ? "tours list fetched" : "No tour found",
+            message: tours.length ? "Tours list fetched" : "No tour found",
             error: false,
             success: true,
-            data: tours || [],
+            data: formattedTours || [],
         })
 
     } catch (error) {
@@ -626,7 +637,8 @@ export async function fetchTourDetails(request, response) {
             });
         }
 
-        const tour = await TourModel.findById(_id);
+        const tour = await TourModel.findById(_id)
+            .populate("userId", "name");
 
         if (!tour) {
             return response.status(404).json({
@@ -636,11 +648,16 @@ export async function fetchTourDetails(request, response) {
             });
         }
 
+        const formattedTour = {
+            ...tour.toObject(),
+            escortName: tour.userId?.name
+        };
+
         return response.status(200).json({
-            message: "tours list fetched",
+            message: "Tour details fetched successfully",
             success: true,
             error: false,
-            data: tour
+            data: formattedTour
         });
 
     } catch (error) {
@@ -659,7 +676,7 @@ export async function deleteTour(request, response) {
     try {
         const { _id } = request.body;
 
-        
+
         if (!_id) {
             return response.status(400).json({
                 message: "Tour ID required",
@@ -693,3 +710,6 @@ export async function deleteTour(request, response) {
         });
     }
 }
+
+//=================================================================<  >================================================================
+

@@ -3125,9 +3125,29 @@ export const addTour = async (request, response) => {
             });
         }
 
+        const getTourStatus = (start, end) => {
+            const today = new Date();
+
+            // 🔴 Clone dates (important)
+            const s = new Date(start);
+            const e = new Date(end);
+            const t = new Date(today);
+
+            s.setHours(0, 0, 0, 0);
+            e.setHours(0, 0, 0, 0);
+            t.setHours(0, 0, 0, 0);
+
+            if (s <= t && e >= t) return "ongoing";
+            if (e < t) return "completed";
+            return "upcoming";
+        };
+
+        const status = getTourStatus(start, end);
+
         // 🔥 Overlapping check (escort-wise)
         const existingTour = await TourModel.findOne({
             escortId: escortId,
+            status: { $ne: "cancelled" },
             $or: [
                 {
                     startDate: { $lte: end },
@@ -3152,6 +3172,7 @@ export const addTour = async (request, response) => {
             startDate: start,
             endDate: end,
             tourNotes,
+            status
         });
 
         const savedTour = await newTour.save();
