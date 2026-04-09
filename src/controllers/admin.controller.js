@@ -738,21 +738,14 @@ export async function deleteTour(request, response) {
 export async function fetchBlogs(request, response) {
     try {
 
-        console.log("blog fetch api run");
-
         const blogs = await BlogModel.find()
             .populate("userId", "name")
             .sort({ createdAt: -1 });
-
-        console.log("blogs", blogs);
-
 
         const formattedBlogs = blogs.map(blog => ({
             ...blog.toObject(),
             userName: blog.userId?.name
         }));
-
-        console.log("formatted blogs", formattedBlogs);
 
         return response.status(200).json({
             message: formattedBlogs.length ? "Blogs list fetched" : "No blog found",
@@ -762,7 +755,6 @@ export async function fetchBlogs(request, response) {
         })
 
     } catch (error) {
-        console.log("blog catch error", error);
 
         return response.status(500).json({
             message: error.message || "Internal server error",
