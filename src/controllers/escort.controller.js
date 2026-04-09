@@ -1727,8 +1727,12 @@ export const deleteNewsTourController = async (request, response) => {
             }
         }
 
+        await NewstourCommentsModel.deleteMany({ postId: _id });
+        await NewstourLikesModel.deleteMany({ postId: _id })
+
         // ✅ delete post from DB
         await NewsAndTourModel.findByIdAndDelete(_id);
+
 
         // ✅ remove reference from EscortModel
         await EscortModel.updateOne(
@@ -2083,6 +2087,8 @@ export const createBlog = async (request, response) => {
             });
         }
 
+        let uploadedMedia = []; // 🔥 rollback
+
         // ✅ upload media to cloudinary
         const mediaUploads = await Promise.all(
             request.files.map(async (file) => {
@@ -2092,10 +2098,15 @@ export const createBlog = async (request, response) => {
                     "blog/post"
                 );
 
-                return {
+                const mediaObj = {
                     url: result.secure_url,
+                    public_id: result.public_id,
                     type: file.mimetype.startsWith("video") ? "video" : "image"
                 };
+
+                uploadedMedia.push(mediaObj); // rollback tracking
+
+                return mediaObj;
             })
         );
 
@@ -2113,7 +2124,6 @@ export const createBlog = async (request, response) => {
             media: mediaUploads
         });
 
-        console.log("post :", post);
 
         // ✅ push post id into escort model
         await EscortModel.findOneAndUpdate(
@@ -2130,6 +2140,16 @@ export const createBlog = async (request, response) => {
 
 
     } catch (error) {
+
+        if (uploadedMedia.length > 0) {
+            await Promise.all(
+                uploadedMedia.map(item =>
+                    cloudinary.uploader.destroy(item.public_id, {
+                        resource_type: item.type === "video" ? "video" : "image"
+                    })
+                )
+            );
+        }
 
         return response.status(500).json({
             message: error.message || "Server Error",
@@ -2247,7 +2267,7 @@ export const updateBlog = async (request, response) => {
     }
 };
 
-// Delete NewsTour
+// Delete blog
 export const deleteBlog = async (request, response) => {
     try {
 
@@ -2286,6 +2306,9 @@ export const deleteBlog = async (request, response) => {
                 }
             }
         }
+
+        await BlogCommentsModel.deleteMany({ postId: _id });
+        await BlogLikesModel.deleteMany({ postId: _id });
 
         // ✅ delete post from DB
         await BlogModel.findByIdAndDelete(_id);

@@ -5,7 +5,13 @@ import EscortModel from "../models/escortModel.js";
 import ClientModel from "../models/clientModel.js";
 import { sendMail } from "../utils/sendMail.js";
 import TourModel from '../models/tourModel.js';
-import { request } from 'express';
+import BlogModel from '../models/blogModel.js';
+import BlogCommentsModel from '../models/blogCommentsModel.js';
+import BlogLikesModel from '../models/blogLikesModel.js';
+import cloudinary from '../config/cloudinary.js';
+import NewsAndTourModel from '../models/newsandtourModel.js';
+import NewstourCommentsModel from '../models/newstourCommentsModel.js';
+import NewstourLikesModel from '../models/newstourLikesModel.js';
 
 // Admin login
 export async function adminlogincontroller(request, response) {
@@ -698,9 +704,9 @@ export async function deleteTour(request, response) {
         const start = new Date(tour.startDate);
         const end = new Date(tour.endDate);
 
-        today.setHours(0,0,0,0);
-        start.setHours(0,0,0,0);
-        end.setHours(0,0,0,0);
+        today.setHours(0, 0, 0, 0);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(0, 0, 0, 0);
 
         if (start <= today && end >= today) {
             return response.status(400).json({
@@ -726,5 +732,282 @@ export async function deleteTour(request, response) {
         });
     }
 }
-//=================================================================<  >================================================================
+//=================================================================< Blogs >================================================================
+
+// fetch blogs
+export async function fetchBlogs(request, response) {
+    try {
+
+        const blogs = await BlogModel.find()
+            .populate("userId", "name")
+            .sort({ createdAt: -1 });
+
+        const formattedBlogs = blogs.map(blog => ({
+            ...blog.toObject(),
+            escortName: blog.userId?.name
+        }));
+
+        return response.status(200).json({
+            message: formattedBlogs.length ? "Blogs list fetched" : "No tour found",
+            error: false,
+            success: true,
+            data: formattedBlogs || [],
+        })
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            error: true,
+            success: false
+        })
+    }
+}
+
+// fetch blog details
+export async function fetchBlogDetails(request, response) {
+    try {
+        const { _id } = request.query;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "Blog ID is required",
+                success: false,
+                error: true
+            });
+        }
+
+        const blog = await BlogModel.findById(_id)
+            .populate("userId", "name");
+
+        if (!blog) {
+            return response.status(404).json({
+                message: "Blog not found",
+                success: false,
+                error: true
+            });
+        }
+
+        const formattedBlog = {
+            ...blog.toObject(),
+            escortName: blog.userId?.name
+        };
+
+        return response.status(200).json({
+            message: "Blog details fetched successfully",
+            success: true,
+            error: false,
+            data: formattedBlog
+        });
+
+    } catch (error) {
+        console.log("FETCH TOUR DETAILS ERROR:", error);
+
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
+
+// delete blog and related data
+
+export async function deleteBlog(request, response) {
+    try {
+        const { _id } = request.body;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "Blog ID required",
+                success: false,
+                error: true
+            });
+        }
+
+        const blog = await BlogModel.findById(_id);
+
+        if (!blog) {
+            return response.status(404).json({
+                message: "Blog not found",
+                success: false,
+                error: true,
+            });
+        }
+
+        // 🔥 1. Delete media from Cloudinary
+        if (blog.media && blog.media.length > 0) {
+            await Promise.all(
+                blog.media.map(item =>
+                    item.public_id &&
+                    cloudinary.uploader.destroy(item.public_id, {
+                        resource_type: item.type === "video" ? "video" : "image"
+                    })
+                )
+            );
+        }
+
+        // 🔥 2. Delete comments & likes
+        await BlogCommentsModel.deleteMany({ postId: _id });
+        await BlogLikesModel.deleteMany({ postId: _id });
+
+        // 🔥 3. Remove blog reference from Escort
+        await EscortModel.updateMany(
+            { blog: _id },
+            { $pull: { blog: _id } }
+        );
+
+        // 🔥 4. Delete blog
+        await blog.deleteOne();
+
+        return response.status(200).json({
+            message: "Blog, media, comments & likes deleted successfully",
+            success: true,
+            error: false
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
+//=================================================================< NewsandTours >================================================================
+
+// fetch newsandtours
+export async function fetchNewsandtours(request, response) {
+    try {
+
+        const newsandtours = await NewsAndTourModel.find()
+            .populate("userId", "name")
+            .sort({ createdAt: -1 });
+
+        const formattedNewsandtours = newsandtours.map(newsandtour => ({
+            ...newsandtour.toObject(),
+            escortName: newsandtour.userId?.name
+        }));
+
+        return response.status(200).json({
+            message: formattedNewsandtours.length ? "Newsandtours list fetched" : "No Newsandtour found",
+            error: false,
+            success: true,
+            data: formattedNewsandtours || [],
+        })
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            error: true,
+            success: false
+        })
+    }
+}
+
+// fetch newsandtour details
+export async function fetchNewsandtourDetails(request, response) {
+    try {
+        const { _id } = request.query;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "Newsandtour ID is required",
+                success: false,
+                error: true
+            });
+        }
+
+        const newsandtour = await NewsAndTourModel.findById(_id)
+            .populate("userId", "name");
+
+        if (!newsandtour) {
+            return response.status(404).json({
+                message: "Newsandtour not found",
+                success: false,
+                error: true
+            });
+        }
+
+        const formattedNewsandtour = {
+            ...newsandtour.toObject(),
+            escortName: newsandtour.userId?.name
+        };
+
+        return response.status(200).json({
+            message: "Newsandtour details fetched successfully",
+            success: true,
+            error: false,
+            data: formattedNewsandtour
+        });
+
+    } catch (error) {
+        console.log("FETCH TOUR DETAILS ERROR:", error);
+
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
+
+// delete newsandtour and related data like and comments
+export async function deleteNewsandtour(request, response) {
+    try {
+        const { _id } = request.body;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "Newsandtour ID required",
+                success: false,
+                error: true
+            });
+        }
+
+        const newsandtour = await NewsAndTourModel.findById(_id);
+
+        if (!newsandtour) {
+            return response.status(404).json({
+                message: "Newsandtour not found",
+                success: false,
+                error: true,
+            });
+        }
+
+        if (newsandtour.media && newsandtour.media.length > 0) {
+            await Promise.all(
+                newsandtour.media.map(item =>
+                    item.public_id &&
+                    cloudinary.uploader.destroy(item.public_id, {
+                        resource_type: item.type === "video" ? "video" : "image"
+                    })
+                )
+            );
+        }
+
+        await NewstourCommentsModel.deleteMany({ postId: _id });
+        await NewstourLikesModel.deleteMany({ postId: _id });
+        await newsandtour.deleteOne();
+
+        await EscortModel.updateMany(
+            { newsTour: _id },
+            { $pull: { newsTour: _id } }
+        );
+
+        return response.status(200).json({
+            message: "Newsandtour and related data deleted successfully",
+            success: true,
+            error: false
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
+
+// ======================================================<  >==============================================================
 
