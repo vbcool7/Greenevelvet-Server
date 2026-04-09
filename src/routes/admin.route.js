@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { adminlogincontroller, adminlogoutcontroller, deleteBlog, deleteClient, deleteEscortcontroller, deleteNewsandtour, deleteTour, fetchBlogDetails, fetchBlogs, fetchClientdetails, fetchClients, fetchEscortcontroller, fetchEscortdetailscontroller, fetchNewsandtourDetails, fetchNewsandtours, fetchTourDetails, fetchTours, updateClient, updateEscortcontroller, verifiedEscortcontroller } from '../controllers/admin.controller.js';
+import { adminlogincontroller, adminlogoutcontroller, deleteBlog, deleteClient, deleteEscortcontroller, deleteNewsandtour, deleteTour, fetchBlogDetails, fetchBlogs, fetchClientdetails, fetchClients, fetchEscortcontroller, fetchEscortdetailscontroller, fetchNewsandtourDetails, fetchNewsandtours, fetchTourDetails, fetchTours, updateBlogStatus, updateClient, updateEscortcontroller, updateNewsandtourStatus, verifiedEscortcontroller } from '../controllers/admin.controller.js';
 import { protect } from '../middleware/auth.js';
 
 const adminRouter = Router();
@@ -34,11 +34,13 @@ adminRouter.delete("/delete-tour", deleteTour)
 // blogs fetch and delete operation
 adminRouter.get("/fetch-blogs", fetchBlogs)
 adminRouter.get("/fetch-blog-details", fetchBlogDetails)
+adminRouter.patch("/update-blog-status", updateBlogStatus)
 adminRouter.delete("/delete-blog", deleteBlog)
 
 // newsandtours fetch and delete
 adminRouter.get("/fetch-newsandtours", fetchNewsandtours)
 adminRouter.get("/fetch-newsandtour-details", fetchNewsandtourDetails)
+adminRouter.patch("/update-newstour-status", updateNewsandtourStatus)
 adminRouter.delete("/delete-newsandtour", deleteNewsandtour)
 
 

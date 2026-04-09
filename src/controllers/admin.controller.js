@@ -738,6 +738,8 @@ export async function deleteTour(request, response) {
 export async function fetchBlogs(request, response) {
     try {
 
+        console.log("blog fetch api run");
+
         const blogs = await BlogModel.find()
             .populate("userId", "name")
             .sort({ createdAt: -1 });
@@ -749,6 +751,7 @@ export async function fetchBlogs(request, response) {
             ...blog.toObject(),
             escortName: blog.userId?.name
         }));
+
         console.log("formatted blogs", formattedBlogs);
 
         return response.status(200).json({
@@ -816,8 +819,49 @@ export async function fetchBlogDetails(request, response) {
     }
 }
 
-// delete blog and related data
+export async function updateBlogStatus(request, response) {
+    try {
+        const { _id, status } = request.body;
 
+        if (!_id || !status) {
+            return response.status(400).json({
+                message: "ID and status required",
+                success: false,
+                error: true
+            });
+        }
+
+        const updated = await BlogModel.findByIdAndUpdate(
+            _id,
+            { status },
+            { new: true }
+        );
+
+        if (!updated) {
+            return response.status(404).json({
+                message: "Not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: `Status updated to ${status}`,
+            success: true,
+            error: false,
+            data: updated
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message,
+            success: false,
+            error: true
+        });
+    }
+}
+
+// delete blog and related data
 export async function deleteBlog(request, response) {
     try {
         const { _id } = request.body;
@@ -951,6 +995,49 @@ export async function fetchNewsandtourDetails(request, response) {
 
         return response.status(500).json({
             message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
+
+// update newstour status
+export async function updateNewsandtourStatus(request, response) {
+    try {
+        const { _id, status } = request.body;
+
+        if (!_id || !status) {
+            return response.status(400).json({
+                message: "ID and status required",
+                success: false,
+                error: true
+            });
+        }
+
+        const updated = await NewsAndTourModel.findByIdAndUpdate(
+            _id,
+            { status },
+            { new: true }
+        );
+
+        if (!updated) {
+            return response.status(404).json({
+                message: "Not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: `Status updated to ${status}`,
+            success: true,
+            error: false,
+            data: updated
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message,
             success: false,
             error: true
         });
