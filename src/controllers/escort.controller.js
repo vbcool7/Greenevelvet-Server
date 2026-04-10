@@ -26,6 +26,7 @@ import BlogLikesModel from "../models/blogLikesModel.js";
 import BookingModel from "../models/bookingModel.js";
 import TourModel from "../models/tourModel.js";
 import { decrypt, encrypt } from "../utils/crypto.js";
+import sharp from "sharp";
 
 
 
@@ -1557,6 +1558,7 @@ export const fetchEscortNewsTourcontroller = async (request, response) => {
 
         const posts = await NewsAndTourModel
             .find({ escortId: escortId, status: "active" })
+            .populate("userId", "name")
             .sort({ createdAt: -1 })
             .limit(20)
             .populate("newstourComments")
@@ -1765,8 +1767,6 @@ export const fetchAllNewsTourController = async (request, response) => {
 
         const { country, city } = request.query;
 
-        console.log("request.query: ", request.query);
-
         if (!country) {
             return response.status(400).json({
                 message: "Country is required",
@@ -1785,22 +1785,25 @@ export const fetchAllNewsTourController = async (request, response) => {
             query.city = city;
         }
 
-        console.log("query: ", query);
-
-        const posts = await NewsAndTourModel
+        const newsandtours = await NewsAndTourModel
             .find(query)
+            .populate("userId", "name")
             .sort({ createdAt: -1 })
             .limit(24)
             .populate("newstourComments")
             .populate("newstourLikes");
 
-        console.log("posts: ", posts);
+        const formattedNewsandtours = newsandtours.map(newsandtour => ({
+            ...newsandtour.toObject(),
+            escortName: newsandtour.userId?.name
+        }));
+
 
         return response.status(200).json({
-            message: "Posts fetched successfully",
+            message: "Newsandtours fetched successfully",
             success: true,
             error: false,
-            data: posts
+            data: formattedNewsandtours
         });
 
     } catch (error) {
@@ -1840,8 +1843,6 @@ export const fetchSelectNewsTourController = async (request, response) => {
                     select: "name avatar"
                 }
             });
-
-        console.log("post: ", post);
 
         return response.status(200).json({
             message: "Post fetched successfully",
@@ -2045,8 +2046,6 @@ export const fetchSelectedNewsTourComments = async (request, response) => {
 // ==============================================< Blog controlls >==============================================
 
 // Create Blog
-import sharp from "sharp";
-
 export const createBlog = async (request, response) => {
     let uploadedMedia = [];
 
@@ -2421,8 +2420,6 @@ export const fetchAllBlogs = async (request, response) => {
 
         const { country, city } = request.query;
 
-        console.log("request.query: ", request.query);
-
         if (!country) {
             return response.status(400).json({
                 message: "Country is required",
@@ -2441,8 +2438,6 @@ export const fetchAllBlogs = async (request, response) => {
             query.city = city;
         }
 
-        console.log("query: ", query);
-
         const posts = await BlogModel
             .find(query)
             .sort({ createdAt: -1 })
@@ -2451,8 +2446,6 @@ export const fetchAllBlogs = async (request, response) => {
                 path: "userId",
                 select: "name avatar"
             })
-
-        console.log("posts: ", posts);
 
         if (!posts.length) {
             return response.status(404).json({
@@ -2485,8 +2478,6 @@ export const fetchSelectBlog = async (request, response) => {
     try {
 
         const { _id } = request.query;
-
-        console.log("request.query:", request.query);
 
         // check id exist
         if (!_id) {
