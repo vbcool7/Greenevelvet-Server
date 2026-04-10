@@ -1512,7 +1512,6 @@ export const createNewsTourcontroller = async (request, response) => {
             name,
             title,
             description,
-            public_id,
             status: "active",
             media: mediaUploads
         });
@@ -2120,7 +2119,6 @@ export const createBlog = async (request, response) => {
             country,
             name,
             title,
-            public_id,
             description,
             status: "active",
             media: mediaUploads
