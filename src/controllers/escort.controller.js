@@ -1497,6 +1497,7 @@ export const createNewsTourcontroller = async (request, response) => {
 
                 return {
                     url: result.secure_url,
+                    public_id: result.public_id,
                     type: file.mimetype.startsWith("video") ? "video" : "image"
                 };
             })
@@ -1511,6 +1512,7 @@ export const createNewsTourcontroller = async (request, response) => {
             name,
             title,
             description,
+            public_id,
             status: "active",
             media: mediaUploads
         });
@@ -1530,7 +1532,6 @@ export const createNewsTourcontroller = async (request, response) => {
             data: post
         });
 
-        console.log("post Data:", data);
 
     } catch (error) {
 
@@ -2119,6 +2120,7 @@ export const createBlog = async (request, response) => {
             country,
             name,
             title,
+            public_id,
             description,
             status: "active",
             media: mediaUploads
