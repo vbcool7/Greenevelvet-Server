@@ -2045,12 +2045,14 @@ export const fetchSelectedNewsTourComments = async (request, response) => {
 // ==============================================< Blog controlls >==============================================
 
 // Create Blog
+import sharp from "sharp";
+
 export const createBlog = async (request, response) => {
     let uploadedMedia = [];
+
     try {
 
         const { escortId, userId, userType, name, city, country, title, description } = request.body;
-
 
         if (!escortId || !title || !description) {
             return response.status(400).json({
@@ -2077,7 +2079,6 @@ export const createBlog = async (request, response) => {
             });
         }
 
-        // ✅ check escort exist
         const escort = await EscortModel.findOne({ escortId });
 
         if (!escort) {
@@ -2088,12 +2089,41 @@ export const createBlog = async (request, response) => {
             });
         }
 
-        // ✅ upload media to cloudinary
+        // ✅ upload media to cloudinary (with compression + validation)
         const mediaUploads = await Promise.all(
             request.files.map(async (file) => {
 
+                // 🔴 TYPE VALIDATION
+                if (!file.mimetype.startsWith("image") && !file.mimetype.startsWith("video")) {
+                    throw new Error("Only image or video allowed");
+                }
+
+                // 🔴 VIDEO SIZE VALIDATION (no compression)
+                if (file.mimetype.startsWith("video") && file.size > 10 * 1024 * 1024) {
+                    throw new Error("Video must be under 10MB");
+                }
+
+                let fileBuffer = file.buffer;
+
+                // ✅ IMAGE COMPRESSION (Sharp)
+                if (file.mimetype.startsWith("image")) {
+
+                    const compressedBuffer = await sharp(file.buffer)
+                        .resize({ width: 1024 }) // max width
+                        .jpeg({ quality: 70 })   // compression
+                        .toBuffer();
+
+                    fileBuffer = compressedBuffer;
+
+                    // 🔴 FINAL SIZE CHECK
+                    if (fileBuffer.length > 10 * 1024 * 1024) {
+                        throw new Error("Compressed image still too large");
+                    }
+                }
+
+                // ✅ upload
                 const result = await uploadMediaCloudinary(
-                    file,
+                    { ...file, buffer: fileBuffer },
                     "blog/post"
                 );
 
@@ -2103,13 +2133,12 @@ export const createBlog = async (request, response) => {
                     type: file.mimetype.startsWith("video") ? "video" : "image"
                 };
 
-                uploadedMedia.push(mediaObj); // rollback tracking
+                uploadedMedia.push(mediaObj);
 
                 return mediaObj;
             })
         );
 
-        // ✅ create post
         const post = await BlogModel.create({
             escortId,
             userId,
@@ -2123,8 +2152,6 @@ export const createBlog = async (request, response) => {
             media: mediaUploads
         });
 
-
-        // ✅ push post id into escort model
         await EscortModel.findOneAndUpdate(
             { escortId },
             { $push: { blog: post._id } }
@@ -2136,7 +2163,6 @@ export const createBlog = async (request, response) => {
             error: false,
             data: post
         });
-
 
     } catch (error) {
         console.log("🔥 ERROR:", error);
