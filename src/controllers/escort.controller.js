@@ -2046,6 +2046,7 @@ export const fetchSelectedNewsTourComments = async (request, response) => {
 
 // Create Blog
 export const createBlog = async (request, response) => {
+    let uploadedMedia = [];
     try {
 
         const { escortId, userId, userType, name, city, country, title, description } = request.body;
@@ -2086,8 +2087,6 @@ export const createBlog = async (request, response) => {
                 error: true,
             });
         }
-
-        let uploadedMedia = []; // 🔥 rollback
 
         // ✅ upload media to cloudinary
         const mediaUploads = await Promise.all(
@@ -2140,6 +2139,7 @@ export const createBlog = async (request, response) => {
 
 
     } catch (error) {
+        console.log("🔥 ERROR:", error);
 
         if (uploadedMedia.length > 0) {
             await Promise.all(
