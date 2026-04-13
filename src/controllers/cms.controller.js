@@ -6,6 +6,8 @@ export const saveCms = async (request, response) => {
     try {
         const { slug, title, content, status } = request.body;
 
+        console.log("req body save: ", request.body);
+
         if (!slug || !title || !content) {
             return response.status(400).json({
                 message: "All fields are required",
@@ -61,6 +63,8 @@ export const getCmsBySlug = async (request, response) => {
     try {
         const { slug } = request.params;
 
+        console.log("fetch slug: ", slug );
+
         const cms = await CmsModel.findOne({ slug });
 
         if (!cms) {
@@ -90,6 +94,7 @@ export const getCmsBySlug = async (request, response) => {
 export const deleteCms = async (request, response) => {
     try {
         const { id } = request.params;
+        console.log("delete slug id: ", id );
 
         await CmsModel.findByIdAndDelete(id);
 
