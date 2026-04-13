@@ -6,6 +6,7 @@ import adminRouter from "./routes/admin.route.js";
 import loginRouter from "./routes/login.route.js";
 import geoRouter from "./routes/geo.route.js";
 import visitRouter from "./routes/visits.route.js";
+import cmsRouter from "./routes/cms.route.js";
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use('/escort', escortRouter);
 app.use('/client', clientRouter);
 app.use('/user', loginRouter);
 app.use('/visit', visitRouter);
+app.use('/cms', cmsRouter);
 
 
 /* Global Error Handler */
