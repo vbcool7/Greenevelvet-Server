@@ -6,7 +6,7 @@ export const saveCms = async (request, response) => {
     try {
         const { slug, title, content, status } = request.body;
 
-        console.log("req body save: ", request.body);
+        console.log("request body save: ", request.body);
 
         if (!slug || !title || !content) {
             return response.status(400).json({
@@ -58,12 +58,66 @@ export const getAllCms = async (request, response) => {
     }
 };
 
+// toggle slug status 
+export const updateStatus = async (request, response) => {
+    try {
+        const { slug, status } = request.body;
+
+        // ✅ validation
+        if (!slug || !status) {
+            return response.status(400).json({
+                message: "slug and status are required",
+                success: false,
+                error: true
+            });
+        }
+
+        // ✅ allow only valid values
+        if (!["active", "inactive"].includes(status)) {
+            return response.status(400).json({
+                message: "Invalid status value",
+                success: false,
+                error: true
+            });
+        }
+
+        const updated = await CmsModel.findOneAndUpdate(
+            { slug },
+            { status },
+            { new: true }
+        );
+
+        // ❗ not found case
+        if (!updated) {
+            return response.status(404).json({
+                message: "CMS page not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: "Status updated",
+            success: true,
+            error: false,
+            data: updated
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message,
+            success: false,
+            error: true
+        });
+    }
+};
+
 //  get selected slug/ page content
 export const getCmsBySlug = async (request, response) => {
     try {
         const { slug } = request.params;
 
-        console.log("fetch slug: ", slug );
+        console.log("fetch slug: ", slug);
 
         const cms = await CmsModel.findOne({ slug });
 
@@ -94,7 +148,7 @@ export const getCmsBySlug = async (request, response) => {
 export const deleteCms = async (request, response) => {
     try {
         const { id } = request.params;
-        console.log("delete slug id: ", id );
+        console.log("delete slug id: ", id);
 
         await CmsModel.findByIdAndDelete(id);
 
