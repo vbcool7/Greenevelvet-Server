@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { deleteCms, getAllCms, getCmsBySlug, saveCms } from "../controllers/cms.controller";
+import { deleteCms, getAllCms, getCmsBySlug, saveCms } from "../controllers/cms.controller.js";
 
 const cmsRouter = Router()
 

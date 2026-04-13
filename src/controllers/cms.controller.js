@@ -1,4 +1,4 @@
-import CmsModel from "../models/cmsModel";
+import CmsModel from "../models/cmsModel.js";
 
 
 // create and update new slug /page content
