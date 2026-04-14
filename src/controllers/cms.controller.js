@@ -117,8 +117,6 @@ export const getCmsBySlug = async (request, response) => {
     try {
         const { slug } = request.params;
 
-        console.log("fetch slug: ", slug);
-
         const cms = await CmsModel.findOne({ slug });
 
         if (!cms) {
@@ -144,25 +142,78 @@ export const getCmsBySlug = async (request, response) => {
     }
 };
 
+// get active slug
+export const getActiveSlug = async (request, response) => {
+    try {
+        const { slug } = request.params;
+
+        const cms = await CmsModel.findOne({
+            slug,
+            status: "active"
+        });
+
+        if (!cms) {
+            return response.status(404).json({
+                message: "Active CMS page not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: "Fetched success",
+            success: true,
+            error: false,
+            data: cms,
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message,
+            success: false,
+            error: true
+        });
+    }
+};
+
 // delete slug / page content
 export const deleteCms = async (request, response) => {
     try {
         const { id } = request.params;
-        console.log("delete slug id: ", id);
 
-        await CmsModel.findByIdAndDelete(id);
+        // ✅ Check valid ObjectId
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return response.status(400).json({
+                message: "Invalid CMS ID",
+                success: false,
+                error: true
+            });
+        }
 
-        response.status(200).json({
+        // ✅ Find & Delete
+        const deletedCms = await CmsModel.findByIdAndDelete(id);
+
+        // ✅ If not found
+        if (!deletedCms) {
+            return response.status(404).json({
+                message: "CMS not found",
+                success: false,
+                error: true
+            });
+        }
+
+        // ✅ Success response
+        return response.status(200).json({
             message: "CMS deleted successfully",
             success: true,
-            error: true
+            error: false
         });
 
     } catch (error) {
-        response.status(500).json({
+        return response.status(500).json({
             message: error.message,
             success: false,
-            error: false
+            error: true
         });
     }
 };
