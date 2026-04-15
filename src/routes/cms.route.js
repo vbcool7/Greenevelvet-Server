@@ -11,7 +11,7 @@ cmsRouter.get("/active/:slug", getActiveSlug);
 cmsRouter.delete("/delete/:id", deleteCms);
 
 cmsRouter.post("/add-location-content", addLocationContentCms);
-cmsRouter.get("/all-location-content", getAllLocationContent);
+cmsRouter.get("/all-locations", getAllLocationContent);
 cmsRouter.patch("/update-location-content-status", updateLocationContentStatus);
 cmsRouter.get("/location-content/:slug", getLocationContentBySlug);
 cmsRouter.get("/active-location-content/:slug", getActiveLocaionContent);

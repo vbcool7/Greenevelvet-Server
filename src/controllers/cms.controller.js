@@ -284,7 +284,7 @@ export const addLocationContentCms = async (request, response) => {
 export const getAllLocationContent = async (request, response) => {
     try {
         const cmsList = await CmsLocationModel.find()
-        .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 });
 
         return response.status(200).json({
             message: "All location content fetched successfully",
