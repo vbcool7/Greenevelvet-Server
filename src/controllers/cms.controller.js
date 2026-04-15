@@ -232,11 +232,9 @@ export const generateSlug = (country, city) => {
 };
 
 // create location content 
-export const addLocationContentCms = async (request, response) => {
+export const addUpdateLocationContentCms = async (request, response) => {
     try {
         const { country, city, title, content, status } = request.body;
-
-        console.log("request body save: ", request.body);
 
         if (!country || !city || !title || !content) {
             return response.status(400).json({
@@ -248,32 +246,51 @@ export const addLocationContentCms = async (request, response) => {
 
         const slug = generateSlug(country, city);
 
+        // 🔥 check existing
         const existing = await CmsLocationModel.findOne({ slug });
+
+        let cms;
+
         if (existing) {
-            return response.status(400).json({
-                message: "Content already exists for this location",
-                success: false,
-                error: true
+            // ✅ UPDATE
+            cms = await CmsLocationModel.findOneAndUpdate(
+                { slug },
+                {
+                    title,
+                    content,
+                    status: status || "active"
+                },
+                { new: true }
+            );
+
+            return response.status(200).json({
+                message: "Location content updated successfully",
+                success: true,
+                error: false,
+                data: cms,
+            });
+
+        } else {
+            // ✅ CREATE
+            cms = await CmsLocationModel.create({
+                country,
+                city,
+                slug,
+                title,
+                content,
+                status: status || "active",
+            });
+
+            return response.status(201).json({
+                message: "Location content created successfully",
+                success: true,
+                error: false,
+                data: cms,
             });
         }
 
-        const cms = await CmsLocationModel.create({
-            country,
-            city,
-            slug,
-            title,
-            content,
-            status: status || "active",
-        });
-
-        return response.status(201).json({
-            message: "Location content created successfully",
-            success: true,
-            error: false,
-            data: cms,
-        });
     } catch (error) {
-        response.status(500).json({
+        return response.status(500).json({
             message: error.message,
             success: false,
             error: true
