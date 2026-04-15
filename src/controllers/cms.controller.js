@@ -234,7 +234,7 @@ export const generateSlug = (country, city) => {
 // create location content 
 export const addUpdateLocationContentCms = async (request, response) => {
     try {
-        const { country, city, title, content, status } = request.body;
+        let { country, city, title, content, status } = request.body; // ✅ let
 
         if (!country || !city || !title || !content) {
             return response.status(400).json({
@@ -249,16 +249,16 @@ export const addUpdateLocationContentCms = async (request, response) => {
 
         const slug = generateSlug(country, city);
 
-        // 🔥 check existing
         const existing = await CmsLocationModel.findOne({ slug });
 
         let cms;
 
         if (existing) {
-            // ✅ UPDATE
             cms = await CmsLocationModel.findOneAndUpdate(
                 { slug },
                 {
+                    country,
+                    city,    
                     title,
                     content,
                     status: status || "active"
@@ -274,7 +274,6 @@ export const addUpdateLocationContentCms = async (request, response) => {
             });
 
         } else {
-            // ✅ CREATE
             cms = await CmsLocationModel.create({
                 country,
                 city,
@@ -293,7 +292,7 @@ export const addUpdateLocationContentCms = async (request, response) => {
         }
 
     } catch (error) {
-        console.log("add error", error)
+        console.log("add error", error);
         return response.status(500).json({
             message: error.message,
             success: false,
