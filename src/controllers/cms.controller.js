@@ -244,6 +244,9 @@ export const addUpdateLocationContentCms = async (request, response) => {
             });
         }
 
+        country = country.toLowerCase().trim();
+        city = city.toLowerCase().trim();
+
         const slug = generateSlug(country, city);
 
         // 🔥 check existing
