@@ -124,7 +124,7 @@ export const getCmsBySlug = async (request, response) => {
 
         if (!cms) {
             return response.status(404).json({
-                message: "CMS page not found",
+                message: "CMS page .... not found",
                 success: false,
                 error: true
             });
