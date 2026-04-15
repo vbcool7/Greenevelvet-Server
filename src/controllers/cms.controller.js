@@ -339,7 +339,7 @@ export const updateLocationContentStatus = async (request, response) => {
         // ❗ not found case
         if (!updated) {
             return response.status(404).json({
-                message: "CMS page not found",
+                message: "Location content not found",
                 success: false,
                 error: true
             });

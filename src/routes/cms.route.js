@@ -1,4 +1,5 @@
 import { Router } from "express";
+
 import { addLocationContentCms, deleteCms, deleteLocationContent, getActiveLocaionContent, getActiveSlug, getAllCms, getAllLocationContent, getCmsBySlug, getLocationContentBySlug, saveCms, updateLocationContentStatus, updateStatus } from "../controllers/cms.controller.js";
 
 const cmsRouter = Router()
