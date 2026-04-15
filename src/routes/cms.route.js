@@ -7,7 +7,7 @@ const cmsRouter = Router()
 cmsRouter.post("/save", saveCms);
 cmsRouter.get("/all-slug", getAllCms);
 cmsRouter.patch("/update-status", updateStatus);
-cmsRouter.get("/:slug", getCmsBySlug);
+cmsRouter.get("/slug/:slug", getCmsBySlug);
 cmsRouter.get("/active/:slug", getActiveSlug);
 cmsRouter.delete("/delete/:id", deleteCms);
 
