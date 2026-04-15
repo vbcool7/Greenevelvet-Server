@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { addLocationContentCms, deleteCms, deleteLocationContent, getActiveLocaionContent, getActiveSlug, getAllCms, getAllLocationContent, getCmsBySlug, getLocationContentBySlug, saveCms, updateLocationContentStatus, updateStatus } from "../controllers/cms.controller.js";
+import { addLocationContentCms, deleteCms, deleteLocationContent, fetchAllLocations, getActiveLocaionContent, getActiveSlug, getAllCms, getCmsBySlug, getLocationContentBySlug, saveCms, updateLocationContentStatus, updateStatus } from "../controllers/cms.controller.js";
 
 const cmsRouter = Router()
 
@@ -12,7 +12,7 @@ cmsRouter.get("/active/:slug", getActiveSlug);
 cmsRouter.delete("/delete/:id", deleteCms);
 
 cmsRouter.post("/add-location-content", addLocationContentCms);
-cmsRouter.get("/all-locations", getAllLocationContent);
+cmsRouter.get("/fetchalllocation", fetchAllLocations);
 cmsRouter.patch("/update-location-content-status", updateLocationContentStatus);
 cmsRouter.get("/location-content/:slug", getLocationContentBySlug);
 cmsRouter.get("/active-location-content/:slug", getActiveLocaionContent);
