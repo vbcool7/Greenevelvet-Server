@@ -280,11 +280,11 @@ export const addLocationContentCms = async (request, response) => {
     }
 };
 
-// get all slug/ pages content
+// get all location contents content
 export const getAllLocationContent = async (request, response) => {
     try {
-        const cmsList = await CmsLocationModel.find().
-            sort({ createdAt: -1 });
+        const cmsList = await CmsLocationModel.find()
+        .sort({ createdAt: -1 });
 
         return response.status(200).json({
             message: "All location content fetched successfully",
@@ -294,6 +294,7 @@ export const getAllLocationContent = async (request, response) => {
         });
 
     } catch (error) {
+        console.log("ERROR ", error)
         return response.status(500).json({
             message: error.message,
             success: false,
