@@ -1,6 +1,6 @@
 import CmsLocationModel from "../models/cmsLocationContentModel.js";
 import CmsModel from "../models/cmsModel.js";
-
+import mongoose from "mongoose";
 
 // create and update new slug /page content
 export const saveCms = async (request, response) => {
