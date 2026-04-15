@@ -377,7 +377,7 @@ export const updateLocationContentStatus = async (request, response) => {
     }
 };
 
-//  get selected slug/ page content
+//  get selected location content
 export const getLocationContentBySlug = async (request, response) => {
     try {
         const { slug } = request.params;
@@ -407,21 +407,21 @@ export const getLocationContentBySlug = async (request, response) => {
     }
 };
 
-// get active slug
+// get active location content by city
 export const getActiveLocaionContent = async (request, response) => {
     try {
-        const { slug } = request.params;
+        const { city } = request.params;
 
-        if (!slug) {
+        if (!city) {
             return response.status(404).json({
-                message: "Slug is required",
+                message: "City is required",
                 success: false,
                 error: true
             });
         }
 
         const cms = await CmsLocationModel.findOne({
-            slug,
+            city,
             status: "active"
         });
 
@@ -449,7 +449,7 @@ export const getActiveLocaionContent = async (request, response) => {
     }
 };
 
-// delete slug / page content
+// delete location content
 export const deleteLocationContent = async (request, response) => {
     try {
         const { id } = request.params;
