@@ -410,10 +410,18 @@ export const getLocationContentBySlug = async (request, response) => {
 // get active slug
 export const getActiveLocaionContent = async (request, response) => {
     try {
-        const { slug } = request.params;
+        const { city } = request.params;
+
+        if (!city) {
+            return response.status(404).json({
+                message: "City is required",
+                success: false,
+                error: true
+            });
+        }
 
         const cms = await CmsLocationModel.findOne({
-            slug,
+            city,
             status: "active"
         });
 
