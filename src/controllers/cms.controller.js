@@ -282,6 +282,8 @@ export const addLocationContentCms = async (request, response) => {
 
 // get all location contents content
 export const getAllLocationContent = async (request, response) => {
+
+    return console.log("try before ");
     try {
         const cmsList = await CmsLocationModel.find()
             .sort({ createdAt: -1 });
