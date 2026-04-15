@@ -293,6 +293,7 @@ export const addUpdateLocationContentCms = async (request, response) => {
         }
 
     } catch (error) {
+        console.log("add error", error)
         return response.status(500).json({
             message: error.message,
             success: false,
