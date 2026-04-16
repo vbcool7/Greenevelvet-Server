@@ -16,9 +16,9 @@ export const createContact = async (request, response) => {
             role
         } = request.body;
 
-        if (!fullname || !mobile || !email || !message) {
+        if (!fullname || !email || !message || !inquiryType) {
             return response.status(400).json({
-                message: "Name, mobile, email and message are required",
+                message: "Name, email, inquiry and message are required",
                 success: false,
                 error: true
             });
