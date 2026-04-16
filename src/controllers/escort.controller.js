@@ -3508,6 +3508,7 @@ export const cancelTour = async (request, response) => {
 
 // ==========================================================< Fetch Home Slider Escorts >====================================================================
 
+// country escorts for home page banner
 export async function fetchHomeSliderEscorts(request, response) {
     try {
         const { role, isVerified, country, city, isVisible } = request.query;
@@ -3541,13 +3542,50 @@ export async function fetchHomeSliderEscorts(request, response) {
 
         const escorts = await EscortModel.find(filter);
 
-        if (escorts.length === 0) {
+        return response.status(200).json({
+            message: "Escort list fetched",
+            error: false,
+            success: true,
+            data: escorts
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || error,
+            error: true,
+            success: false
+        });
+    }
+}
+
+// city escorts for banner slider
+export async function fetchCitySliderEscorts(request, response) {
+    try {
+        const { role, isVerified, city, isVisible } = request.query;
+
+        let filter = {};
+
+        if (role) filter.role = role;
+
+        if (!city) {
             return response.status(400).json({
-                message: "escorts not found",
+                message: "city is missing",
                 error: true,
                 success: false
             });
         }
+        filter.city = city;
+
+        if (isVerified !== undefined)
+            filter.isVerified = isVerified === "true";
+
+        if (isVisible !== undefined)
+            filter.isVisible = isVisible === "true";
+
+        // Only escorts with avatar
+        filter.avatar = { $exists: true, $ne: null, $ne: "" };
+
+        const escorts = await EscortModel.find(filter);
 
         return response.status(200).json({
             message: "Escort list fetched",

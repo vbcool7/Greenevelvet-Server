@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addBlogComment, addBooking, addNewstourCommentController, addTour, advanceSearchController, blockBlogComments, cancelBooking, cancelTour, changeMobilenumber, complteBooking, createBlog, createNewsTourcontroller, deleteBlog, deleteBooking, deleteEscortProfile, deleteNewsTourController, deleteTour, editEscortProfileDetails, escortdetailscontroller, escortLogincontroller, escortRatescontroller, escortServicescontroller, escortUploadverification, fetchAllBlogs, fetchAllNewsTourController, fetchBookings, fetchEscortBlog, fetchEscortdetailscontroller, fetchEscortNewsTourcontroller, fetchFiltercityescortscontroller, fetchFilterHomescortscontroller, fetchHomeSliderEscorts, fetchSelectBlog, fetchSelectBooking, fetchSelectedBlogComments, fetchSelectedNewsTourComments, fetchSelectNewsTourController, getEscortContact, getToursByDate, hideEscortProfile, logoutEscortcontroller, registerEscortcontroller, sendOtpcontroller, toggleBlogLike, toggleNewstourLikeController, updateBlog, updateBooking, updateEscortProfile, updateHighlightscontroller, updateNewsTourController, updateTour, uploadAvatarcontroller, uploadImagescontroller, uploadVideoscontroller, verifiedEscortcontroller, verifyEmailcontroller, verifyMobileotp } from '../controllers/escort.controller.js'
+import { addBlogComment, addBooking, addNewstourCommentController, addTour, advanceSearchController, blockBlogComments, cancelBooking, cancelTour, changeMobilenumber, complteBooking, createBlog, createNewsTourcontroller, deleteBlog, deleteBooking, deleteEscortProfile, deleteNewsTourController, deleteTour, editEscortProfileDetails, escortdetailscontroller, escortLogincontroller, escortRatescontroller, escortServicescontroller, escortUploadverification, fetchAllBlogs, fetchAllNewsTourController, fetchBookings, fetchCitySliderEscorts, fetchEscortBlog, fetchEscortdetailscontroller, fetchEscortNewsTourcontroller, fetchFiltercityescortscontroller, fetchFilterHomescortscontroller, fetchHomeSliderEscorts, fetchSelectBlog, fetchSelectBooking, fetchSelectedBlogComments, fetchSelectedNewsTourComments, fetchSelectNewsTourController, getEscortContact, getToursByDate, hideEscortProfile, logoutEscortcontroller, registerEscortcontroller, sendOtpcontroller, toggleBlogLike, toggleNewstourLikeController, updateBlog, updateBooking, updateEscortProfile, updateHighlightscontroller, updateNewsTourController, updateTour, uploadAvatarcontroller, uploadImagescontroller, uploadVideoscontroller, verifiedEscortcontroller, verifyEmailcontroller, verifyMobileotp } from '../controllers/escort.controller.js'
 import upload from "../middleware/multer.js";
 import { protect } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rateLimit.js";
@@ -81,6 +81,8 @@ escortRouter.patch("/cancel-tour", cancelTour);
 
 //  Home Slider Escorts
 escortRouter.get("/fetch-home-slider-escorts", fetchHomeSliderEscorts);
+escortRouter.get("/fetch-city-slider-escorts", fetchCitySliderEscorts);
+
 
 // get Escort contact link by Decryp mobile
 escortRouter.post("/contact-link", rateLimit(5, 6000), getEscortContact);
