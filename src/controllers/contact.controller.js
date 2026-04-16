@@ -7,8 +7,7 @@ import { sendMail } from "../utils/sendMail.js";
 export const createContact = async (request, response) => {
     try {
         const {
-            name,
-            lastName,
+            fullname,
             mobile,
             email,
             inquiryType,
@@ -17,7 +16,7 @@ export const createContact = async (request, response) => {
             role
         } = request.body;
 
-        if (!name || !mobile || !email || !message) {
+        if (!fullname || !mobile || !email || !message) {
             return response.status(400).json({
                 message: "Name, mobile, email and message are required",
                 success: false,
@@ -26,8 +25,7 @@ export const createContact = async (request, response) => {
         }
 
         const contact = new ContactModel({
-            name,
-            lastName,
+            fullname,
             mobile,
             email,
             inquiryType,

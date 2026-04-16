@@ -2,13 +2,9 @@ import mongoose from "mongoose";
 
 const contactSchema = new mongoose.Schema(
     {
-        name: {
+        fullname: {
             type: String,
             required: true,
-            trim: true
-        },
-        lastName: {
-            type: String,
             trim: true
         },
         mobile: {
