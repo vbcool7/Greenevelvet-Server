@@ -146,25 +146,29 @@ export async function adminlogoutcontroller(request, response) {
 export async function fetchEscortcontroller(request, response) {
     try {
         const { role } = request.query;
+        console.log("request query", request.query);
 
         let filter = {};
 
         if (role) filter.role = role;
 
-        filter.isEmailVerified = true;
+        filter.isEmailVerified = false;
         filter.isVerified = false;
+
+        console.log("filter", filter);
 
         const escorts = await EscortModel.find(filter)
             .sort({ createdAt: -1 });
 
         return response.status(200).json({
-            message: escorts.length ? "Escort list fetched" : "No escorts found",
+            message: escorts?.length ? "Escort list fetched" : "No escorts found",
             error: false,
             success: true,
             data: escorts || [],
         })
 
     } catch (error) {
+        console.log("unverified escorts list error", error);
         return response.status(500).json({
             message: error.message || error,
             error: true,
