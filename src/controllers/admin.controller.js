@@ -12,6 +12,7 @@ import cloudinary from '../config/cloudinary.js';
 import NewsAndTourModel from '../models/newsandtourModel.js';
 import NewstourCommentsModel from '../models/newstourCommentsModel.js';
 import NewstourLikesModel from '../models/newstourLikesModel.js';
+import { decrypt } from '../utils/crypto.js';
 
 // Admin login
 export async function adminlogincontroller(request, response) {
@@ -146,7 +147,6 @@ export async function adminlogoutcontroller(request, response) {
 export async function fetchEscortcontroller(request, response) {
     try {
         const { role } = request.query;
-        console.log("request query", request.query);
 
         let filter = {};
 
@@ -155,10 +155,23 @@ export async function fetchEscortcontroller(request, response) {
         filter.isEmailVerified = false;
         filter.isVerified = false;
 
-        console.log("filter", filter);
 
         const escorts = await EscortModel.find(filter)
             .sort({ createdAt: -1 });
+
+        let mobile = escorts.mobile;
+
+        try {
+            if (mobile?.startsWith("enc:")) {
+                mobile = decrypt(mobile.replace("enc:", ""));
+            } else {
+                mobile = decrypt(mobile);
+            }
+        } catch {
+            mobile = "";
+        }
+
+        escorts.mobile = mobile;
 
         return response.status(200).json({
             message: escorts?.length ? "Escort list fetched" : "No escorts found",
@@ -168,7 +181,6 @@ export async function fetchEscortcontroller(request, response) {
         })
 
     } catch (error) {
-        console.log("unverified escorts list error", error);
         return response.status(500).json({
             message: error.message || error,
             error: true,
