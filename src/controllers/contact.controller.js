@@ -150,6 +150,7 @@ export const replyContact = async (request, response) => {
             { new: true }
         );
 
+        console.log("contact details: ", contact);
 
         // ✅ Send Email
         await sendMail({
