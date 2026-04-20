@@ -33,7 +33,7 @@ export const createContact = async (request, response) => {
             ClientModel.findOne({ email: normalizedEmail }).lean()
         ]);
 
-        let role = "visitor";
+        let role = "Visitor";
 
         // ✅ conflict handling
         if (escort && client) {
