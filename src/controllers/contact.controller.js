@@ -104,7 +104,15 @@ export const getAllContacts = async (request, response) => {
 export const replyContact = async (request, response) => {
     try {
         const { id } = request.params;
-        const { adminReply } = request.body;
+        const { text } = request.body;
+
+        if (!text || !text.trim()) {
+            return response.status(400).json({
+                message: "Reply text is required",
+                success: false,
+                error: true
+            });
+        }
 
         // ✅ Validate ID
         if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -129,12 +137,19 @@ export const replyContact = async (request, response) => {
         const contact = await ContactModel.findByIdAndUpdate(
             id,
             {
-                adminReply,
+                $push: {
+                    adminReply: {
+                        text,
+                        sender: "admin",
+                        time: new Date()
+                    }
+                },
                 repliedAt: new Date(),
                 status: "resolved"
             },
             { new: true }
         );
+
 
         // ✅ Send Email
         await sendMail({
@@ -142,7 +157,7 @@ export const replyContact = async (request, response) => {
             subject: "Response to your inquiry- GREENE VELVET",
             html: `
         <p>Hi ${contact.name},</p>
-        <p>${adminReply}</p>
+        <p>${text}</p>
         <br/>
         <p>Thanks & Regards,<br/>Support Team</p>
       `

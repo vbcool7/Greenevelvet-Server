@@ -45,10 +45,23 @@ const contactSchema = new mongoose.Schema(
             enum: ["Client", "Escort", "Visitor"],
             default: "Visitor"
         },
-        adminReply: {
-            type: String,
-            default: ""
-        },
+        adminReply: [
+            {
+                text: {
+                    type: String,
+                    required: true,
+                    trim: true
+                },
+                sender: {
+                    type: String,
+                    default: "Admin"
+                },
+                time: {
+                    type: String,
+                    default: () => new Date().toLocaleString()
+                }
+            }
+        ],
         repliedAt: {
             type: Date
         },
