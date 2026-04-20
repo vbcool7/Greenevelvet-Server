@@ -44,8 +44,8 @@ export const createContact = async (request, response) => {
             });
         }
 
-        if (escort) role = "escort";
-        else if (client) role = "client";
+        if (escort) role = "Escort";
+        else if (client) role = "Client";
 
         const contact = new ContactModel({
             fullname,
