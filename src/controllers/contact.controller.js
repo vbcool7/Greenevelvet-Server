@@ -104,7 +104,7 @@ export const getAllContacts = async (request, response) => {
 export const replyContact = async (request, response) => {
     try {
         const { id } = request.params;
-        const { text } = request.body;
+        const { text, status } = request.body;
 
         if (!text || !text.trim()) {
             return response.status(400).json({
@@ -145,7 +145,7 @@ export const replyContact = async (request, response) => {
                     }
                 },
                 repliedAt: new Date(),
-                status: "resolved"
+                status
             },
             { new: true }
         );
