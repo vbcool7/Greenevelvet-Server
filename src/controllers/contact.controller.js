@@ -140,7 +140,7 @@ export const replyContact = async (request, response) => {
                 $push: {
                     adminReply: {
                         text,
-                        sender: "admin",
+                        sender: "Admin",
                         time: new Date()
                     }
                 },
