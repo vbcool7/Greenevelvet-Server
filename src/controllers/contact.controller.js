@@ -153,16 +153,16 @@ export const replyContact = async (request, response) => {
         console.log("contact details: ", contact);
 
         // ✅ Send Email
-        await sendMail({
-            to: contact.email,
-            subject: "Response to your inquiry- GREENE VELVET",
-            html: `
-        <p>Hi ${contact.name},</p>
-        <p>${text}</p>
-        <br/>
-        <p>Thanks & Regards,<br/>Support Team</p>
-      `
-        });
+        await sendMail(
+            contact.email,
+            "Response to your inquiry - GREENE VELVET",
+            `
+           <p>Hi ${contact.fullname},</p>
+           <p>${text}</p>
+           <br/>
+           <p>Thanks & Regards,<br/>Support Team</p>
+        `
+        );
 
         return response.status(200).json({
             message: "Reply sent successfully",
