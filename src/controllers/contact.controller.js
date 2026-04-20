@@ -84,6 +84,7 @@ export const getAllContacts = async (request, response) => {
             .lean();
 
         return response.status(200).json({
+            message: "Support ticket fetched successfully",
             success: true,
             error: false,
             count: contacts.length,
@@ -108,7 +109,7 @@ export const replyContact = async (request, response) => {
         // ✅ Validate ID
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return response.status(400).json({
-                message: "Invalid contact ID",
+                message: "Invalid support ticket ID",
                 success: false,
                 error: true
             });
@@ -118,7 +119,7 @@ export const replyContact = async (request, response) => {
         const contactData = await ContactModel.findById(id);
         if (!contactData) {
             return response.status(404).json({
-                message: "Contact not found",
+                message: "Support ticket not found",
                 success: false,
                 error: true
             });
@@ -173,7 +174,7 @@ export const updateContactStatus = async (request, response) => {
             return response.status(400).json({
                 success: false,
                 error: true,
-                message: "Invalid contact ID"
+                message: "Invalid support ticket ID"
             });
         }
 
@@ -196,7 +197,7 @@ export const updateContactStatus = async (request, response) => {
             return response.status(404).json({
                 success: false,
                 error: true,
-                message: "Contact not found"
+                message: "Support ticket not found"
             });
         }
 
@@ -226,7 +227,7 @@ export const deleteContact = async (request, response) => {
             return response.status(400).json({
                 success: false,
                 error: true,
-                message: "Invalid contact ID"
+                message: "Invalid support ticket ID"
             });
         }
 
@@ -238,17 +239,19 @@ export const deleteContact = async (request, response) => {
             return response.status(404).json({
                 success: false,
                 error: true,
-                message: "Contact not found"
+                message: "Support ticket not found"
             });
         }
 
         return response.status(200).json({
             success: true,
             error: false,
-            message: "Contact deleted permanently"
+            message: "Support ticket deleted permanently"
         });
 
     } catch (error) {
+        console.log("Error ", error);
+
         return response.status(500).json({
             success: false,
             error: true,
