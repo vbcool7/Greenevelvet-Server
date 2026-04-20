@@ -1,6 +1,8 @@
 import ContactModel from "../models/contactModel.js";
 import mongoose from "mongoose";
 import { sendMail } from "../utils/sendMail.js";
+import EscortModel from "../models/escortModel.js";
+import ClientModel from "../models/clientModel.js";
 
 
 // create contact
@@ -13,7 +15,6 @@ export const createContact = async (request, response) => {
             inquiryType,
             profileLink,
             message,
-            role
         } = request.body;
 
         if (!fullname || !email || !message || !inquiryType) {
@@ -24,14 +25,36 @@ export const createContact = async (request, response) => {
             });
         }
 
+        const normalizedEmail = email.toLowerCase().trim();
+
+        // ✅ parallel queries (fast)
+        const [escort, client] = await Promise.all([
+            EscortModel.findOne({ email: normalizedEmail }).lean(),
+            ClientModel.findOne({ email: normalizedEmail }).lean()
+        ]);
+
+        let role = "visitor";
+
+        // ✅ conflict handling
+        if (escort && client) {
+            return response.status(400).json({
+                message: "Email exists in both Escort and Client",
+                success: false,
+                error: true
+            });
+        }
+
+        if (escort) role = "escort";
+        else if (client) role = "client";
+
         const contact = new ContactModel({
             fullname,
             mobile,
-            email,
+            email: normalizedEmail,
             inquiryType,
             profileLink,
             message,
-            role
+            role,
         });
 
         await contact.save();
