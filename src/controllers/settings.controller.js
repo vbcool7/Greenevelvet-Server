@@ -1,7 +1,7 @@
 import settingsModel from "../models/settingsModel.js";
-import deleteImageCloudinary from "../utils/deleteImageCloudinary.js";
-import uploadImageCloudinary from "../utils/uploadImageCloudinary.js";
 import fs from "fs";
+import { uploadFromCloudinary } from "../utils/uploadFromCloudinary.js";
+import { deleteFromCloudinary } from "../utils/deleteFromCloudinary.js";
 
 // fetch settings
 export const getSettings = async (request, response) => {
@@ -61,16 +61,16 @@ export const updateSiteIdentity = async (request, response) => {
         try {
             // ===== PARALLEL UPLOAD =====
             [uploadedLogo, uploadedBanner] = await Promise.all([
-                logoFile ? uploadImageCloudinary(logoFile.path) : null,
-                bannerFile ? uploadImageCloudinary(bannerFile.path) : null,
+                logoFile ? uploadFromCloudinary(logoFile.path) : null,
+                bannerFile ? uploadFromCloudinary(bannerFile.path) : null,
             ]);
         } catch (uploadError) {
             // 🔥 CLEANUP uploaded images if partial success
             if (uploadedLogo?.public_id) {
-                await deleteImageCloudinary(uploadedLogo.public_id);
+                await deleteFromCloudinary(uploadedLogo.public_id);
             }
             if (uploadedBanner?.public_id) {
-                await deleteImageCloudinary(uploadedBanner.public_id);
+                await deleteFromCloudinary(uploadedBanner.public_id);
             }
             throw uploadError;
         } finally {
@@ -87,7 +87,7 @@ export const updateSiteIdentity = async (request, response) => {
         if (uploadedLogo) {
             try {
                 if (settings.logoPublicId) {
-                    await deleteImageCloudinary(settings.logoPublicId);
+                    await deleteFromCloudinary(settings.logoPublicId);
                 }
             } catch (err) {
                 console.log("old logo delete failed:", err.message);
@@ -101,7 +101,7 @@ export const updateSiteIdentity = async (request, response) => {
         if (uploadedBanner) {
             try {
                 if (settings.bannerPublicId) {
-                    await deleteImageCloudinary(settings.bannerPublicId);
+                    await deleteFromCloudinary(settings.bannerPublicId);
                 }
             } catch (err) {
                 console.log("old banner delete failed:", err.message);
