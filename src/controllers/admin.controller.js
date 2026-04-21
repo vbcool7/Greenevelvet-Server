@@ -157,7 +157,7 @@ export const getAdminDetails = async (request, response) => {
             });
         }
 
-        const admin = await adminModel
+        const admin = await AdminModel
             .findById(adminId)
             .select("-password -__v");
 
@@ -204,7 +204,7 @@ export const updateAdminName = async (request, response) => {
         // 👉 JWT use
         const adminId = request.user?._id;
 
-        const updatedAdmin = await adminModel.findByIdAndUpdate(
+        const updatedAdmin = await AdminModel.findByIdAndUpdate(
             adminId,
             { $set: { name: name.trim() } },
             { new: true, runValidators: true }
