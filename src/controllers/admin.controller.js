@@ -147,6 +147,8 @@ export const getAdminDetails = async (request, response) => {
         // 👉 JWT middleware
         const adminId = request.user?._id;
 
+        console.log("admin token", adminId);
+
         if (!adminId) {
             return response.status(401).json({
                 message: "Unauthorized access",
