@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { adminlogincontroller, adminlogoutcontroller, deleteBlog, deleteClient, deleteEscortcontroller, deleteNewsandtour, deleteTour, fetchBlogDetails, fetchBlogs, fetchClientdetails, fetchClients, fetchEscortcontroller, fetchEscortdetailscontroller, fetchNewsandtourDetails, fetchNewsandtours, fetchTourDetails, fetchTours, updateBlogStatus, updateClient, updateEscortcontroller, updateNewsandtourStatus, verifiedEscortcontroller } from '../controllers/admin.controller.js';
+import { adminlogincontroller, adminlogoutcontroller, deleteBlog, deleteClient, deleteEscortcontroller, deleteNewsandtour, deleteTour, fetchBlogDetails, fetchBlogs, fetchClientdetails, fetchClients, fetchEscortcontroller, fetchEscortdetailscontroller, fetchNewsandtourDetails, fetchNewsandtours, fetchTourDetails, fetchTours, getAdminDetails, updateAdminName, updateBlogStatus, updateClient, updateEscortcontroller, updateNewsandtourStatus, verifiedEscortcontroller } from '../controllers/admin.controller.js';
 import { protect } from '../middleware/auth.js';
 
 const adminRouter = Router();
@@ -12,6 +12,10 @@ adminRouter.get("/admin-data", protect(["Admin"]), async (request, response) => 
     // req.user me Admin ka data aayega
     response.json({ success: true, data: request.user });
 });
+
+
+adminRouter.get("/get-account-details", getAdminDetails);
+adminRouter.patch("/update-name", protect(["Admin"]), updateAdminName);
 
 // escorts fetch update and delete operation
 adminRouter.get("/fetch-unverified-escorts", fetchEscortcontroller)

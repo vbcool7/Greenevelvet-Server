@@ -1,7 +1,9 @@
 import settingsModel from "../models/settingsModel.js";
 import deleteImageCloudinary from "../utils/deleteImageCloudinary.js";
 import uploadImageCloudinary from "../utils/uploadImageCloudinary.js";
+import fs from "fs";
 
+// fetch settings
 export const getSettings = async (request, response) => {
     try {
         console.log("setting fecth run");
@@ -31,7 +33,125 @@ export const getSettings = async (request, response) => {
     }
 };
 
-export const updateSettings = async (request, response) => {
+// update site identity 
+export const updateSiteIdentity = async (request, response) => {
+    let uploadedLogo = null;
+    let uploadedBanner = null;
+
+    try {
+        let settings = await settingsModel.findOneAndUpdate(
+            { singleton: "unique_settings" },
+            { $setOnInsert: { singleton: "unique_settings" } },
+            { new: true, upsert: true }
+        );
+
+        const allowedFields = ["taglineLine1", "taglineLine2"];
+        let updateData = {};
+
+        // ===== TEXT FIELDS =====
+        allowedFields.forEach((field) => {
+            if (request.body[field] !== undefined) {
+                updateData[field] = request.body[field];
+            }
+        });
+
+        const logoFile = request.files?.logo?.[0];
+        const bannerFile = request.files?.banner?.[0];
+
+        try {
+            // ===== PARALLEL UPLOAD =====
+            [uploadedLogo, uploadedBanner] = await Promise.all([
+                logoFile ? uploadImageCloudinary(logoFile.path) : null,
+                bannerFile ? uploadImageCloudinary(bannerFile.path) : null,
+            ]);
+        } catch (uploadError) {
+            // 🔥 CLEANUP uploaded images if partial success
+            if (uploadedLogo?.public_id) {
+                await deleteImageCloudinary(uploadedLogo.public_id);
+            }
+            if (uploadedBanner?.public_id) {
+                await deleteImageCloudinary(uploadedBanner.public_id);
+            }
+            throw uploadError;
+        } finally {
+            // ===== TEMP FILE CLEANUP =====
+            if (logoFile?.path && fs.existsSync(logoFile.path)) {
+                fs.unlink(logoFile.path, () => { });
+            }
+            if (bannerFile?.path && fs.existsSync(bannerFile.path)) {
+                fs.unlink(bannerFile.path, () => { });
+            }
+        }
+
+        // ===== LOGO =====
+        if (uploadedLogo) {
+            try {
+                if (settings.logoPublicId) {
+                    await deleteImageCloudinary(settings.logoPublicId);
+                }
+            } catch (err) {
+                console.log("old logo delete failed:", err.message);
+            }
+
+            updateData.logo = uploadedLogo.url;
+            updateData.logoPublicId = uploadedLogo.public_id;
+        }
+
+        // ===== BANNER =====
+        if (uploadedBanner) {
+            try {
+                if (settings.bannerPublicId) {
+                    await deleteImageCloudinary(settings.bannerPublicId);
+                }
+            } catch (err) {
+                console.log("old banner delete failed:", err.message);
+            }
+
+            updateData.banner = uploadedBanner.url;
+            updateData.bannerPublicId = uploadedBanner.public_id;
+        }
+
+        // ❗ No valid update check
+        if (Object.keys(updateData).length === 0) {
+            return response.status(400).json({
+                message: "No valid fields provided",
+                success: false,
+                error: true,
+            });
+        }
+
+        // ===== PRELOAD =====
+        const finalLogo = updateData.logo || settings.logo;
+        const finalBanner = updateData.banner || settings.banner;
+
+        updateData.preloadAssets = [finalLogo, finalBanner].filter(Boolean);
+
+        const updated = await settingsModel.findByIdAndUpdate(
+            settings._id,
+            { $set: updateData },
+            { new: true, runValidators: true }
+        );
+
+        return response.status(200).json({
+            message: "Site Identity updated successfully",
+            success: true,
+            error: false,
+            data: updated,
+        });
+
+    } catch (error) {
+        console.log("site identity error :", error);
+
+        return response.status(500).json({
+            message: error.message,
+            success: false,
+            error: true,
+        });
+    }
+};
+
+// update preference
+export const updatePreferences = async (request, response) => {
     try {
         let settings = await settingsModel.findOne({ singleton: "unique_settings" });
 
@@ -39,59 +159,50 @@ export const updateSettings = async (request, response) => {
             settings = await settingsModel.create({});
         }
 
-        let updateData = { ...request.body };
+        const allowedFields = [
+            "enableSubscription",
+            "escortApprovalRequired",
+            "enableLogin",
+            "enableSignup",
+            "profileVisibility",
+            "notifications",
+            "maintenanceMode",
+        ];
 
-        console.log("request body :", updateData);
+        let updateData = {};
 
-        // ===== LOGO =====
-        if (request.files?.logo?.length > 0) {
-            // delete old logo
-            if (settings.logoPublicId) {
-                await deleteImageCloudinary(settings.logoPublicId);
+        allowedFields.forEach((field) => {
+            if (request.body[field] !== undefined) {
+                updateData[field] = request.body[field];
             }
+        });
 
-            // upload new logo
-            const uploadedLogo = await uploadImageCloudinary(request.files.logo[0].path);
+        console.log("filtered preference data :", updateData);
 
-            updateData.logo = uploadedLogo.url;
-            updateData.logoPublicId = uploadedLogo.public_id;
+        // ❗ No valid field check
+        if (Object.keys(updateData).length === 0) {
+            return response.status(400).json({
+                message: "No valid fields provided",
+                success: false,
+                error: true,
+            });
         }
 
-        // ===== BANNER =====
-        if (request.files?.banner?.length > 0) {
-            if (settings.bannerPublicId) {
-                await deleteImageCloudinary(settings.bannerPublicId);
-            }
-
-            const uploadedBanner = await uploadImageCloudinary(request.files.banner[0].path);
-
-            updateData.banner = uploadedBanner.url;
-            updateData.bannerPublicId = uploadedBanner.public_id;
-        }
-
-        // ===== PRELOAD AUTO =====
-        updateData.preloadAssets = [
-            updateData.logo || settings.logo,
-            updateData.banner || settings.banner,
-        ].filter(Boolean);
-
-        // ===== UPDATE =====
-        const updatedSettings = await settingsModel.findByIdAndUpdate(
+        const updated = await settingsModel.findByIdAndUpdate(
             settings._id,
             { $set: updateData },
             { new: true, runValidators: true }
         );
 
         return response.status(200).json({
-            message: "Settings updated successfully",
+            message: "Preferences updated successfully",
             success: true,
             error: false,
-            data: updatedSettings,
+            data: updated,
         });
 
     } catch (error) {
-        console.log("setting error", error);
-
+        console.log("preference error :", error);
         return response.status(500).json({
             message: error.message,
             success: false,

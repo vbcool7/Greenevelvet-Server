@@ -141,6 +141,98 @@ export async function adminlogoutcontroller(request, response) {
     }
 }
 
+// fetch account details
+export const getAdminDetails = async (request, response) => {
+    try {
+        // 👉 JWT middleware
+        const adminId = request.user?._id;
+
+        if (!adminId) {
+            return response.status(401).json({
+                message: "Unauthorized access",
+                success: false,
+                error: true,
+            });
+        }
+
+        const admin = await adminModel
+            .findById(adminId)
+            .select("-password -__v");
+
+        if (!admin) {
+            return response.status(404).json({
+                message: "Admin not found",
+                success: false,
+                error: true,
+            });
+        }
+
+        return response.status(200).json({
+            message: "Admin fetched successfully",
+            success: true,
+            error: false,
+            data: admin,
+        });
+
+    } catch (error) {
+        console.log("admin fetch error:", error);
+
+        return response.status(500).json({
+            message: error.message,
+            success: false,
+            error: true,
+        });
+    }
+};
+
+// name update
+export const updateAdminName = async (request, response) => {
+    try {
+        const { name } = request.body;
+
+        // ❗ Validation
+        if (!name || name.trim() === "") {
+            return response.status(400).json({
+                message: "Name is required",
+                success: false,
+                error: true,
+            });
+        }
+
+        // 👉 JWT use
+        const adminId = request.user?._id;
+
+        const updatedAdmin = await adminModel.findByIdAndUpdate(
+            adminId,
+            { $set: { name: name.trim() } },
+            { new: true, runValidators: true }
+        ).select("-password");
+
+        if (!updatedAdmin) {
+            return response.status(404).json({
+                message: "Admin not found",
+                success: false,
+                error: true,
+            });
+        }
+
+        return response.status(200).json({
+            message: "Name updated successfully",
+            success: true,
+            error: false,
+            data: updatedAdmin,
+        });
+
+    } catch (error) {
+        console.log("update name error:", error);
+        return response.status(500).json({
+            message: error.message,
+            success: false,
+            error: true,
+        });
+    }
+};
+
 //============================================================< Escorts >======================================================================
 
 // fetch escorts
