@@ -14,7 +14,7 @@ adminRouter.get("/admin-data", protect(["Admin"]), async (request, response) => 
 });
 
 
-adminRouter.get("/get-account-details", getAdminDetails);
+adminRouter.get("/get-account-details", protect(["Admin"]), getAdminDetails);
 adminRouter.patch("/update-name", protect(["Admin"]), updateAdminName);
 
 // escorts fetch update and delete operation
