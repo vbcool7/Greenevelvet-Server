@@ -13,3 +13,4 @@ export const deleteFromCloudinary = async (publicId) => {
         throw new Error("Image delete failed");
     }
 };
+

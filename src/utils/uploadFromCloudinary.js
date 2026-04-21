@@ -1,27 +1,30 @@
 import fs from "fs";
 import cloudinary from "../config/cloudinary.js";
 
-export const uploadFromCloudinary = async (filePath, folder = "uploads") => {
-    try {
-        if (!filePath) throw new Error("File path is required");
 
-        const result = await cloudinary.uploader.upload(filePath, {
-            folder,
-            resource_type: "image", // ✅ only images
+export const uploadFromCloudinary = async (fileBuffer) => {
+    try {
+        if (!fileBuffer) throw new Error("File buffer is required");
+
+        return await new Promise((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+                {
+                    folder: "uploads",
+                    resource_type: "image",
+                },
+                (error, result) => {
+                    if (error) return reject(error);
+
+                    resolve({
+                        url: result.secure_url,
+                        public_id: result.public_id,
+                    });
+                }
+            ).end(fileBuffer);
         });
 
-        return {
-            url: result.secure_url,
-            public_id: result.public_id,
-        };
-
     } catch (error) {
-        console.log("uploadFromCloudinary error:", error);
+        console.log("upload error:", error);
         throw new Error("Image upload failed");
-    } finally {
-        // cleanup local file
-        if (filePath && fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-        }
     }
 };

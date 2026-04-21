@@ -45,10 +45,11 @@ export const updateSiteIdentity = async (request, response) => {
             { new: true, upsert: true }
         );
 
-        const allowedFields = ["taglineLine1", "taglineLine2"];
-        let updateData = {};
+        const updateData = {};
 
         // ===== TEXT FIELDS =====
+        const allowedFields = ["taglineLine1", "taglineLine2"];
+
         allowedFields.forEach((field) => {
             if (request.body[field] !== undefined) {
                 updateData[field] = request.body[field];
@@ -58,60 +59,36 @@ export const updateSiteIdentity = async (request, response) => {
         const logoFile = request.files?.logo?.[0];
         const bannerFile = request.files?.banner?.[0];
 
-        try {
-            // ===== PARALLEL UPLOAD =====
-            [uploadedLogo, uploadedBanner] = await Promise.all([
-                logoFile ? uploadFromCloudinary(logoFile.path) : null,
-                bannerFile ? uploadFromCloudinary(bannerFile.path) : null,
-            ]);
-        } catch (uploadError) {
-            // 🔥 CLEANUP uploaded images if partial success
-            if (uploadedLogo?.public_id) {
-                await deleteFromCloudinary(uploadedLogo.public_id);
-            }
-            if (uploadedBanner?.public_id) {
-                await deleteFromCloudinary(uploadedBanner.public_id);
-            }
-            throw uploadError;
-        } finally {
-            // ===== TEMP FILE CLEANUP =====
-            if (logoFile?.path && fs.existsSync(logoFile.path)) {
-                fs.unlink(logoFile.path, () => { });
-            }
-            if (bannerFile?.path && fs.existsSync(bannerFile.path)) {
-                fs.unlink(bannerFile.path, () => { });
-            }
+        // ===== BUFFER UPLOAD (OPTION 1) =====
+        if (logoFile) {
+            uploadedLogo = await uploadFromCloudinary(logoFile.buffer);
         }
 
-        // ===== LOGO =====
+        if (bannerFile) {
+            uploadedBanner = await uploadFromCloudinary(bannerFile.buffer);
+        }
+
+        // ===== LOGO REPLACE =====
         if (uploadedLogo) {
-            try {
-                if (settings.logoPublicId) {
-                    await deleteFromCloudinary(settings.logoPublicId);
-                }
-            } catch (err) {
-                console.log("old logo delete failed:", err.message);
+            if (settings.logoPublicId) {
+                await deleteFromCloudinary(settings.logoPublicId);
             }
 
             updateData.logo = uploadedLogo.url;
             updateData.logoPublicId = uploadedLogo.public_id;
         }
 
-        // ===== BANNER =====
+        // ===== BANNER REPLACE =====
         if (uploadedBanner) {
-            try {
-                if (settings.bannerPublicId) {
-                    await deleteFromCloudinary(settings.bannerPublicId);
-                }
-            } catch (err) {
-                console.log("old banner delete failed:", err.message);
+            if (settings.bannerPublicId) {
+                await deleteFromCloudinary(settings.bannerPublicId);
             }
 
             updateData.banner = uploadedBanner.url;
             updateData.bannerPublicId = uploadedBanner.public_id;
         }
 
-        // ❗ No valid update check
+        // ===== VALIDATION =====
         if (Object.keys(updateData).length === 0) {
             return response.status(400).json({
                 message: "No valid fields provided",
@@ -120,12 +97,7 @@ export const updateSiteIdentity = async (request, response) => {
             });
         }
 
-        // ===== PRELOAD =====
-        const finalLogo = updateData.logo || settings.logo;
-        const finalBanner = updateData.banner || settings.banner;
-
-        updateData.preloadAssets = [finalLogo, finalBanner].filter(Boolean);
-
+        // ===== UPDATE =====
         const updated = await settingsModel.findByIdAndUpdate(
             settings._id,
             { $set: updateData },
@@ -140,7 +112,7 @@ export const updateSiteIdentity = async (request, response) => {
         });
 
     } catch (error) {
-        console.log("site identity error :", error);
+        console.log("site identity error:", error);
 
         return response.status(500).json({
             message: error.message,
