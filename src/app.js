@@ -9,6 +9,7 @@ import visitRouter from "./routes/visits.route.js";
 import cmsRouter from "./routes/cms.route.js";
 import subscriptionRouter from "./routes/subscription.route.js";
 import contactRouter from "./routes/contact.route.js";
+import settingsRouter from "./routes/settigns.route.js";
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use('/visit', visitRouter);
 app.use('/cms', cmsRouter);
 app.use('/subscription', subscriptionRouter);
 app.use('/contact', contactRouter);
+app.use('/settings', settingsRouter);
 
 /* Global Error Handler */
 app.use((err, req, res, next) => {
