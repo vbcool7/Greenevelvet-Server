@@ -53,7 +53,28 @@ export const updateSiteIdentity = async (request, response) => {
 
         allowedFields.forEach((field) => {
             if (request.body[field] !== undefined) {
-                updateData[field] = request.body[field];
+                try {
+                    const parsed = JSON.parse(request.body[field]);
+
+                    // ✅ validation
+                    if (
+                        parsed?.text &&
+                        parsed?.highlight &&
+                        parsed.text.includes(parsed.highlight)
+                    ) {
+                        updateData[field] = {
+                            text: parsed.text.trim(),
+                            highlight: parsed.highlight.trim(),
+                        };
+                    } else {
+                        throw new Error(`${field} invalid format`);
+                    }
+                } catch (err) {
+                    return response.status(400).json({
+                        success: false,
+                        message: `Invalid data for ${field}`,
+                    });
+                }
             }
         });
 

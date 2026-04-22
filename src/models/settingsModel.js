@@ -8,8 +8,31 @@ const settingsSchema = new mongoose.Schema(
       unique: true,
     },
 
-    taglineLine1: { type: String, default: "" },
-    taglineLine2: { type: String, default: "" },
+    taglineLine1: {
+      text: {
+        type: String,
+        required: true,
+        default: ""
+      },
+      highlight: {
+        type: String,
+        required: true,
+        default: ""
+      }
+    },
+
+    taglineLine2: {
+      text: {
+        type: String,
+        required: true,
+        default: ""
+      },
+      highlight: {
+        type: String,
+        required: true,
+        default: ""
+      }
+    },
 
     logo: {
       type: String,
