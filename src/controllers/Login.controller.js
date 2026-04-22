@@ -2,6 +2,7 @@ import ClientModel from "../models/clientModel.js";
 import EscortModel from "../models/escortModel.js";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
+import settingsModel from "../models/settingsModel.js";
 
 export async function loginUsercontroller(request, response) {
     try {
@@ -33,8 +34,8 @@ export async function loginUsercontroller(request, response) {
             });
         }
 
-        // ⚠️ Status check only for Escort
-        if (role === "Escort" && user.status !== "Active") {
+        // ⚠️ Status check 
+        if (user.status !== "Active") {
             return response.status(403).json({
                 message: "Contact to admin",
                 success: false,
@@ -69,6 +70,19 @@ export async function loginUsercontroller(request, response) {
         user.onlineStatus = true;
         await user.save();
 
+        let redirectTo = role === "Escort" ? "/modeldashboard" : "/clientdashboard";
+
+
+        const settings = await settingsModel.findOne({});
+
+        if (
+            role === "Escort" &&
+            settings?.enableSubscription &&
+            !user?.subscriptionActive
+        ) {
+            redirectTo = "/subscription";
+        }
+
         return response.json({
             message: "Login successful",
             success: true,
@@ -78,7 +92,8 @@ export async function loginUsercontroller(request, response) {
                 escortId: role === "Escort" ? user.escortId : null,
                 clientId: role === "Client" ? user.clientId : null,
                 role: role,
-                token: token
+                token: token,
+                redirectTo,
             }
         });
 

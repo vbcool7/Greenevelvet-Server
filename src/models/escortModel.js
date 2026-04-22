@@ -194,6 +194,10 @@ const EscortSchema = new mongoose.Schema({
     },
 
     /* ================= SUBSCRIPTION ================= */
+    subscriptionActive: {
+        type: Boolean,
+        default: false
+    },
     subscriptionplan: [
         {
             type: mongoose.Schema.ObjectId,
