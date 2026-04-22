@@ -29,6 +29,15 @@ const settingsSchema = new mongoose.Schema(
       default: ""
     },
 
+    mobilebanner: {
+      type: String,
+      default: ""
+    },
+    mobilebannerPublicId: {
+      type: String,
+      default: ""
+    },
+
     preloadAssets: [
       {
         type: String,

@@ -37,6 +37,7 @@ export const getSettings = async (request, response) => {
 export const updateSiteIdentity = async (request, response) => {
     let uploadedLogo = null;
     let uploadedBanner = null;
+    let uploadedMobileBanner = null;
 
     try {
         let settings = await settingsModel.findOneAndUpdate(
@@ -58,6 +59,7 @@ export const updateSiteIdentity = async (request, response) => {
 
         const logoFile = request.files?.logo?.[0];
         const bannerFile = request.files?.banner?.[0];
+        const mobilebannerFile = request.files?.mobilebanner?.[0];
 
         // ===== BUFFER UPLOAD (OPTION 1) =====
         if (logoFile) {
@@ -66,6 +68,10 @@ export const updateSiteIdentity = async (request, response) => {
 
         if (bannerFile) {
             uploadedBanner = await uploadFromCloudinary(bannerFile.buffer);
+        }
+
+        if (mobilebannerFile) {
+            uploadedMobileBanner = await uploadFromCloudinary(mobilebannerFile.buffer);
         }
 
         // ===== LOGO REPLACE =====
@@ -86,6 +92,16 @@ export const updateSiteIdentity = async (request, response) => {
 
             updateData.banner = uploadedBanner.url;
             updateData.bannerPublicId = uploadedBanner.public_id;
+        }
+
+        // ===== BANNER REPLACE =====
+        if (uploadedMobileBanner) {
+            if (settings.mobilebannerPublicId) {
+                await deleteFromCloudinary(settings.mobilebannerPublicId);
+            }
+
+            updateData.mobilebanner = uploadedMobileBanner.url;
+            updateData.mobilebannerPublicId = uploadedMobileBanner.public_id;
         }
 
         // ===== VALIDATION =====
