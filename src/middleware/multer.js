@@ -17,7 +17,7 @@ const upload = multer({
     },
     limits: {
         // Use field-level size check in controller for different limits
-        fileSize: 50 * 1024 * 1024, // max 50MB per file
+        fileSize: 10 * 1024 * 1024, // max 10MB per file
     },
 });
 
