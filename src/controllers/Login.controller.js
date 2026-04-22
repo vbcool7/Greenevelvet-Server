@@ -16,6 +16,16 @@ export async function loginUsercontroller(request, response) {
             });
         }
 
+        const settings = await settingsModel.findOne({});
+
+        if (settings && settings?.enableLogin === false) {
+            return response.status(403).json({
+                message: "Login is temporarily disabled. Please try later.",
+                success: false,
+                error: true
+            })
+        }
+
         // 🔍 First check Escort
         let user = await EscortModel.findOne({ email }).select("+password");
         let role = "Escort";
@@ -71,9 +81,6 @@ export async function loginUsercontroller(request, response) {
         await user.save();
 
         let redirectTo = role === "Escort" ? "/modeldashboard" : "/clientdashboard";
-
-
-        const settings = await settingsModel.findOne({});
 
         if (
             role === "Escort" &&
