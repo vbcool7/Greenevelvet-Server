@@ -21,6 +21,7 @@ app.use(cors({
         "http://localhost:5174",
         "http://admin.greenevelvet.com",
         "https://greenevelvet.com",
+        "http://greene-velvet-project-2026-046081688920-ap-southeast-2-an.s3-website-ap-southeast-2.amazonaws.com/"
     ]
 }))
 app.use(express.json())
