@@ -3575,8 +3575,8 @@ export async function fetchCitySliderEscorts(request, response) {
         //     });
         // }
 
-        
-        filter.city = city;
+
+        if (city) filter.city = city;
         filter.country = country;
 
         if (isVerified !== undefined)
