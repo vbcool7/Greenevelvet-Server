@@ -3561,20 +3561,23 @@ export async function fetchHomeSliderEscorts(request, response) {
 // city escorts for banner slider
 export async function fetchCitySliderEscorts(request, response) {
     try {
-        const { role, isVerified, city, isVisible } = request.query;
+        const { role, isVerified, city, country, isVisible } = request.query;
 
         let filter = {};
 
         if (role) filter.role = role;
 
-        if (!city) {
-            return response.status(400).json({
-                message: "city is missing",
-                error: true,
-                success: false
-            });
-        }
+        // if (!city) {
+        //     return response.status(400).json({
+        //         message: "city is missing",
+        //         error: true,
+        //         success: false
+        //     });
+        // }
+
+        
         filter.city = city;
+        filter.country = country;
 
         if (isVerified !== undefined)
             filter.isVerified = isVerified === "true";
