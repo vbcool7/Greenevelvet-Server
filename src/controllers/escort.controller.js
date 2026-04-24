@@ -1131,6 +1131,7 @@ export async function fetchFiltercityescortscontroller(request, response) {
         const query = {};
 
         if (filters.city) query.city = filters.city;
+        if (filters.country) query.country = filters.country;
 
         if (filters.name) {
             query.name = { $regex: filters.name, $options: "i" };
