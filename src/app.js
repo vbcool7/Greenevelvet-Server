@@ -21,7 +21,8 @@ app.use(cors({
         "http://localhost:5174",
         "http://admin.greenevelvet.com",
         "https://greenevelvet.com",
-        "https://d24rgp5ie3y2qc.cloudfront.net"
+        "https://d24rgp5ie3y2qc.cloudfront.net",
+        "https://d3t84nzlb2gzox.cloudfront.net/",
     ]
 }))
 app.use(express.json())
