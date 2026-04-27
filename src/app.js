@@ -22,7 +22,8 @@ app.use(cors({
         "http://admin.greenevelvet.com",
         "https://greenevelvet.com",
         "https://d24rgp5ie3y2qc.cloudfront.net",
-        "https://d3t84nzlb2gzox.cloudfront.net/",
+        "https://d3t84nzlb2gzox.cloudfront.net",
+        "http://admin-greenevelvet-046081688920-ap-southeast-2-an.s3-website-ap-southeast-2.amazonaws.com",
     ]
 }))
 app.use(express.json())
