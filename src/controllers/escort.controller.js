@@ -1104,7 +1104,7 @@ export async function fetchescortServicescontroller(request, response) {
 // filter city escorts
 export async function fetchFiltercityescortscontroller(request, response) {
     try {
-        let filters = { ...request.query }; // direct query params ko use karo
+        let filters = { ...request.query }; 
 
         // ✅ Boolean conversion
         for (const key in filters) {
