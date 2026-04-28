@@ -7,7 +7,11 @@ import app from "./src/app.js";
 import connectDB from "./src/config/db.js";
 import { autoTourStatusCron } from "./src/Cron/autoTourStatusCron.js";
 
+<<<<<<< HEAD
 const PORT = process.env.PORT || 5000;
+=======
+const PORT = process.env.PORT || 8080;
+>>>>>>> 85ca50f (add new domain name)
 
 // HTTP server create
 const server = http.createServer(app);
@@ -18,8 +22,11 @@ const io = new Server(server, {
         origin: [
             "http://localhost:5173",
             "http://localhost:5174",
+<<<<<<< HEAD
             "http://testing.greenevelvet.com",
             "http://admin.greenevelvet.com"
+=======
+>>>>>>> 85ca50f (add new domain name)
         ],
         methods: ["GET", "POST"],
         credentials: true
