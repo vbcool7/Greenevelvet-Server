@@ -33,6 +33,58 @@ export const getSettings = async (request, response) => {
     }
 };
 
+export const updateContactInfo = async (request, response) => {
+    try {
+
+        const { email, address } = request.body;
+
+        let settings = await settingsModel.findOne({ singleton: "unique_settings" });
+
+        if (!settings) {
+            settings = await settingsModel.create({ singleton: "unique_settings" });
+        }
+
+        let updateData = {};
+
+        if (email !== undefined) {
+            updateData["contactInfo.email"] = email;
+        }
+
+        if (address !== undefined) {
+            updateData["contactInfo.address"] = address;
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            return response.status(400).json({
+                message: "No data provided to update",
+                success: false,
+            });
+        }
+
+
+        const updated = await settingsModel.findByIdAndUpdate(
+            settings._id,
+            { $set: updateData },
+            { new: true, runValidators: true }
+        );
+
+        return response.status(200).json({
+            message: "Contact info updated successfully",
+            success: true,
+            error: false,
+            data: updated,
+        });
+
+    } catch (error) {
+        console.log("contact info error :", error);
+        return response.status(500).json({
+            message: error.message,
+            success: false,
+            error: true,
+        });
+    }
+};
+
 // update site identity 
 export const updateSiteIdentity = async (request, response) => {
     let uploadedLogo = null;
