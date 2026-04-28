@@ -17,9 +17,8 @@ app.use(cors({
     credentials: true,
     origin: [
         "http://localhost:5173",
-        "http://testing.greenevelvet.com",
         "http://localhost:5174",
-        "http://admin.greenevelvet.com",
+        "https://admin.greenevelvet.com",
         "https://greenevelvet.com",
         "https://www.greenevelvet.com",
         "https://d24rgp5ie3y2qc.cloudfront.net",
