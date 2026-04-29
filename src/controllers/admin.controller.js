@@ -235,6 +235,96 @@ export const updateAdminName = async (request, response) => {
     }
 };
 
+
+export const changePassword = async (request, response) => {
+  try {
+    const userId = request.user?._id;
+
+    const { currentPassword, newPassword, confirmPassword } = request.body;
+
+    // 1. Required check
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return response.status(400).json({
+        message: "All fields are required",
+        success: false,
+        error: true
+      });
+    }
+
+    // 2. New & confirm match
+    if (newPassword !== confirmPassword) {
+      return response.status(400).json({
+        message: "Passwords do not match",
+        success: false,
+        error: true
+      });
+    }
+
+    // 3. Password strength
+    if (newPassword.length < 6) {
+      return response.status(400).json({
+        message: "Password must be at least 6 characters",
+        success: false,
+        error: true
+      });
+    }
+
+    // 4. Find user
+    const user = await AdminModel.findById(userId);
+
+    if (!user) {
+      return response.status(404).json({
+        message: "User not found",
+        success: false,
+        error: true
+      });
+    }
+
+    // 5. Compare current password
+    const isMatch = await bcryptjs.compare(currentPassword, user.password);
+
+    if (!isMatch) {
+      return response.status(400).json({
+        message: "Current password is incorrect",
+        success: false,
+        error: true
+      });
+    }
+
+    // 6. Prevent same password reuse
+    const isSame = await bcryptjs.compare(newPassword, user.password);
+    if (isSame) {
+      return response.status(400).json({
+        message: "New password cannot be same as old password",
+        success: false,
+        error: true
+      });
+    }
+
+    // 7. Hash new password
+    const salt = await bcryptjs.genSalt(10);
+    const hashedPassword = await bcryptjs.hash(newPassword, salt);
+
+    user.password = hashedPassword;
+    await user.save();
+
+    return response.status(200).json({
+      message: "Password updated successfully",
+      success: true,
+      error: false
+    });
+
+  } catch (error) {
+    console.error("Change Password Error:", error);
+
+    return response.status(500).json({
+      message: "Something went wrong",
+      success: false,
+      error: true
+    });
+  }
+};
+
 //============================================================< Escorts >======================================================================
 
 // fetch escorts
