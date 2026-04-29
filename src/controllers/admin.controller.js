@@ -270,7 +270,7 @@ export const changePassword = async (request, response) => {
     }
 
     // 4. Find user
-    const user = await AdminModel.findById(userId);
+    const user = await AdminModel.findById(userId).select("+password");
 
     if (!user) {
       return response.status(404).json({
