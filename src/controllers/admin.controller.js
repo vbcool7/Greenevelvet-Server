@@ -378,6 +378,8 @@ export const forgotPassword = async (request, response) => {
             { new: true }
         );
 
+        console.log("updated", updated);
+
         if (!updated) {
             return response.status(429).json({
                 message: "OTP already generated. Please wait",
@@ -398,6 +400,8 @@ export const forgotPassword = async (request, response) => {
         try {
             await sendMail(email, "Password Reset OTP", html);
         } catch (err) {
+            console.log("email send error", err);
+
             await AdminModel.findByIdAndUpdate(admin._id, {
                 resetOtp: null,
                 otpExpiry: null
