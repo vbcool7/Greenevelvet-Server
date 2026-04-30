@@ -33,6 +33,10 @@ const AdminSchema = new mongoose.Schema({
         type: String,
         default: null
     },
+    otpResendTime: {
+        type: Date,
+        default: null
+    },
     otpAttempts: {
         type: Number,
         default: 0

@@ -349,10 +349,10 @@ export const forgotPassword = async (request, response) => {
             });
         }
 
-        // cooldown
-        if (admin.otpExpiry && admin.otpExpiry > Date.now()) {
+        // cooldown check (30 sec)
+        if (admin.otpResendTime && admin.otpResendTime > Date.now()) {
             return response.status(429).json({
-                message: "OTP already sent. Please wait",
+                message: "Please wait before requesting a new OTP",
                 success: false,
                 error: true
             });
@@ -361,6 +361,7 @@ export const forgotPassword = async (request, response) => {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const hashedOtp = await bcryptjs.hash(otp, 10);
         const expiry = Date.now() + 5 * 60 * 1000;
+        const resendCooldown = Date.now() + 30 * 1000; // 30 sec
 
         console.log("otp", otp);
 
@@ -375,6 +376,7 @@ export const forgotPassword = async (request, response) => {
             {
                 resetOtp: hashedOtp,
                 otpExpiry: expiry,
+                otpResendTime: resendCooldown,
                 otpAttempts: 0
             },
             { new: true }
@@ -419,7 +421,7 @@ export const forgotPassword = async (request, response) => {
         }
 
         return response.status(200).json({
-            message: "If account exists, OTP sent",
+            message: "OTP sent",
             success: true,
             error: false
         });
