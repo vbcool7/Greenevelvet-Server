@@ -190,7 +190,7 @@ export const getAdminDetails = async (request, response) => {
 // name update
 export const updateAdminName = async (request, response) => {
     try {
-        const { name } = request.body;
+        const { name, email } = request.body;
 
         // ❗ Validation
         if (!name || name.trim() === "") {
@@ -206,7 +206,7 @@ export const updateAdminName = async (request, response) => {
 
         const updatedAdmin = await AdminModel.findByIdAndUpdate(
             adminId,
-            { $set: { name: name.trim() } },
+            { $set: { name: name.trim(), email: email.trim() } },
             { new: true, runValidators: true }
         ).select("-password");
 
@@ -254,7 +254,7 @@ export const changePassword = async (request, response) => {
         // 2. New & confirm match
         if (newPassword !== confirmPassword) {
             return response.status(400).json({
-                message: "Passwords do not match",
+                message: "New and Cinfirm Passwords do not match",
                 success: false,
                 error: true
             });
@@ -325,6 +325,280 @@ export const changePassword = async (request, response) => {
         });
     }
 };
+
+// forgot passwor send otp
+export const forgotPassword = async (request, response) => {
+    try {
+        const { email } = request.body;
+
+        if (!email) {
+            return response.status(400).json({
+                message: "Email is required",
+                success: false,
+                error: true
+            });
+        }
+
+        const admin = await AdminModel.findOne({ email });
+
+        if (!admin) {
+            return response.status(200).json({
+                message: "If account exists, OTP sent",
+                success: true,
+                error: false
+            });
+        }
+
+        // cooldown
+        if (admin.otpExpiry && admin.otpExpiry > Date.now()) {
+            return response.status(429).json({
+                message: "OTP already sent. Please wait",
+                success: false,
+                error: true
+            });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const hashedOtp = await bcryptjs.hash(otp, 10);
+        const expiry = Date.now() + 5 * 60 * 1000;
+
+        const updated = await AdminModel.findOneAndUpdate(
+            {
+                email,
+                $or: [
+                    { otpExpiry: { $lte: Date.now() } },
+                    { otpExpiry: null }
+                ]
+            },
+            {
+                resetOtp: hashedOtp,
+                otpExpiry: expiry,
+                otpAttempts: 0
+            },
+            { new: true }
+        );
+
+        if (!updated) {
+            return response.status(429).json({
+                message: "OTP already generated. Please wait",
+                success: false,
+                error: true
+            });
+        }
+
+        const html = `
+        <div style="font-family:Arial;padding:10px">
+                <h2>Password Reset OTP</h2>
+                <p>Your OTP for password reset is:</p>
+                <h1 style="letter-spacing:6px;color:#000">${otp}</h1>
+                <p>This OTP is valid for <b>5 minutes</b>.</p>
+                <p>If you did not request this, please ignore this email.</p>
+            </div>
+`;
+        try {
+            await sendMail(email, "Password Reset OTP", html);
+        } catch (err) {
+            await AdminModel.findByIdAndUpdate(admin._id, {
+                resetOtp: null,
+                otpExpiry: null
+            });
+
+            return response.status(500).json({
+                message: "Failed to send OTP",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: "If account exists, OTP sent",
+            success: true,
+            error: false
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        return response.status(500).json({
+            message: "Something went wrong",
+            success: false,
+            error: true
+        });
+    }
+};
+
+// verify otp
+export const verifyOtp = async (request, response) => {
+    try {
+        const { email, otp } = request.body;
+
+        // 1. validation
+        if (!email || !otp) {
+            return response.status(400).json({
+                success: false,
+                message: "Email and OTP required"
+            });
+        }
+
+        // 2. find admin
+        const admin = await AdminModel.findOne({ email });
+
+        if (!admin || !admin.resetOtp) {
+            return response.status(400).json({
+                success: false,
+                message: "Invalid request"
+            });
+        }
+
+        // 3. expiry check (safe)
+        if (!admin.otpExpiry || admin.otpExpiry < Date.now()) {
+            return response.status(400).json({
+                success: false,
+                message: "OTP expired"
+            });
+        }
+
+        // 4. attempts limit check
+        if (admin.otpAttempts >= 5) {
+            return response.status(429).json({
+                success: false,
+                message: "Too many attempts. Try again later"
+            });
+        }
+
+        // 5. OTP match
+        const isMatch = await bcryptjs.compare(otp, admin.resetOtp);
+
+        // ❌ WRONG OTP
+        if (!isMatch) {
+            await AdminModel.updateOne(
+                { email },
+                { $inc: { otpAttempts: 1 } }
+            );
+
+            return response.status(400).json({
+                success: false,
+                message: "Invalid OTP"
+            });
+        }
+
+        // 6. SUCCESS → clear OTP (NO save used)
+        await AdminModel.updateOne(
+            { email },
+            {
+                $unset: {
+                    resetOtp: "",
+                    otpExpiry: ""
+                },
+                $set: {
+                    otpAttempts: 0
+                }
+            }
+        );
+
+        return response.status(200).json({
+            success: true,
+            message: "OTP verified successfully"
+        });
+
+    } catch (error) {
+        console.error("Verify OTP Error:", error);
+
+        return response.status(500).json({
+            success: false,
+            message: "Something went wrong"
+        });
+    }
+};
+
+// reset password
+export const resetPassword = async (request, response) => {
+    try {
+        const { email, newPassword, confirmPassword } = request.body;
+
+        // 1. validation
+        if (!email || !newPassword || !confirmPassword) {
+            return response.status(400).json({
+                message: "All fields are required",
+                success: false,
+                error: true
+            });
+        }
+
+        // 2. New & confirm match
+        if (newPassword !== confirmPassword) {
+            return response.status(400).json({
+                message: "New and Cinfirm Passwords do not match",
+                success: false,
+                error: true
+            });
+        }
+
+        // 3. Password strength
+        if (newPassword.length < 6) {
+            return response.status(400).json({
+                message: "Password must be at least 6 characters",
+                success: false,
+                error: true
+            });
+        }
+
+
+        // 4. find admin
+        const admin = await AdminModel.findOne({ email });
+
+        if (!admin) {
+            return response.status(400).json({
+                message: "Invalid request",
+                success: false,
+                error: true
+            });
+        }
+
+        // 5. security check → OTP must be verified already
+        if (admin.resetOtp || admin.otpExpiry) {
+            return response.status(403).json({
+                message: "OTP not verified",
+                success: false,
+                error: true
+            });
+        }
+
+        // 6. hash new password
+        const hashedPassword = await bcryptjs.hash(newPassword, 10);
+
+        // 7. update password + clear any leftover fields (NO save)
+        await AdminModel.updateOne(
+            { email },
+            {
+                $set: {
+                    password: hashedPassword
+                },
+                $unset: {
+                    resetOtp: "",
+                    otpExpiry: ""
+                },
+                $setOnInsert: {
+                    otpAttempts: 0
+                }
+            }
+        );
+
+        return response.status(200).json({
+            success: true,
+            message: "Password reset successfully"
+        });
+
+    } catch (error) {
+        console.error("Reset Password Error:", error);
+
+        return response.status(500).json({
+            success: false,
+            message: "Something went wrong"
+        });
+    }
+};
+
 
 //============================================================< Escorts >======================================================================
 

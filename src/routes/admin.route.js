@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { adminlogincontroller, adminlogoutcontroller, changePassword, deleteBlog, deleteClient, deleteEscortcontroller, deleteNewsandtour, deleteTour, fetchBlogDetails, fetchBlogs, fetchClientdetails, fetchClients, fetchEscortcontroller, fetchEscortdetailscontroller, fetchNewsandtourDetails, fetchNewsandtours, fetchTourDetails, fetchTours, getAdminDetails, updateAdminName, updateBlogStatus, updateClient, updateEscortcontroller, updateNewsandtourStatus, verifiedEscortcontroller } from '../controllers/admin.controller.js';
+import { adminlogincontroller, adminlogoutcontroller, changePassword, deleteBlog, deleteClient, deleteEscortcontroller, deleteNewsandtour, deleteTour, fetchBlogDetails, fetchBlogs, fetchClientdetails, fetchClients, fetchEscortcontroller, fetchEscortdetailscontroller, fetchNewsandtourDetails, fetchNewsandtours, fetchTourDetails, fetchTours, forgotPassword, getAdminDetails, resetPassword, updateAdminName, updateBlogStatus, updateClient, updateEscortcontroller, updateNewsandtourStatus, verifiedEscortcontroller, verifyOtp } from '../controllers/admin.controller.js';
 import { protect } from '../middleware/auth.js';
 
 const adminRouter = Router();
@@ -18,6 +18,10 @@ adminRouter.get("/get-account-details", protect(["Admin"]), getAdminDetails);
 adminRouter.patch("/update-name", protect(["Admin"]), updateAdminName);
 adminRouter.post("/change-password", protect(["Admin"]), changePassword);
 
+
+adminRouter.post("/send-otp", forgotPassword);
+adminRouter.post("/verify-otp", verifyOtp);
+adminRouter.post("/reset-password", resetPassword);
 // -----------------------------------------------------------------------------------------------------------------------------------
 
 // escorts fetch update and delete operation

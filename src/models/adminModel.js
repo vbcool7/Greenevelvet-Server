@@ -29,11 +29,15 @@ const AdminSchema = new mongoose.Schema({
         type: String,
         default: "Admin"
     },
-    forgotpassword: {
+    resetOtp: {
         type: String,
         default: null
     },
-    forgotpasswordexpiry: {
+    otpAttempts: {
+        type: Number,
+        default: 0
+    },
+    otpExpiry: {
         type: Date,
         default: null
     },
@@ -56,7 +60,6 @@ const AdminSchema = new mongoose.Schema({
     },
     last_login_date: {
         type: Date,
-        default: "",
     },
     onlineStatus: {
         type: Boolean,
