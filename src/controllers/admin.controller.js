@@ -368,10 +368,6 @@ export const forgotPassword = async (request, response) => {
         const updated = await AdminModel.findOneAndUpdate(
             {
                 email,
-                $or: [
-                    { otpExpiry: { $lte: Date.now() } },
-                    { otpExpiry: null }
-                ]
             },
             {
                 resetOtp: hashedOtp,
@@ -381,8 +377,6 @@ export const forgotPassword = async (request, response) => {
             },
             { new: true }
         );
-
-        console.log("updated", updated);
 
         if (!updated) {
             return response.status(429).json({
