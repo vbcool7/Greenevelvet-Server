@@ -362,6 +362,8 @@ export const forgotPassword = async (request, response) => {
         const hashedOtp = await bcryptjs.hash(otp, 10);
         const expiry = Date.now() + 5 * 60 * 1000;
 
+        console.log("otp", otp);
+
         const updated = await AdminModel.findOneAndUpdate(
             {
                 email,
@@ -388,7 +390,7 @@ export const forgotPassword = async (request, response) => {
             });
         }
 
-        const subject = "Password Reset OTP"; 
+        const subject = "Password Reset OTP";
 
         const html = `
         <div style="font-family:Arial;padding:10px">
