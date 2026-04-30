@@ -388,6 +388,8 @@ export const forgotPassword = async (request, response) => {
             });
         }
 
+        const subject = "Password Reset OTP"; 
+
         const html = `
         <div style="font-family:Arial;padding:10px">
                 <h2>Password Reset OTP</h2>
@@ -398,7 +400,7 @@ export const forgotPassword = async (request, response) => {
             </div>
 `;
         try {
-            await sendMail(email, "Password Reset OTP", html);
+            await sendMail(email, subject, html);
         } catch (err) {
             console.log("email send error", err);
 
