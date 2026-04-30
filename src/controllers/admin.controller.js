@@ -190,7 +190,7 @@ export const getAdminDetails = async (request, response) => {
 // name update
 export const updateAdminName = async (request, response) => {
     try {
-        const { name, email } = request.body;
+        const { name } = request.body;
 
         // ❗ Validation
         if (!name || name.trim() === "") {
@@ -206,7 +206,7 @@ export const updateAdminName = async (request, response) => {
 
         const updatedAdmin = await AdminModel.findByIdAndUpdate(
             adminId,
-            { $set: { name: name.trim(), email: email.trim() } },
+            { $set: { name: name.trim() } },
             { new: true, runValidators: true }
         ).select("-password");
 
