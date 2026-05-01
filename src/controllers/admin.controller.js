@@ -391,13 +391,13 @@ export const forgotPassword = async (request, response) => {
         const html = `
 <!DOCTYPE html>
 <html>
-<body style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,sans-serif;">
+<body style="margin:0;padding:0;background:#ffffff;font-family:Arial,sans-serif;">
 
 <table width="100%" cellpadding="0" cellspacing="0" style="padding:20px 0;">
 <tr>
 <td align="center">
 
-  <table width="100%" style="max-width:480px;background:#ffffff;border-radius:8px;padding:20px;">
+  <table width="100%" style="max-width:480px;background:#ffffff;border-radius:8px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
     
     <!-- Header -->
     <tr>
