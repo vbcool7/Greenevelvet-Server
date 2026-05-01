@@ -93,18 +93,14 @@ export async function registerEscortcontroller(request, response) {
             emailVerifyExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
         }
 
-        console.log("payload", payload);
 
         const newEscort = new EscortModel(payload)
         const save = await newEscort.save()
 
         console.log("newEscort", newEscort);
 
-        console.log("save", save);
 
         const verifyLink = `https://greene-velvet.onrender.com/escort/verify-email?token=${token}`
-
-        console.log("verifyLink", verifyLink);
 
         await sendVerificationEmail(normalizedEmail, verifyLink, escortId);
 
