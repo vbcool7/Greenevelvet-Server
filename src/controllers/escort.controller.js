@@ -48,9 +48,9 @@ export async function registerEscortcontroller(request, response) {
             })
         }
 
-        const normalizedEmail = email.toLowerCase();
+        const normalizedEmail = email.trim().toLowerCase();
 
-        const exstingEmail = await ClientModel.findOne({ normalizedEmail })
+        const exstingEmail = await ClientModel.findOne({ email: normalizedEmail })
 
         if (exstingEmail) {
             return response.status(409).json({
@@ -60,10 +60,10 @@ export async function registerEscortcontroller(request, response) {
             })
         }
 
-        const escort = await EscortModel.findOne({ normalizedEmail })
+        const escort = await EscortModel.findOne({ email: normalizedEmail })
 
         if (escort) {
-            return response.json({
+            return response.status(409).json({
                 message: "Already register email",
                 error: true,
                 success: false
@@ -106,9 +106,9 @@ export async function registerEscortcontroller(request, response) {
 
         console.log("verifyLink", verifyLink);
 
-        sendVerificationEmail(email, verifyLink);
+        await sendVerificationEmail(normalizedEmail, verifyLink);
 
-        return response.json({
+        return response.status(200).json({
             message: "Verification link sent to your email",
             error: false,
             success: true,
