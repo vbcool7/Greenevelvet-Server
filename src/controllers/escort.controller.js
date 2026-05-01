@@ -36,7 +36,7 @@ export async function registerEscortcontroller(request, response) {
 
         const { name, email, password, mobile, country, countryCode, city, account_classification, account_type, adverties_category } = request.body
 
-        const mobileEncrypted = "enc:" + encrypt(request.body.mobile);
+        const mobileEncrypted = "enc:" + encrypt(mobile);
 
         console.log(request.body);
 
@@ -48,17 +48,19 @@ export async function registerEscortcontroller(request, response) {
             })
         }
 
-        const exstingEmail = await ClientModel.findOne({ email })
+        const normalizedEmail = email.toLowerCase();
+
+        const exstingEmail = await ClientModel.findOne({ normalizedEmail })
 
         if (exstingEmail) {
-            return response.status(401).json({
+            return response.status(409).json({
                 message: "This email is already registered as Client, You cannot register as Escort with",
                 success: false,
                 error: true
             })
         }
 
-        const escort = await EscortModel.findOne({ email })
+        const escort = await EscortModel.findOne({ normalizedEmail })
 
         if (escort) {
             return response.json({
@@ -78,7 +80,7 @@ export async function registerEscortcontroller(request, response) {
         const payload = {
             escortId,
             name,
-            email,
+            email: normalizedEmail,
             password: hashPassword,
             mobile: mobileEncrypted,
             country,
@@ -91,10 +93,18 @@ export async function registerEscortcontroller(request, response) {
             emailVerifyExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
         }
 
+        console.log("payload", payload);
+
         const newEscort = new EscortModel(payload)
         const save = await newEscort.save()
 
+        console.log("newEscort", newEscort);
+
+        console.log("save", save);
+
         const verifyLink = `https://greene-velvet.onrender.com/escort/verify-email?token=${token}`
+
+        console.log("verifyLink", verifyLink);
 
         sendVerificationEmail(email, verifyLink);
 
@@ -110,6 +120,8 @@ export async function registerEscortcontroller(request, response) {
         })
 
     } catch (error) {
+        console.log("Reg error", error);
+
         return response.status(500).json({
             message: error.message || error,
             error: true,
@@ -1104,7 +1116,7 @@ export async function fetchescortServicescontroller(request, response) {
 // filter city escorts
 export async function fetchFiltercityescortscontroller(request, response) {
     try {
-        let filters = { ...request.query }; 
+        let filters = { ...request.query };
 
         // ✅ Boolean conversion
         for (const key in filters) {
