@@ -780,26 +780,147 @@ export async function updateEscortcontroller(request, response) {
             })
         }
 
+        const verifyHtml = `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background-color:#f9f9f9;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="padding:40px 0;">
+  <tr>
+    <td align="center">
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:460px;background:#ffffff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.05);border:1px solid #eeeeee;overflow:hidden;">
+        
+        <!-- Top Success Bar -->
+        <tr>
+          <td height="5" style="background-color:#00A68F;"></td>
+        </tr>
+
+        <!-- Header -->
+        <tr>
+          <td style="padding:35px 40px 10px 40px;text-align:center;">
+            <h1 style="margin:0;color:#00A68F;font-size:24px;font-weight:800;letter-spacing:1px;">
+              GREENE VELVET
+            </h1>
+          </td>
+        </tr>
+
+        <!-- Content -->
+        <tr>
+          <td style="padding:20px 40px 40px 40px;text-align:center;">
+            <div style="margin-bottom: 20px;">
+                <span style="font-size: 40px;">🎉</span>
+            </div>
+            <h2 style="margin:0 0 12px 0;color:#1a1a1a;font-size:22px;font-weight:600;">Welcome Aboard, ${escort.name}!</h2>
+            <p style="margin:0 0 25px 0;color:#555555;font-size:15px;line-height:22px;">
+              Great news! Your account has been <b>successfully verified</b> by our admin team. You now have full access to your dashboard and features.
+            </p>
+
+            <!-- Login Button -->
+            <div style="margin:30px 0;">
+              <a href="${verifyLink}" 
+                 style="display:inline-block; background-color:#00A68F; color:#ffffff; padding:16px 45px; font-size:16px; font-weight:700; text-decoration:none; border-radius:8px; box-shadow: 0 4px 12px rgba(0, 166, 143, 0.2);">
+                Login to Your Account
+              </a>
+            </div>
+
+            <p style="margin:20px 0 0 0; color:#888888; font-size:13px; line-height:20px;">
+              We are excited to have you with us. If you have any questions, feel free to reach out to our support team.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:25px 40px;background-color:#fcfcfc;border-top:1px solid #eeeeee;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#aaaaaa;line-height:18px;">
+              © ${new Date().getFullYear()} <b>Greene Velvet</b> Solutions. <br>
+              Empowering your professional journey.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+`;
+
+        const rejectedHtml = `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background-color:#f9f9f9;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="padding:40px 0;">
+  <tr>
+    <td align="center">
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:460px;background:#ffffff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.05);border:1px solid #eeeeee;overflow:hidden;">
+        
+        <!-- Subtle Red Top Bar (Indicates Action Required) -->
+        <tr>
+          <td height="5" style="background-color:#e74c3c;"></td>
+        </tr>
+
+        <!-- Header -->
+        <tr>
+          <td style="padding:35px 40px 10px 40px;text-align:center;">
+            <h1 style="margin:0;color:#00A68F;font-size:24px;font-weight:800;letter-spacing:1px;">
+              GREENE VELVET
+            </h1>
+          </td>
+        </tr>
+
+        <!-- Content -->
+        <tr>
+          <td style="padding:20px 40px 40px 40px;">
+            <h2 style="margin:0 0 12px 0;color:#1a1a1a;font-size:20px;font-weight:600;text-align:center;">Account Status Update</h2>
+            <p style="margin:0 0 20px 0;color:#555555;font-size:15px;line-height:22px;text-align:center;">
+              Hello <strong>${escort.name}</strong>, we reviewed your profile verification request. Unfortunately, it could not be approved at this time.
+            </p>
+
+            <!-- Reason Box -->
+            <div style="margin:25px 0;background-color:#fff5f5;border-left:4px solid #e74c3c;padding:15px 20px;">
+              <span style="display:block;font-size:12px;color:#e74c3c;font-weight:700;margin-bottom:5px;text-transform:uppercase;">Reason for Rejection:</span>
+              <p style="margin:0;color:#2d3436;font-size:15px;font-weight:500;">
+                ${reason || "Incomplete or unclear documentation provided."}
+              </p>
+            </div>
+
+            <p style="margin:20px 0 0 0; color:#888888; font-size:13px; line-height:20px; text-align:center;">
+              Please log in to your dashboard to update your information and re-submit your profile for review.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:25px 40px;background-color:#fcfcfc;border-top:1px solid #eeeeee;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#aaaaaa;line-height:18px;">
+              © ${new Date().getFullYear()} <b>Greene Velvet</b> Solutions. <br>
+              Need help? Please contact our support team.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+`;
+
         if (action === "Active") {
             updateData = {
                 isVerified: true,
                 status: "Active",
                 docsuploadStatus: "approved"
             };
-            const verifyLink = `http://localhost:5174/login`
+            const verifyLink = `https://www.greenevelvet.com/login`
 
             emailSubject = "Your account has been verified ✅ - GreeneVelvet";
-            emailHtml = `
-            <h2>Hello ${escort.name}</h2>
-            <p>Your account has been successfully verified by admin.</p>
-            <p>You can now login and start using your account.</p>
-            <a href="${verifyLink}" 
-            style="display:inline-block;padding:12px 20px;
-            background:#0a7cff;color:#fff;text-decoration:none;
-            border-radius:5px;">
-            Login
-            </a>
-            `;
+            emailHtml = verifyHtml;
         }
 
         else if (action === "Suspended") {
@@ -810,12 +931,8 @@ export async function updateEscortcontroller(request, response) {
                 reason
             };
 
-            emailSubject = "Your verification was rejected ❌ - GreeneVelvet";
-            emailHtml = `
-            <h2>Hello ${escort.name}</h2>
-            <p>Your verification was rejected.</p>
-            <p><b>Reason:</b> ${reason || "Incomplete documents"}</p>
-            `;
+            emailSubject = "Your verification was rejected - GreeneVelvet";
+            emailHtml = rejectedHtml;
         }
 
         else {
@@ -901,7 +1018,7 @@ export async function deleteEscortcontroller(request, response) {
     }
 }
 
-// verified escorts 
+// fecth verified escorts 
 export async function verifiedEscortcontroller(request, response) {
     try {
         const { role, isVerified } = request.query;
@@ -1032,6 +1149,140 @@ export async function updateClient(request, response) {
             })
         }
 
+        const verifyHtml = `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background-color:#f9f9f9;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="padding:40px 0;">
+  <tr>
+    <td align="center">
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:460px;background:#ffffff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.05);border:1px solid #eeeeee;overflow:hidden;">
+        
+        <!-- Header Success Bar -->
+        <tr>
+          <td height="5" style="background-color:#00A68F;"></td>
+        </tr>
+
+        <!-- Logo Section -->
+        <tr>
+          <td style="padding:35px 40px 10px 40px;text-align:center;">
+            <h1 style="margin:0;color:#00A68F;font-size:24px;font-weight:800;letter-spacing:1px;">
+              GREENE VELVET
+            </h1>
+          </td>
+        </tr>
+
+        <!-- Main Content -->
+        <tr>
+          <td style="padding:20px 40px 40px 40px;text-align:center;">
+            <div style="margin-bottom: 20px;">
+                <span style="font-size: 40px;">✅</span>
+            </div>
+            <h2 style="margin:0 0 12px 0;color:#1a1a1a;font-size:22px;font-weight:600;">Verification Approved!</h2>
+            <p style="margin:0 0 25px 0;color:#555555;font-size:15px;line-height:22px;">
+              Hello <strong>${client.name}</strong>, your account has been verified by the admin. You are now a verified member of <b>Greene Velvet</b>.
+            </p>
+
+            <!-- Login Action -->
+            <div style="margin:30px 0;">
+              <a href="${loginLink}" 
+                 style="display:inline-block; background-color:#00A68F; color:#ffffff; padding:16px 45px; font-size:16px; font-weight:700; text-decoration:none; border-radius:8px; box-shadow: 0 4px 12px rgba(0, 166, 143, 0.2);">
+                Login to Dashboard
+              </a>
+            </div>
+
+            <p style="margin:20px 0 0 0; color:#888888; font-size:13px; line-height:20px;">
+              You can now access all our premium services and features. Welcome to the community!
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:25px 40px;background-color:#fcfcfc;border-top:1px solid #eeeeee;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#aaaaaa;line-height:18px;">
+              © ${new Date().getFullYear()} <b>Greene Velvet</b> Solutions. <br>
+              Verified Partner Account
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+`;
+
+        const suspendHtml = `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background-color:#f9f9f9;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="padding:40px 0;">
+  <tr>
+    <td align="center">
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:460px;background:#ffffff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.05);border:1px solid #eeeeee;overflow:hidden;">
+        
+        <!-- Danger/Alert Top Bar -->
+        <tr>
+          <td height="5" style="background-color:#d63031;"></td>
+        </tr>
+
+        <!-- Brand Section -->
+        <tr>
+          <td style="padding:35px 40px 10px 40px;text-align:center;">
+            <h1 style="margin:0;color:#00A68F;font-size:24px;font-weight:800;letter-spacing:1px;">
+              GREENE VELVET
+            </h1>
+          </td>
+        </tr>
+
+        <!-- Main Content -->
+        <tr>
+          <td style="padding:20px 40px 40px 40px;">
+            <div style="text-align:center; margin-bottom:20px;">
+                <span style="font-size: 40px;">⚠️</span>
+            </div>
+            <h2 style="margin:0 0 12px 0;color:#1a1a1a;font-size:20px;font-weight:600;text-align:center;">Account Suspended</h2>
+            <p style="margin:0 0 20px 0;color:#555555;font-size:15px;line-height:22px;text-align:center;">
+              Hello <strong>${client.name}</strong>, this is to inform you that your account access has been suspended by our administration team.
+            </p>
+
+            <!-- Suspension Reason Box -->
+            <div style="margin:25px 0;background-color:#fff5f5;border:1px solid #fab1a0;border-radius:8px;padding:20px;">
+              <span style="display:block;font-size:12px;color:#d63031;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Reason for Suspension:</span>
+              <p style="margin:0;color:#2d3436;font-size:15px;font-weight:500;line-height:1.5;">
+                ${updateData.reason || "Violation of community guidelines or terms of service."}
+              </p>
+            </div>
+
+            <p style="margin:20px 0 0 0; color:#888888; font-size:13px; line-height:20px; text-align:center;">
+              While suspended, you will not be able to access your dashboard or services. If you believe this is a mistake, please contact our support desk.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:25px 40px;background-color:#fcfcfc;border-top:1px solid #eeeeee;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#aaaaaa;line-height:18px;">
+              © ${new Date().getFullYear()} <b>Greene Velvet</b> Solutions. <br>
+              Compliance & Security Department
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+`;
+
         let updateData = {};
         let emailSubject = "";
         let emailHtml = "";
@@ -1041,20 +1292,10 @@ export async function updateClient(request, response) {
                 status: "Active",
                 reason: ""
             };
-            const verifyLink = `http://localhost:5174/login`
+            const verifyLink = `https://www.greenevelvet.com/login`
 
             emailSubject = "Account Activated  ✅ - GreeneVelvet";
-            emailHtml = `
-            <h2>Hello ${client.name}</h2>
-            <p>Your account has been activated by admin.</p>
-            <p>You can now continue using the platform.</p>
-            <a href="${verifyLink}" 
-            style="display:inline-block;padding:12px 20px;
-            background:#0a7cff;color:#fff;text-decoration:none;
-            border-radius:5px;">
-            Login
-            </a>
-            `;
+            emailHtml = verifyHtml;
         }
 
         else if (action === "Suspended") {
@@ -1065,11 +1306,7 @@ export async function updateClient(request, response) {
             };
 
             emailSubject = "Account Suspended ❌ - GreeneVelvet";
-            emailHtml = `
-            <h2>Hello ${client.name}</h2>
-            <p>Your account has been suspended by admin.</p>
-            <p><b>Reason:</b> ${updateData.reason}</p>
-            `;
+            emailHtml = suspendHtml;
         }
 
         else {

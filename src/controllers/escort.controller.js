@@ -129,7 +129,7 @@ export async function verifyEmailcontroller(request, response) {
         });
 
         if (!escort) {
-            return response.redirect("http://localhost:5173/link-expired");
+            return response.redirect("https://www.greenevelvet.com/link-expired");
         }
 
         escort.isEmailVerified = true;
@@ -138,7 +138,7 @@ export async function verifyEmailcontroller(request, response) {
 
         await escort.save();
 
-        response.redirect("http://localhost:5173/confirmmobilenumber");
+        response.redirect("https://www.greenevelvet.com/confirmmobilenumber");
 
 
     } catch (error) {
