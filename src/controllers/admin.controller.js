@@ -391,66 +391,62 @@ export const forgotPassword = async (request, response) => {
         const html = `
 <!DOCTYPE html>
 <html>
-<body style="margin:0;padding:0;background:#ffffff;font-family:Arial,sans-serif;">
+<body style="margin:0;padding:0;background-color:#f9f9f9;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
 
-<table width="100%" cellpadding="0" cellspacing="0" style="padding:20px 0;">
-<tr>
-<td align="center">
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="padding:40px 0;">
+  <tr>
+    <td align="center">
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:460px;background:#ffffff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.05);border:1px solid #eeeeee;overflow:hidden;">
+        
+        <!-- Header Decor -->
+        <tr>
+          <td height="5" style="background-color:#00A68F;"></td>
+        </tr>
 
-  <table width="100%" style="max-width:480px;background:#ffffff;border-radius:8px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
-    
-    <!-- Header -->
-    <tr>
-      <td style="text-align:center;padding-bottom:10px;">
-        <h2 style="margin:0;color:#0a7cff;">GREENE VELVET</h2>
-      </td>
-    </tr>
+        <!-- Logo Section -->
+        <tr>
+          <td style="padding:35px 40px 10px 40px;text-align:center;">
+            <h1 style="margin:0;color:#00A68F;font-size:24px;font-weight:800;letter-spacing:1px;">
+              GREENE VELVET
+            </h1>
+          </td>
+        </tr>
 
-    <!-- Content -->
-    <tr>
-      <td style="color:#333;">
-        <h3>Password Reset OTP</h3>
-        <p style="font-size:14px;">
-          Use the OTP below to reset your password:
-        </p>
+        <!-- Content -->
+        <tr>
+          <td style="padding:20px 40px 40px 40px;text-align:center;">
+            <h2 style="margin:0 0 12px 0;color:#1a1a1a;font-size:20px;font-weight:600;">Verification Code</h2>
+            <p style="margin:0;color:#555555;font-size:15px;line-height:22px;">
+              Please use the one-time password (OTP) below to securely sign in or reset your password.
+            </p>
 
-        <!-- OTP Box -->
-        <div style="text-align:center;margin:20px 0;">
-          <span style="
-            display:inline-block;
-            font-size:26px;
-            letter-spacing:6px;
-            font-weight:bold;
-            color:#0a7cff;
-            background:#eef5ff;
-            padding:12px 20px;
-            border-radius:6px;
-          ">
-            ${otp}
-          </span>
-        </div>
+            <!-- OTP Highlight -->
+            <div style="margin:30px 0;background-color:#f0faf9;border-radius:10px;padding:20px;border:1px solid #d1efea;">
+              <span style="display:block;font-size:12px;color:#00A68F;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Your OTP Code</span>
+              <span style="font-family:'Courier New',Courier,monospace;font-size:38px;font-weight:bold;color:#00A68F;letter-spacing:10px;">
+                ${otp}
+              </span>
+            </div>
 
-        <p style="font-size:14px;">
-          This OTP is valid for <b>5 minutes</b>.
-        </p>
+            <p style="margin:0;color:#888888;font-size:13px;">
+              This code is valid for <b style="color:#333;">5 minutes</b>. <br>
+              Security Note: Never share this code with anyone.
+            </p>
+          </td>
+        </tr>
 
-        <p style="font-size:12px;color:#777;">
-          If you did not request this, you can safely ignore this email.
-        </p>
-      </td>
-    </tr>
-
-    <!-- Footer -->
-    <tr>
-      <td style="text-align:center;font-size:12px;color:#999;padding-top:15px;">
-        © ${new Date().getFullYear()} GreeneVelvet
-      </td>
-    </tr>
-
-  </table>
-
-</td>
-</tr>
+        <!-- Footer -->
+        <tr>
+          <td style="padding:25px 40px;background-color:#fcfcfc;border-top:1px solid #eeeeee;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#aaaaaa;line-height:18px;">
+              &copy; ${new Date().getFullYear()} <b>Greene Velvet</b> Solutions. <br>
+              Automatic security email, please do not reply.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
 </table>
 
 </body>
