@@ -1,44 +1,46 @@
-import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-});
-
+// ✅ Email validator (same)
 const isValidEmail = (email) =>
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+// ✅ Set API Key
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 export const sendVerificationEmail = async (email, link) => {
 
-    if (!isValidEmail(email)) {
-        console.log(`Invalid email format: ${email} - skipping`);
-        return;
-    }
+  if (!isValidEmail(email)) {
+    console.log(`Invalid email format: ${email} - skipping`);
+    return;
+  }
 
-    try {
-        await transporter.sendMail({
-            from: `"GREENE VELVET" <${process.env.EMAIL_USER}>`,
-            to: email,
-            subject: "Complete My Registration - GreeneVelvet",
-            html: `
+  try {
+    const msg = {
+      to: email,
+      from: `"GREENE VELVET" <${process.env.SENDER_EMAIL}>`, // verified sender
+      subject: "Complete My Registration - GreeneVelvet",
+      html: `
         <h2>Please Confirm Your Email Address</h2>
         <p>Thank you for registering with GreeneVelvet.</p>
         <p>Click the button below to complete your registration:</p>
         <a href="${link}" 
-         style="display:inline-block;padding:12px 20px;
-         background:#0a7cff;color:#fff;text-decoration:none;
-         border-radius:5px;">
-         Complete My Registration
-      </a>
-      <p>If you can't find the email, check your spam folder for Greenvelvet.com.au</p>`
+          style="display:inline-block;padding:12px 20px;
+          background:#0a7cff;color:#fff;text-decoration:none;
+          border-radius:5px;">
+          Complete My Registration
+        </a>
+        <p>If you can't find the email, check your spam folder.</p>
+      `
+    };
 
-        });
-        console.log(`Verification email sent to ${email}`);
+    await sgMail.send(msg);
 
-    } catch (error) {
-        console.error(`Email not sent to ${email}:`, error.message);
-    }
-}
+    console.log(`Verification email sent to ${email}`);
+
+  } catch (error) {
+    console.error(
+      `Email not sent to ${email}:`,
+      error.response?.body || error.message
+    );
+  }
+};

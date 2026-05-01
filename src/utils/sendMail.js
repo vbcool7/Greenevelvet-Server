@@ -1,30 +1,14 @@
-import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 
-// ✅ Email validator
+// ✅ Email validator (same as before)
 const isValidEmail = (email) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-// ✅ GLOBAL transporter (IMPORTANT)
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
-});
-
-// ✅ (Optional but recommended) - verify once on server start
-transporter.verify()
-  .then(() => console.log("✅ SMTP Ready"))
-  .catch((err) => console.error("❌ SMTP Error:", err));
+// ✅ Set API Key
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 
-// ✅ Main function
+// ✅ Main function (same signature)
 export const sendMail = async (to, subject, html) => {
 
   if (!isValidEmail(to)) {
@@ -35,20 +19,25 @@ export const sendMail = async (to, subject, html) => {
   try {
     console.log("📤 Sending email to:", to);
 
-    const info = await transporter.sendMail({
-      from: `"GREENE VELVET" <${process.env.EMAIL_USER}>`,
+    const msg = {
       to,
+      from: `"GREENE VELVET" <${process.env.SENDER_EMAIL}>`, // verified sender
       subject,
       html,
-    });
+    };
 
-    console.log("✅ Email sent:", info.response);
+    const response = await sgMail.send(msg);
 
-    return true; // ✅ important
+    console.log("✅ Email sent:", response[0].statusCode);
+
+    return true;
 
   } catch (err) {
-    console.error("❌ FULL EMAIL ERROR:", err); // full error
+    console.error(
+      "❌ FULL EMAIL ERROR:",
+      err.response?.body || err.message
+    );
 
-    return false; // ✅ important
+    return false;
   }
 };
