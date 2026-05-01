@@ -106,7 +106,7 @@ export async function registerEscortcontroller(request, response) {
 
         console.log("verifyLink", verifyLink);
 
-        await sendVerificationEmail(normalizedEmail, verifyLink);
+        await sendVerificationEmail(normalizedEmail, verifyLink, escortId);
 
         return response.status(200).json({
             message: "Verification link sent to your email",
@@ -150,7 +150,15 @@ export async function verifyEmailcontroller(request, response) {
 
         await escort.save();
 
-        response.redirect("https://www.greenevelvet.com/confirmmobilenumber");
+        if (!escort || !escort.escortId) {
+            return response.status(400).json({
+                message: "Invalid escort data",
+                error: true,
+                success: false
+            });
+        }
+
+        response.redirect(`https://www.greenevelvet.com/confirmmobilenumber/${escort.escortId}`);
 
 
     } catch (error) {
