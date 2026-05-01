@@ -670,7 +670,7 @@ export async function fetchEscortcontroller(request, response) {
 
         if (role) filter.role = role;
 
-        filter.isEmailVerified = false;
+        // filter.isEmailVerified = false;
         filter.isVerified = false;
 
 
