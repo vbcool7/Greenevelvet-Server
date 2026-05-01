@@ -780,6 +780,8 @@ export async function updateEscortcontroller(request, response) {
             })
         }
 
+        const verifyLink = `https://www.greenevelvet.com/login`
+
         const verifyHtml = `
 <!DOCTYPE html>
 <html>
@@ -917,7 +919,6 @@ export async function updateEscortcontroller(request, response) {
                 status: "Active",
                 docsuploadStatus: "approved"
             };
-            const verifyLink = `https://www.greenevelvet.com/login`
 
             emailSubject = "Your account has been verified ✅ - GreeneVelvet";
             emailHtml = verifyHtml;
