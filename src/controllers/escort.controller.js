@@ -104,7 +104,7 @@ export async function registerEscortcontroller(request, response) {
             success: true,
             data: {
                 escortId: save.escortId,
-                mobile: save.mobile,
+                mobile: mobile,
                 email: save.email,
             }
         })
