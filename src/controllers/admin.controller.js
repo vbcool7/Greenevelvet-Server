@@ -190,7 +190,7 @@ export const getAdminDetails = async (request, response) => {
 // name update
 export const updateAdminName = async (request, response) => {
     try {
-        const { name} = request.body;
+        const { name } = request.body;
 
         // ❗ Validation
         if (!name || name.trim() === "") {
@@ -674,6 +674,21 @@ export async function fetchEscortdetailscontroller(request, response) {
                 error: true
             });
         }
+
+        let mobile = escort.mobile;
+
+        try {
+            if (mobile?.startsWith("enc:")) {
+                mobile = decrypt(mobile.replace("enc:", ""));
+            } else {
+                mobile = decrypt(mobile);
+            }
+        } catch {
+            mobile = "";
+        }
+
+        escort.mobile = mobile;
+
 
         return response.status(200).json({
             message: "Escort details fetched",
