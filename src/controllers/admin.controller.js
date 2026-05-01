@@ -389,13 +389,72 @@ export const forgotPassword = async (request, response) => {
         const subject = "Password Reset OTP";
 
         const html = `
-        <div style="font-family:Arial;padding:10px">
-                <h2>Password Reset OTP</h2>
-                <p>Your OTP for password reset is:</p>
-                <h1 style="letter-spacing:6px;color:#000">${otp}</h1>
-                <p>This OTP is valid for <b>5 minutes</b>.</p>
-                <p>If you did not request this, please ignore this email.</p>
-            </div>
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,sans-serif;">
+
+<table width="100%" cellpadding="0" cellspacing="0" style="padding:20px 0;">
+<tr>
+<td align="center">
+
+  <table width="100%" style="max-width:480px;background:#ffffff;border-radius:8px;padding:20px;">
+    
+    <!-- Header -->
+    <tr>
+      <td style="text-align:center;padding-bottom:10px;">
+        <h2 style="margin:0;color:#0a7cff;">GREENE VELVET</h2>
+      </td>
+    </tr>
+
+    <!-- Content -->
+    <tr>
+      <td style="color:#333;">
+        <h3>Password Reset OTP</h3>
+        <p style="font-size:14px;">
+          Use the OTP below to reset your password:
+        </p>
+
+        <!-- OTP Box -->
+        <div style="text-align:center;margin:20px 0;">
+          <span style="
+            display:inline-block;
+            font-size:26px;
+            letter-spacing:6px;
+            font-weight:bold;
+            color:#0a7cff;
+            background:#eef5ff;
+            padding:12px 20px;
+            border-radius:6px;
+          ">
+            ${otp}
+          </span>
+        </div>
+
+        <p style="font-size:14px;">
+          This OTP is valid for <b>5 minutes</b>.
+        </p>
+
+        <p style="font-size:12px;color:#777;">
+          If you did not request this, you can safely ignore this email.
+        </p>
+      </td>
+    </tr>
+
+    <!-- Footer -->
+    <tr>
+      <td style="text-align:center;font-size:12px;color:#999;padding-top:15px;">
+        © ${new Date().getFullYear()} GreeneVelvet
+      </td>
+    </tr>
+
+  </table>
+
+</td>
+</tr>
+</table>
+
+</body>
+</html>
 `;
         try {
             await sendMail(email, subject, html);
