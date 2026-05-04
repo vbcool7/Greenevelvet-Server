@@ -30,6 +30,7 @@ export async function loginUsercontroller(request, response) {
         let user = await EscortModel.findOne({ email }).select("+password");
         let role = "Escort";
 
+
         // 🔍 If not Escort → check Client
         if (!user) {
             user = await ClientModel.findOne({ email }).select("+password");
@@ -43,6 +44,8 @@ export async function loginUsercontroller(request, response) {
                 error: true
             });
         }
+
+        let _id = user?._id;
 
         // ⚠️ Status check 
         if (user.status !== "Active") {
