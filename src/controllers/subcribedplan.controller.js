@@ -54,23 +54,23 @@ export const createTransaction = async (request, response) => {
             parties: [
                 {
                     role: "buyer",
-                    customer: { email: email }
+                    customer: email
                 },
                 {
                     role: "seller",
-                    customer: { email: "greenevelvets@gmail.com" }
+                    customer: "greenevelvets@gmail.com"
                 }
             ],
             items: [
                 {
                     title: plan.title,
                     description: plan.duration,
-                    type: "service",
-                    inspection_period: 0, // fast release
+                    type: "milestone",
+                    inspection_period: 86400, // fast release
                     quantity: 1,
                     schedule: [
                         {
-                            amount: plan.amount,
+                            amount: Number(plan.amount).toFixed(2),
                             payer_customer: "buyer",
                             beneficiary_customer: "seller"
                         }
