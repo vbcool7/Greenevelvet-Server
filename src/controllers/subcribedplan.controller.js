@@ -8,7 +8,7 @@ import SubscriptionModel from "../models/subscriptionModel.js";
 export const createTransaction = async (request, response) => {
     try {
 
-        const userId = request?.user?._id; 
+        const userId = request?.user?._id;
         const { planId } = request?.body;
 
         // ✅ Basic validation
@@ -65,8 +65,8 @@ export const createTransaction = async (request, response) => {
             txnData,
             {
                 auth: {
-                    username: process.env.ESCROW_API_KEY,
-                    password: ""
+                    username: process.env.ESCROW_EMAIL,
+                    password: process.env.ESCROW_API_KEY
                 }
             }
         );
