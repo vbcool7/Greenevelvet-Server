@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { checkSubscription, createTransaction, escrowWebhook } from "../controllers/subcribedplan.controller";
+import { checkSubscription, createTransaction, escrowWebhook } from "../controllers/subcribedplan.controller.js";
 
 const subcribedRouter = Router();
 
