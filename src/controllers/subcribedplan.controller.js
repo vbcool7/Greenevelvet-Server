@@ -49,25 +49,25 @@ export const createTransaction = async (request, response) => {
         const txnData = {
             description: `Subscription - ${plan.title}`,
             currency: "aud",
+            action: "create",
+            return_url: "https://greenevelvets.com/payment-success",
             parties: [
                 {
                     role: "buyer",
-                    customer: {
-                        email: email // Escort email
-                    }
+                    customer: { email: email }
                 },
                 {
                     role: "seller",
-                    customer: {
-                        email: "greenevelvets@gmail.com" // 👈 admin email
-                    }
+                    customer: { email: "greenevelvets@gmail.com" }
                 }
             ],
             items: [
                 {
                     title: plan.title,
                     description: plan.duration,
-                    type: "general_merchandise",
+                    type: "service",
+                    inspection_period: 0, // fast release
+                    quantity: 1,
                     schedule: [
                         {
                             amount: plan.amount,
@@ -118,8 +118,8 @@ export const createTransaction = async (request, response) => {
         });
 
     } catch (error) {
-        console.log("CATCH ERROR:", error?.response?.data || error.message);
-
+        console.log("CATCH ERROR:", error?.response?.data?.message || error.message);
+        console.log("DETAILED ERROR:", JSON.stringify(error?.response?.data, null, 2));
         return response.status(500).json({
             message: "Failed to create transaction",
             success: false,
