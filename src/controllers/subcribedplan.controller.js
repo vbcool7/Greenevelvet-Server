@@ -22,9 +22,6 @@ export const createTransaction = async (request, response) => {
 
         const escort = await EscortModel.findById(userId);
 
-        console.log("escort", escort);
-
-        console.log("process.env.ESCROW_EMAIL", process.env.ESCROW_EMAIL);
 
         let email = escort?.email;
 
@@ -58,7 +55,7 @@ export const createTransaction = async (request, response) => {
             parties: [
                 {
                     role: "buyer",
-                    customer: escort.email,
+                    customer: process.env.ESCROW_EMAIL,
                 },
                 {
                     role: "seller",
@@ -97,7 +94,7 @@ export const createTransaction = async (request, response) => {
         // ✅  create record in DB
         const newSub = await subcribedModel.create({
             userId,
-            planId: plan.planId,
+            planId: plan._id,
             title: plan.title,
             duration: plan.duration,
             originalPrice: plan.originalPrice,
