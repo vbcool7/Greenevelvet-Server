@@ -22,6 +22,10 @@ export const createTransaction = async (request, response) => {
 
         const escort = await EscortModel.findById(userId);
 
+        console.log("escort", escort);
+
+        console.log("process.env.ESCROW_EMAIL", process.env.ESCROW_EMAIL);
+
         let email = escort?.email;
 
         // ✅ validation
@@ -54,11 +58,11 @@ export const createTransaction = async (request, response) => {
             parties: [
                 {
                     role: "buyer",
-                    customer: { email: escort.email },
+                    customer: escort.email,
                 },
                 {
                     role: "seller",
-                    customer: { email: process.env.ESCROW_EMAIL },
+                    customer: process.env.ESCROW_EMAIL,
                 }
             ],
             items: [
