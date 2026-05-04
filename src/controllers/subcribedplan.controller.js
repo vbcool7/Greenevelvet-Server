@@ -70,7 +70,7 @@ export const createTransaction = async (request, response) => {
                     quantity: 1,
                     schedule: [
                         {
-                            amount: Number(plan.amount).toFixed(2),
+                            amount: Number(plan.discountedPrice).toFixed(2),
                             payer_customer: "buyer",
                             beneficiary_customer: "seller"
                         }
@@ -98,7 +98,7 @@ export const createTransaction = async (request, response) => {
             duration: plan.duration,
             originalPrice: plan.originalPrice,
             discountedPrice: plan.discountedPrice,
-            amount: plan.amount,
+            amount: plan.discountedPrice,
             currency: "AUD",
             escrowTransactionId: escrowRes.data.id,
             status: "pending"
