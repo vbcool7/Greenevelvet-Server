@@ -92,13 +92,12 @@ export const createTransaction = async (request, response) => {
         );
 
         console.log("ESCROW FULL RESPONSE:", escrowRes.data);
-        const paymentUrl = escrowRes.data.landing_page;
 
         // ✅  create record in DB
         const newSub = await subcribedModel.create({
             userId,
             planId: plan._id,
-            planName:plan.title,
+            planName: plan.title,
             title: plan.title,
             duration: plan.duration,
             originalPrice: plan.originalPrice,
@@ -114,6 +113,16 @@ export const createTransaction = async (request, response) => {
             $push: { subscribedplans: newSub._id }
         });
 
+        const buyerParty = escrowRes.data.parties.find(p => p.role === 'buyer');
+        const paymentUrl = buyerParty ? buyerParty.next_step : null;
+
+        if (!paymentUrl) {
+            return response.status(400).json({
+                message: "Payment link (next_step) not found in Escrow response",
+                success: false,
+                error: true
+            });
+        }
         return response.status(200).json({
             message: "Transaction created successfully",
             success: true,
