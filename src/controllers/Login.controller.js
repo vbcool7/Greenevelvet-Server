@@ -65,7 +65,8 @@ export async function loginUsercontroller(request, response) {
 
         const payload = {
             userId: role === "Escort" ? user.escortId : user.clientId,
-            role: role
+            role: role,
+            _id: _id
         };
 
         // Generate token
