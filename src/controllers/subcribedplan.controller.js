@@ -72,8 +72,8 @@ export const createTransaction = async (request, response) => {
                     schedule: [
                         {
                             amount: Number(plan.discountedPrice).toFixed(2),
-                            payer_customer: "buyer",
-                            beneficiary_customer: "seller"
+                            payer_customer: escort.email,
+                            beneficiary_customer: process.env.ESCROW_EMAIL,
                         }
                     ]
                 }
