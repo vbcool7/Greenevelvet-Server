@@ -95,6 +95,7 @@ export const createTransaction = async (request, response) => {
         const newSub = await subcribedModel.create({
             userId,
             planId: plan._id,
+            planName:plan.title,
             title: plan.title,
             duration: plan.duration,
             originalPrice: plan.originalPrice,
