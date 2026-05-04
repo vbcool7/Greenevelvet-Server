@@ -54,11 +54,11 @@ export const createTransaction = async (request, response) => {
             parties: [
                 {
                     role: "buyer",
-                    customer: email
+                    customer: escort.email,
                 },
                 {
                     role: "seller",
-                    customer: "greenevelvets@gmail.com"
+                    customer: process.env.ESCROW_EMAIL,
                 }
             ],
             items: [
