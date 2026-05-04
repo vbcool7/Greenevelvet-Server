@@ -91,6 +91,9 @@ export const createTransaction = async (request, response) => {
             }
         );
 
+        console.log("ESCROW FULL RESPONSE:", escrowRes.data);
+        const paymentUrl = escrowRes.data.landing_page;
+
         // ✅  create record in DB
         const newSub = await subcribedModel.create({
             userId,
@@ -116,7 +119,8 @@ export const createTransaction = async (request, response) => {
             success: true,
             error: false,
             escrowTransactionId: escrowRes.data.id,
-            transaction: newSub
+            transaction: newSub,
+            paymentUrl: paymentUrl,
         });
 
     } catch (error) {
