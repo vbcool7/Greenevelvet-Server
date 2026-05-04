@@ -20,6 +20,10 @@ export const createTransaction = async (request, response) => {
             });
         }
 
+        const escort = await EscortModel.findById(userId);
+
+        let email = escort?.email;
+
         // ✅ validation
         if (!planId) {
             return response.status(400).json({
@@ -45,10 +49,25 @@ export const createTransaction = async (request, response) => {
         const txnData = {
             description: `Subscription - ${plan.title}`,
             currency: "aud",
+            parties: [
+                {
+                    role: "buyer",
+                    customer: {
+                        email: email // Escort email
+                    }
+                },
+                {
+                    role: "seller",
+                    customer: {
+                        email: "greenevelvets@gmail.com" // 👈 admin email
+                    }
+                }
+            ],
             items: [
                 {
                     title: plan.title,
                     description: plan.duration,
+                    type: "general_merchandise",
                     schedule: [
                         {
                             amount: plan.amount,
