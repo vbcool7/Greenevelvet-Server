@@ -10,6 +10,11 @@ const EscortplanSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+
+    planId: {
+        type: String
+    },
+
     plan: {
         type: String,
         required: true
@@ -31,14 +36,15 @@ const EscortplanSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
-    startDate: Date,
-    endDate: Date,
 
+    escrowTransactionId: {
+        type: String,
+    },
 
-    billingcadence: String,
-    namecard: String,
-    billingaddress: String,
-    paymentmethod: String
+    paymentStatus: {
+        type: String,
+        enum: ["pending", "success", "failed"],
+    },
 
 }, { timestamps: true }
 );

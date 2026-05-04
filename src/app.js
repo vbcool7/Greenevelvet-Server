@@ -10,6 +10,7 @@ import cmsRouter from "./routes/cms.route.js";
 import subscriptionRouter from "./routes/subscription.route.js";
 import contactRouter from "./routes/contact.route.js";
 import settingsRouter from "./routes/settigns.route.js";
+import subcribedRouter from "./routes/subcribedplan.route.js";
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.use('/cms', cmsRouter);
 app.use('/subscription', subscriptionRouter);
 app.use('/contact', contactRouter);
 app.use('/settings', settingsRouter);
+app.use('/escrow', subcribedRouter);
 
 /* Global Error Handler */
 app.use((err, req, res, next) => {

@@ -198,10 +198,16 @@ const EscortSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    subscriptionplan: [
+
+    subscriptionStatus: {
+        type: String,
+        default: "inactive"
+    },
+
+    subscribedplans: [
         {
             type: mongoose.Schema.ObjectId,
-            ref: "subscriptionplan"
+            ref: "subcribedplans"
         }
     ],
     subscriptionplanexpiry: {
