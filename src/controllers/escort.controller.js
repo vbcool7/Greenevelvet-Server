@@ -704,6 +704,50 @@ export async function uploadAvatarcontroller(request, response) {
 
 }
 
+export async function toggleFaceBlur(request, response) {
+    try {
+        const userId = request.user?._id;
+
+        if (!userId) {
+            return response.status(401).json({
+                message: "Unauthorized",
+                success: false,
+                error: true
+            });
+        }
+
+        const escort = await EscortModel.findById(userId);
+
+        if (!escort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+        // 🔁 Toggle
+        escort.isFaceBlurred = !escort.isFaceBlurred;
+        await escort.save();
+
+        return response.status(200).json({
+            success: true,
+            message: `Face blur ${escort.isFaceBlurred ? "enabled" : "disabled"}`,
+            isFaceBlurred: escort.isFaceBlurred,
+            error: false
+        });
+
+    } catch (error) {
+        console.log("Toggle error", error);
+
+        return response.status(500).json({
+            message: error.message,
+            success: false,
+            error: true
+        });
+    }
+}
+
 // upload gallery images
 export async function uploadImagescontroller(request, response) {
     try {

@@ -316,6 +316,10 @@ const EscortSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    isFaceBlurred: {
+        type: Boolean,
+        default: false
+    },
     gallery: {
         photos: [
             {
