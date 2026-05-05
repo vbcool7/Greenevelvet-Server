@@ -81,7 +81,7 @@ export const createTransaction = async (request, response) => {
         };
 
         const escrowRes = await axios.post(
-            "https://api.escrow.com/2017-09-01/transaction",
+            ESCROW_API_URL,
             txnData,
             {
                 auth: {
