@@ -64,6 +64,7 @@ export const createUglyMug = async (request, response) => {
 
         const newEntry = await UglyMugsModel.create({
             reportedBy: userId,
+            clientName: clientName.trim(),
             clientPhone: clientPhone.trim(),
             clientEmail: clientEmail.trim(),
             reason: reason.trim(),
