@@ -5,7 +5,7 @@ import { protect } from '../middleware/auth.js';
 
 const uglymugsRouter = Router();
 
-uglymugsRouter.post("/create-uglymug", createUglyMug);
+uglymugsRouter.post("/create-uglymug", protect(["Escort"]), createUglyMug);
 uglymugsRouter.get("/all-uglymugs", getAllUglyMugsAdmin);
 uglymugsRouter.get("/active-uglymugs", getAllUglyMugsEscorts);
 uglymugsRouter.get("/my-uglymugs", protect(["Escort"]), getMyUglyMugs);
