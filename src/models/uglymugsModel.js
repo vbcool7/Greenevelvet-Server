@@ -7,12 +7,14 @@ const UglyMugsSchema = new mongoose.Schema({
         ref: 'Escort',
         required: true
     },
-
     clientId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Client'
     },
-
+    clientName: {
+        type: String,
+        trim: true
+    },
     clientPhone: {
         type: String,
         required: true,
@@ -24,7 +26,6 @@ const UglyMugsSchema = new mongoose.Schema({
         lowercase: true,
         trim: true
     },
-
     incidentType: {
         type: String,
         enum: ['Non-payment', 'Aggressive Behavior', 'Time Waster', 'Fake Profile', 'Other'],
@@ -34,28 +35,34 @@ const UglyMugsSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-
     reason: {
         type: String,
         required: true,
         maxLength: 1000
     },
-
-    evidence: [{
+    country: {
         type: String
-    }],
+    },
+    city: {
+        type: String
+    },
     location: {
         type: String
     },
-    isVerifiedEntry: {
+    isActive: {
         type: Boolean,
-        default: false
+        default: true
     },
-    status: {
+    adminRemark: {
         type: String,
-        enum: ['Pending', 'Confirmed', 'Rejected'],
-        default: 'Pending'
-    }
+        trim: true,
+    },
+    actionBy: {
+        type: String,
+    },
+    actionAt: {
+        type: Date,
+    },
 }, { timestamps: true });
 
 UglyMugsSchema.index({ clientPhone: 1, clientEmail: 1 });
