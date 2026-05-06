@@ -46,8 +46,8 @@ export const createUglyMug = async (request, response) => {
                 : value;
         };
 
-        const city = normalizeText(city);
-        const country = normalizeText(country);
+        const formattedCity = normalizeText(city);
+        const formattedCountry = normalizeText(country);
 
         const existing = await UglyMugsModel.findOne({
             reportedBy: userId,
@@ -68,8 +68,8 @@ export const createUglyMug = async (request, response) => {
             clientEmail: clientEmail.trim(),
             reason: reason.trim(),
             incidentType,
-            city: city,
-            country: country,
+            city: formattedCity,
+            country: formattedCountry,
             location: location.trim(),
         });
 
