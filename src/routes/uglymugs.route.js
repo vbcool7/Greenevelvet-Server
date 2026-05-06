@@ -9,7 +9,7 @@ uglymugsRouter.post("/create-uglymug", protect(["Escort"]), createUglyMug);
 uglymugsRouter.get("/all-uglymugs", getAllUglyMugsAdmin);
 uglymugsRouter.get("/active-uglymugs", getAllUglyMugsEscorts);
 uglymugsRouter.get("/my-uglymugs", protect(["Escort"]), getMyUglyMugs);
-uglymugsRouter.get("/check-client-risk", checkClientRisk);
+uglymugsRouter.post("/check-client-risk", checkClientRisk);
 uglymugsRouter.patch("/update-uglymug", protect(["Admin"]), updateUglyMug);
 uglymugsRouter.delete("/delete-uglymug", deleteUglyMug);
 
