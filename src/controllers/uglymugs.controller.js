@@ -6,7 +6,7 @@ export const createUglyMug = async (request, response) => {
     try {
         const userId = request.user?._id;
 
-        const { clientName, clientPhone, clientEmail, reason, incidentType, location, city, country } = request.body;
+        const { clientName, clientPhone, clientEmail, reason, incidentType, incidentDate, location, city, country } = request.body;
 
         if (!userId) {
             return response.status(400).json({
@@ -16,9 +16,9 @@ export const createUglyMug = async (request, response) => {
             });
         }
 
-        if (!clientName || !clientPhone || !reason || !location || !incidentType) {
+        if (!clientName || !clientPhone || !reason || !location || !incidentType || !incidentDate) {
             return response.status(400).json({
-                message: "clientPhone, reason, location and incidentType are required.",
+                message: "clientPhone, reason, location, incidentDate and incidentType are required.",
                 success: false,
                 error: true
             });

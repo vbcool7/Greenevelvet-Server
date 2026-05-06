@@ -28,8 +28,20 @@ const UglyMugsSchema = new mongoose.Schema({
     },
     incidentType: {
         type: String,
-        enum: ['Non-payment', 'Aggressive Behavior', 'Time Waster', 'Fake Profile', 'Other'],
-        default: 'Other'
+        enum: [
+            'non_payment',
+            'safety_threat',
+            'boundary_violation',
+            'no_show',
+            'verbal_abuse',
+            'unauthorized_media',
+            'intoxicated_client',
+            'identity_fraud',
+            'privacy_breach',
+            'hygiene_issue',
+            'other'
+        ],
+        default: 'other'
     },
     incidentDate: {
         type: Date,
