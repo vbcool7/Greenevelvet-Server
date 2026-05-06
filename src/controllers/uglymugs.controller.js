@@ -46,8 +46,8 @@ export const createUglyMug = async (request, response) => {
                 : value;
         };
 
-        city = normalizeText(city);
-        country = normalizeText(country);
+        const city = normalizeText(city);
+        const country = normalizeText(country);
 
         const existing = await UglyMugsModel.findOne({
             reportedBy: userId,
@@ -337,7 +337,7 @@ export const deleteUglyMug = async (request, response) => {
 
     } catch (error) {
         console.error("Delete Report Error:", error);
-       
+
         return response.status(500).json({
             message: error.message || "Error deleting report",
             success: false,
