@@ -11,6 +11,6 @@ uglymugsRouter.get("/active-uglymugs", getAllUglyMugsEscorts);
 uglymugsRouter.get("/my-uglymugs", protect(["Escort"]), getMyUglyMugs);
 uglymugsRouter.post("/check-client-risk", checkClientRisk);
 uglymugsRouter.patch("/update-uglymug", protect(["Admin"]), updateUglyMug);
-uglymugsRouter.delete("/delete-uglymug", deleteUglyMug);
+uglymugsRouter.delete("/delete-uglymug/:id", deleteUglyMug);
 
 export default uglymugsRouter;

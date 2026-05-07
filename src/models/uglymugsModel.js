@@ -39,6 +39,7 @@ const UglyMugsSchema = new mongoose.Schema({
             'identity_fraud',
             'privacy_breach',
             'hygiene_issue',
+            'health_issue',
             'other'
         ],
         default: 'other'

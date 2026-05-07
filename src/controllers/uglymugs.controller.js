@@ -209,7 +209,7 @@ export const checkClientRisk = async (request, response) => {
 
         const reports = await UglyMugsModel.find({
             $or: query
-        }).select("reason incidentType location createdAt city");
+        }).select(" clientName clientPhone clientEmail reason incidentType incidentDate location createdAt city");
 
         const reportCount = reports.length;
 
