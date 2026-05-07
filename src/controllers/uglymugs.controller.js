@@ -310,17 +310,17 @@ export const updateUglyMug = async (request, response) => {
 // delete report entry
 export const deleteUglyMug = async (request, response) => {
     try {
-        const { reportId } = request.params;
+        const { id } = request.params;
 
-        if (!reportId) {
+        if (!id) {
             return response.status(400).json({
-                message: "reportId is required",
+                message: "Report Id is required",
                 success: false,
                 error: true
             });
         }
 
-        const report = await UglyMugsModel.findByIdAndDelete(reportId);
+        const report = await UglyMugsModel.findByIdAndDelete(id);
 
         if (!report) {
             return response.status(404).json({
