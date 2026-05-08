@@ -4,10 +4,10 @@ import { createExtraPlan, getAllActiveExtraPlans, getAllExtraPlans, getSelectExt
 const extraRouter = Router();
 
 extraRouter.post("/create-extra-plan", createExtraPlan);
-extraRouter.patch("update-extra-plan", updateExtraPlan);
-extraRouter.get("/fetch-all-extra-plan", getAllActiveExtraPlans);
-extraRouter.get("/fetch-active-extra-plan", getAllExtraPlans);
-extraRouter.get("/fetch-select-extra-plan", getSelectExtraPlan);
+extraRouter.patch("update-extra-plan/:id", updateExtraPlan);
+extraRouter.get("/fetch-active-extra-plan", getAllActiveExtraPlans);
+extraRouter.get("/fetch-all-extra-plan", getAllExtraPlans);
+extraRouter.get("/fetch-select-extra-plan/:id", getSelectExtraPlan);
 
 
 export default extraRouter;

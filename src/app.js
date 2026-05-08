@@ -24,8 +24,6 @@ app.use(cors({
         "https://admin.greenevelvet.com",
         "https://greenevelvet.com",
         "https://www.greenevelvet.com",
-        "https://d24rgp5ie3y2qc.cloudfront.net",
-        "https://d3t84nzlb2gzox.cloudfront.net",
     ]
 }))
 app.use(express.json())
