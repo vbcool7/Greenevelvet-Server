@@ -12,6 +12,7 @@ import contactRouter from "./routes/contact.route.js";
 import settingsRouter from "./routes/settigns.route.js";
 import subcribedRouter from "./routes/subcribedplan.route.js";
 import uglymugsRouter from "./routes/uglymugs.route.js";
+import extraRouter from "./routes/extra.route.js";
 
 const app = express();
 
@@ -53,6 +54,9 @@ app.use('/contact', contactRouter);
 app.use('/settings', settingsRouter);
 app.use('/escrow', subcribedRouter);
 app.use('/uglymugs', uglymugsRouter);
+app.use('/extra', extraRouter);
+
+
 
 /* Global Error Handler */
 app.use((err, req, res, next) => {
