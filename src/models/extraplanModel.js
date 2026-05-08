@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-extraplanSchema = new mongoose.Schema(
+const extraplanSchema = new mongoose.Schema(
     {
         iconName: {
             type: String,
