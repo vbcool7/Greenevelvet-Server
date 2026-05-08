@@ -353,6 +353,8 @@ export const createTransaction = async (request, response) => {
             title: plan.title,
             duration: plan.duration,
             amount: plan.price,
+            originalPrice: plan.price,
+            discountedPrice: plan.price,
             currency: "AUD",
             escrowTransactionId: escrowRes.data.id,
             status: "pending"
