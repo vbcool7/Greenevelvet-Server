@@ -10,7 +10,7 @@ extraRouter.get("/fetch-active-extra-plan", getAllActiveExtraPlans);
 extraRouter.get("/fetch-all-extra-plan", getAllExtraPlans);
 extraRouter.get("/fetch-select-extra-plan/:id", getSelectExtraPlan);
 
-extraRouter.post("/create-transection",protect(["Escort"]), createTransaction);
+extraRouter.post("/create-extra-plan-transection", protect(["Escort"]), createTransaction);
 
 
 export default extraRouter;
