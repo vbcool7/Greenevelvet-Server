@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import ExtraPlanModel from "../models/extraplanModel.js";
 
 
@@ -240,6 +241,9 @@ export const getSelectExtraPlan = async (request, response) => {
         });
 
     } catch (error) {
+        console.log("Fetch select plan error", error.message);
+        console.log(error);
+
         return response.status(500).json({
             message: error.message,
             success: false,
