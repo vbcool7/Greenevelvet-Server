@@ -184,10 +184,10 @@ export const checkClientRisk = async (request, response) => {
     try {
         const { clientName, clientPhone, clientEmail } = request.body;
 
-        if (!clientPhone && !clientEmail) {
+        if (!clientPhone || !clientEmail || !clientName) {
             return response.status(400).json({
                 success: false,
-                message: "Name, Phone and Email is required",
+                message: "Name or Phone or Email anyone is required",
                 error: true
             });
         }

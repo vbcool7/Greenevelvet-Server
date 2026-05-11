@@ -1,12 +1,13 @@
 import crypto from "crypto";
 import dotenv from "dotenv";
-dotenv.config({ path: "./.env" });
+dotenv.config();
 
 
 const SECRET = process.env.CRYPTO_SECRET;
 
-if (!SECRET) {
-    throw new Error("CRYPTO_SECRET is missing in .env");
+if (!SECRET || SECRET.trim() === "") {
+    console.error("CRYPTO_SECRET missing");
+    process.exit(1);
 }
 
 
