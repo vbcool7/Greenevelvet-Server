@@ -27,6 +27,7 @@ import BookingModel from "../models/bookingModel.js";
 import TourModel from "../models/tourModel.js";
 import { decrypt, encrypt } from "../utils/crypto.js";
 import sharp from "sharp";
+import { sendRegistrationNotification } from "../utils/sendRegistrationNotification.js";
 
 
 
@@ -103,6 +104,8 @@ export async function registerEscortcontroller(request, response) {
         const verifyLink = `https://greenvelvet-api.onrender.com/escort/verify-email?token=${token}`
 
         await sendVerificationEmail(normalizedEmail, verifyLink, escortId);
+
+        await sendRegistrationNotification({ email: process.env.ADMIN_RECEIVER_EMAIL, modelName: name })
 
         return response.status(200).json({
             message: "Verification link sent to your email",

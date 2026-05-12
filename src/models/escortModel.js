@@ -76,7 +76,7 @@ const EscortSchema = new mongoose.Schema({
 
     highlights: {
         type: String,
-        default: "Every frame is a little more tempting than the last."
+        default: ""
     },
 
     /* ================= DOCUMENT VERIFICATION ================= */
