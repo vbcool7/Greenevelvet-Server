@@ -172,6 +172,7 @@ const EscortSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    
     availability_plan: [
         {
             type: mongoose.Schema.ObjectId,
