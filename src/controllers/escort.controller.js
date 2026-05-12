@@ -100,7 +100,7 @@ export async function registerEscortcontroller(request, response) {
         console.log("newEscort", newEscort);
 
 
-        const verifyLink = `https://greene-velvet.onrender.com/escort/verify-email?token=${token}`
+        const verifyLink = `https://greenvelvet-api.onrender.com/escort/verify-email?token=${token}`
 
         await sendVerificationEmail(normalizedEmail, verifyLink, escortId);
 
