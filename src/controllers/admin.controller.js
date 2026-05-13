@@ -761,6 +761,57 @@ export async function fetchEscortdetailscontroller(request, response) {
     }
 }
 
+export async function escortProfileDetails(request, response) {
+    try {
+        const { id } = request.query;
+
+        if (!id) {
+            return response.status(400).json({
+                message: "Escort Id is missing",
+                success: false,
+                error: true
+            })
+        }
+
+        const escort = await EscortModel.findById({ id })
+            .populate("services")
+            .populate("rates")
+            .populate("blog")
+            .populate("newsandtour")
+            .populate("tours")
+
+        let mobile = escort.mobile;
+
+        try {
+            if (mobile?.startsWith("enc:")) {
+                mobile = decrypt(mobile.replace("enc:", ""));
+            } else {
+                mobile = decrypt(mobile);
+            }
+        } catch {
+            mobile = "";
+        }
+
+        escort.mobile = mobile;
+
+
+        return response.status(200).json({
+            message: "Escort profile details fetched",
+            success: true,
+            error: false,
+            data: escort
+        })
+
+    } catch (error) {
+        console.log("Escort profile details Error: ", error);
+        return response.status(500).json({
+            message: error.message || error,
+            success: false,
+            error: true
+        })
+    }
+}
+
 // update escort
 export async function updateEscortcontroller(request, response) {
     try {
