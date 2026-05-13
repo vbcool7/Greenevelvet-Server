@@ -2823,7 +2823,9 @@ export const fetchSelectedBlogComments = async (request, response) => {
 
 // add booking
 export const addBooking = async (request, response) => {
+
     try {
+
         const {
             userId,
             escortId,
@@ -2834,104 +2836,212 @@ export const addBooking = async (request, response) => {
             status,
             title,
             notAvailable,
-            type, // booking | availability
+            type // booking | availability
         } = request.body;
 
-        // ✅ Basic validation
+        // ===============================
+        // Validation
+        // ===============================
+
         if (!userId || !escortId || !date || !type) {
+
             return response.status(400).json({
                 message: "Required fields missing",
                 success: false,
-                error: true,
+                error: true
             });
+
         }
 
-        // ✅ Time Handling
+        // ===============================
+        // Time Setup
+        // ===============================
+
         let start = startTime;
         let end = endTime;
 
         if (isAllDay || notAvailable) {
+
             start = "00:00";
             end = "23:59";
+
         }
 
-        // ✅ Time validation (only when needed)
-        if (!isAllDay && !notAvailable && start >= end) {
-            return response.status(400).json({
-                message: "End time must be greater than start time",
-                success: false,
-                error: true,
-            });
+        // ===============================
+        // Create Proper DateTime
+        // ===============================
+
+        let startDateTime = new Date(`${date}T${start}:00`);
+        let endDateTime = new Date(`${date}T${end}:00`);
+
+        // ✅ Overnight Support
+        // Example:
+        // 11 PM → 2 AM
+        // 23:00 → 02:00
+
+        if (endDateTime <= startDateTime) {
+
+            endDateTime.setDate(
+                endDateTime.getDate() + 1
+            );
+
         }
 
-        // ✅ Conflict Check (IMPORTANT LOGIC 🔥)
-        let conflictQuery = {
+        // ===============================
+        // Get Same Date Records
+        // ===============================
+
+        const existingSlots = await BookingModel.find({
             escortId,
-            date,
-            startTime: { $lt: end },
-            endTime: { $gt: start },
-        };
+            date
+        });
 
-        // 👉 अगर full day block है (notAvailable)
-        if (notAvailable) {
-            conflictQuery = { escortId, date };
+        // ===============================
+        // Conflict Check
+        // ===============================
+
+        let hasConflict = false;
+
+        for (const slot of existingSlots) {
+
+            let slotStart = new Date(
+                `${slot.date.toISOString().split("T")[0]}T${slot.startTime}:00`
+            );
+
+            let slotEnd = new Date(
+                `${slot.date.toISOString().split("T")[0]}T${slot.endTime}:00`
+            );
+
+            // Overnight Existing Slot
+            if (slotEnd <= slotStart) {
+
+                slotEnd.setDate(
+                    slotEnd.getDate() + 1
+                );
+
+            }
+
+            const overlap =
+                startDateTime < slotEnd &&
+                endDateTime > slotStart;
+
+            if (!overlap) continue;
+
+            // =====================================
+            // RULES
+            // =====================================
+
+            // ❌ Availability inside Booking NOT allowed
+
+            if (
+                type === "availability" &&
+                slot.type === "booking"
+            ) {
+
+                hasConflict = true;
+                break;
+
+            }
+
+            // ✅ Booking inside Availability ALLOWED
+
+            if (
+                type === "booking" &&
+                slot.type === "availability"
+            ) {
+
+                continue;
+
+            }
+
+            // ❌ Same type overlap block
+
+            hasConflict = true;
+            break;
+
         }
 
-        const isConflict = await BookingModel.findOne(conflictQuery);
+        if (hasConflict) {
 
-        if (isConflict) {
             return response.status(400).json({
                 message:
-                    type === "availability"
-                        ? "Time slot already blocked"
-                        : "Time slot already booked",
+                    type === "booking"
+                        ? "Time slot already booked"
+                        : "Availability conflicts with booking",
                 success: false,
-                error: true,
+                error: true
             });
+
         }
 
-        // ✅ Create Booking / Availability
+        // ===============================
+        // Create Record
+        // ===============================
+
         const booking = await BookingModel.create({
+
             userId,
             escortId,
             date,
+
             startTime: start,
             endTime: end,
+
             isAllDay,
             status: status || "active",
             title,
             notAvailable,
-            type,
+            type
+
         });
 
-        const updatedEscort = await EscortModel.findOneAndUpdate(
-            { escortId: escortId },
+        // ===============================
+        // Push into Escort
+        // ===============================
+
+        await EscortModel.findOneAndUpdate(
+
+            { escortId },
+
             {
                 $push: {
                     bookings: booking._id
                 }
-            },
-            { new: true }
+            }
+
         );
 
+        // ===============================
+        // Success
+        // ===============================
 
         return response.status(201).json({
+
             message:
                 type === "booking"
                     ? "Booking added successfully"
                     : "Availability added successfully",
+
             success: true,
             error: false,
-            data: booking,
+            data: booking
+
         });
+
     } catch (error) {
+
         return response.status(500).json({
+
             message: error.message || "Server error",
             success: false,
-            error: true,
+            error: true
+
         });
+
     }
+
 };
+
 
 // fetch booking
 export const fetchBookings = async (request, response) => {
