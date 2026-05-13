@@ -2905,11 +2905,11 @@ export const addBooking = async (request, response) => {
         for (const slot of existingSlots) {
 
             let slotStart = new Date(
-                `${slot.date.toISOString().split("T")[0]}T${slot.startTime}:00`
+                `${new Date(slot.date).toISOString().split("T")[0]}T${slot.startTime}:00`
             );
 
             let slotEnd = new Date(
-                `${slot.date.toISOString().split("T")[0]}T${slot.endTime}:00`
+                `${new Date(slot.date).toISOString().split("T")[0]}T${slot.endTime}:00`
             );
 
             // Overnight Existing Slot
