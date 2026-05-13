@@ -778,7 +778,8 @@ export async function escortProfileDetails(request, response) {
             .populate("services")
             .populate("rates")
             .populate("blog")
-            .populate("newsTour");
+            .populate("newsTour")
+            .populate("bookings");
 
 
         let mobile = escort.mobile;

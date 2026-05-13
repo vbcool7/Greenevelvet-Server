@@ -2904,6 +2904,17 @@ export const addBooking = async (request, response) => {
             type,
         });
 
+        const updatedEscort = await EscortModel.findOneAndUpdate(
+            { escortId: escortId },
+            {
+                $push: {
+                    bookings: booking._id
+                }
+            },
+            { new: true }
+        );
+
+
         return response.status(201).json({
             message:
                 type === "booking"
