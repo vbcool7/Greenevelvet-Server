@@ -1203,6 +1203,10 @@ export async function updateClient(request, response) {
             })
         }
 
+        let updateData = {};
+        let emailSubject = "";
+        let emailHtml = "";
+
         let loginLink = "https://www.greenevelvet.com/login"
 
         const verifyHtml = `
@@ -1311,7 +1315,7 @@ export async function updateClient(request, response) {
             <div style="margin:25px 0;background-color:#fff5f5;border:1px solid #fab1a0;border-radius:8px;padding:20px;">
               <span style="display:block;font-size:12px;color:#d63031;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Reason for Suspension:</span>
               <p style="margin:0;color:#2d3436;font-size:15px;font-weight:500;line-height:1.5;">
-                ${updateData.reason || "Violation of community guidelines or terms of service."}
+                ${reason || "Violation of community guidelines or terms of service."}
               </p>
             </div>
 
@@ -1339,9 +1343,7 @@ export async function updateClient(request, response) {
 </html>
 `;
 
-        let updateData = {};
-        let emailSubject = "";
-        let emailHtml = "";
+
 
         if (action === "Active") {
             updateData = {
@@ -1402,6 +1404,7 @@ export async function updateClient(request, response) {
         })
     }
 }
+
 
 //  delete client
 export async function deleteClient(request, response) {
