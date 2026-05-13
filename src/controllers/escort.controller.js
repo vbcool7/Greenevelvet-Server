@@ -3281,6 +3281,16 @@ export const addTour = async (request, response) => {
 
         const savedTour = await newTour.save();
 
+        const updatedEscort = await EscortModel.findOneAndUpdate(
+            { escortId: escortId },
+            {
+                $push: {
+                    tours: savedTour._id
+                }
+            },
+            { new: true }
+        );
+
         return response.status(201).json({
             message: "Tour added successfully",
             success: true,
