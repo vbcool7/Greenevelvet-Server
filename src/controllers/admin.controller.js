@@ -1203,6 +1203,8 @@ export async function updateClient(request, response) {
             })
         }
 
+        let loginLink = "https://www.greenevelvet.com/login"
+
         const verifyHtml = `
 <!DOCTYPE html>
 <html>
