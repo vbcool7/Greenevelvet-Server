@@ -773,7 +773,7 @@ export async function escortProfileDetails(request, response) {
             })
         }
 
-        const escort = await EscortModel.findById({ id })
+        const escort = await EscortModel.findById(id)
             .populate("services")
             .populate("rates")
             .populate("blog")
