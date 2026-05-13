@@ -307,7 +307,7 @@ const EscortSchema = new mongoose.Schema({
     tours: [
         {
             type: mongoose.Schema.ObjectId,
-            ref: "Tours"
+            ref: "tours"
         }
     ],
 
