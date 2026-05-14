@@ -349,7 +349,7 @@ export const deleteUglyMug = async (request, response) => {
 export const checkClientReport = async (request, response) => {
     try {
 
-        const { email, mobile } = request.body;
+        const { email, mobile } = request.query;
 
         if (!email && !mobile) {
             return response.status(400).json({
