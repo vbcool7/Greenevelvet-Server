@@ -30,8 +30,17 @@ const ClientSchema = new mongoose.Schema({
         required: [true, "Provide account type"],
         unique: true
     },
-
-
+    countryCode: {
+        type: String,
+    },
+    city: {
+        type: String,
+        trim: true,
+    },
+    country: {
+        type: String,
+        trim: true,
+    },
     role: {
         type: String,
         default: "Client"
@@ -85,22 +94,25 @@ const ClientSchema = new mongoose.Schema({
     ],
 
     /* ================= PASSWORD & OTP ================= */
-    forgot_password: {
+    resetOtp: {
         type: String,
         default: null
     },
-    forgot_password_expiry: {
+    otpResendTime: {
+        type: Date,
+        default: null
+    },
+    otpAttempts: {
+        type: Number,
+        default: 0
+    },
+    otpExpiry: {
         type: Date,
         default: null
     },
     changePassword: {
         type: Date
     },
-    refresh_token: {
-        type: String,
-        default: ""
-    },
-
 
     /* ================= RELATIONS (REFERENCES) ================= */
     bookings: [
@@ -171,6 +183,19 @@ const ClientSchema = new mongoose.Schema({
         escortId: { type: mongoose.Schema.Types.ObjectId, ref: 'Escort' },
         viewedAt: { type: Date, default: Date.now }
     }],
+
+    emailVerifyToken: {
+        type: String,
+        default: null
+    },
+    emailVerifyExpiry: {
+        type: Date,
+        default: null
+    },
+    isEmailVerified: {
+        type: Boolean,
+        default: false
+    },
 
 }, {
     timestamps: true

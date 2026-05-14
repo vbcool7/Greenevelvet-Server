@@ -1,9 +1,12 @@
 import bcryptjs from "bcryptjs";
+import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import ClientModel from "../models/clientModel.js";
 import { generatedclientId } from "../utils/generatedId.js";
 import uploadImageCloudinary from "../utils/uploadImageCloudinary.js";
 import EscortModel from "../models/escortModel.js";
+import { sendVerificationEmail } from "../utils/emailService.js";
+import { sendRegistrationNotification } from "../utils/sendRegistrationNotification.js";
 
 // client register controll
 export async function registerClientcontroller(request, response) {
@@ -18,9 +21,12 @@ export async function registerClientcontroller(request, response) {
             })
         }
 
-        const exstingEmail = await EscortModel.findOne({ email })
-        
-        if(exstingEmail) {
+        const normalizedEmail = email.trim().toLowerCase();
+
+
+        const exstingEmail = await EscortModel.findOne({ email: normalizedEmail })
+
+        if (exstingEmail) {
             return response.status(401).json({
                 message: "This email is already registered as Escort, You cannot register as Client with",
                 success: false,
@@ -28,10 +34,10 @@ export async function registerClientcontroller(request, response) {
             })
         }
 
-        const client = await ClientModel.findOne({ email })
+        const client = await ClientModel.findOne({ email: normalizedEmail })
 
         if (client) {
-            return response.json({
+            return response.status(401).json({
                 message: "Already register email",
                 error: true,
                 success: false
@@ -40,22 +46,32 @@ export async function registerClientcontroller(request, response) {
 
         const clientId = await generatedclientId()
 
+        const token = crypto.randomBytes(32).toString("hex")
+
         const salt = await bcryptjs.genSalt(10)
         const hashPassword = await bcryptjs.hash(password, salt)
 
         const payload = {
             clientId,
             name,
-            email,
+            email: normalizedEmail,
             password: hashPassword,
             mobile,
-        }
+            emailVerifyToken: token,
+            emailVerifyExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        };
 
-        const newClient = new ClientModel(payload)
-        const save = await newClient.save()
+        const newClient = new ClientModel(payload);
+        const save = await newClient.save();
+
+        const verifyLink = `https://greenvelvet-api.onrender.com/client/verify-email?token=${token}`;
+
+        await sendVerificationEmail(normalizedEmail, verifyLink, clientId);
+
+        await sendRegistrationNotification({ email: process.env.ADMIN_RECEIVER_EMAIL, modelName: name });
 
 
-        return response.json({
+        return response.status(200).json({
             message: "User register successfully",
             error: false,
             success: true,
@@ -63,10 +79,54 @@ export async function registerClientcontroller(request, response) {
         })
 
     } catch (error) {
+        console.log("client registration error", error);
+
         return response.status(500).json({
             message: error.message || error,
             error: true,
             success: false
+        })
+    }
+}
+
+// Client verify email controll
+export async function clientVerifyEmail(request, response) {
+    try {
+        const { token } = request.query;
+
+        const client = await ClientModel.findOne({
+            emailVerifyToken: token,
+            emailVerifyExpiry: { $gt: Date.now() },
+        });
+
+        if (!client) {
+            return response.redirect("https://www.greenevelvet.com/link-expired");
+        }
+
+        client.isEmailVerified = true;
+        client.emailVerifyToken = null;
+        client.emailVerifyExpiry = null;
+
+        await client.save();
+
+        if (!client || !client.clientId) {
+            return response.status(404).json({
+                message: "Invalid client data",
+                error: true,
+                success: false
+            });
+        }
+
+        response.redirect(`https://www.greenevelvet.com/login`);
+
+
+    } catch (error) {
+        console.log("email verification error :", error);
+
+        return response.status(500).json({
+            message: error.message || error,
+            success: false,
+            error: true,
         })
     }
 }

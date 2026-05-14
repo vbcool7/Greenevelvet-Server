@@ -84,7 +84,7 @@ export async function loginUsercontroller(request, response) {
         user.onlineStatus = true;
         await user.save();
 
-        let redirectTo = role === "Escort" ? "/modeldashboard" : "/clientdashboard";
+        let redirectTo = role === "Escort" ? "/modeldashboard" : "/clientdashboard/profile";
 
         if (
             role === "Escort" &&

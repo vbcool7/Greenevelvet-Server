@@ -172,7 +172,7 @@ const EscortSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
-    
+
     availability_plan: [
         {
             type: mongoose.Schema.ObjectId,
@@ -231,12 +231,29 @@ const EscortSchema = new mongoose.Schema({
         type: Date,
         default: null
     },
-    changePassword: {
-        type: Date
-    },
     refresh_token: {
         type: String,
         default: ""
+    },
+
+    resetOtp: {
+        type: String,
+        default: null
+    },
+    otpResendTime: {
+        type: Date,
+        default: null
+    },
+    otpAttempts: {
+        type: Number,
+        default: 0
+    },
+    otpExpiry: {
+        type: Date,
+        default: null
+    },
+    changePassword: {
+        type: Date
     },
 
     /* ================= RELATIONS (REFERENCES) ================= */

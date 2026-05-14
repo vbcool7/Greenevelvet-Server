@@ -35,7 +35,7 @@ export const sendRegistrationNotification = async ({ email, modelName }) => {
           <td style="padding:20px 40px 40px 40px;text-align:center;">
             <h2 style="margin:0 0 12px 0;color:#1a1a1a;font-size:20px;font-weight:600;">New Model Registered</h2>
             <p style="margin:0 0 25px 0;color:#555555;font-size:15px;line-height:22px;">
-              Hello Admin, a new model <strong>${modelName}</strong> has just registered on <strong>Greene Velvet</strong>. Please review the profile for approval.
+              Hello Admin, a new user <strong>${modelName}</strong> has just registered on <strong>Greene Velvet</strong>. Please review the profile for approval.
             </p>
 
             <!-- Action Button -->
