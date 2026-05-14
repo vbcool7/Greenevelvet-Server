@@ -351,6 +351,8 @@ export const checkClientReport = async (request, response) => {
 
         const { email, mobile } = request.query;
 
+        console.log("req query", request.query);
+
         if (!email && !mobile) {
             return response.status(400).json({
                 message: "Email or mobile are required",
