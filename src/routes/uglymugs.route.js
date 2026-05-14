@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { checkClientRisk, createUglyMug, deleteUglyMug, getAllUglyMugsAdmin, getAllUglyMugsEscorts, getMyUglyMugs, updateUglyMug } from '../controllers/uglymugs.controller.js';
+import { checkClientReport, checkClientRisk, createUglyMug, deleteUglyMug, getAllUglyMugsAdmin, getAllUglyMugsEscorts, getMyUglyMugs, updateUglyMug } from '../controllers/uglymugs.controller.js';
 import { protect } from '../middleware/auth.js';
 
 const uglymugsRouter = Router();
@@ -12,5 +12,6 @@ uglymugsRouter.get("/my-uglymugs", protect(["Escort"]), getMyUglyMugs);
 uglymugsRouter.post("/check-client-risk", checkClientRisk);
 uglymugsRouter.patch("/update-uglymug", protect(["Admin"]), updateUglyMug);
 uglymugsRouter.delete("/delete-uglymug/:id", deleteUglyMug);
+uglymugsRouter.get("/check-client-report", checkClientReport)
 
 export default uglymugsRouter;

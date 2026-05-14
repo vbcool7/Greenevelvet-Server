@@ -1,4 +1,5 @@
 import UglyMugsModel from "../models/uglymugsModel.js";
+import axios from "axios";
 
 
 // create report
@@ -182,22 +183,18 @@ export const getMyUglyMugs = async (request, response) => {
 // fetch client status report
 export const checkClientRisk = async (request, response) => {
     try {
-        const { clientName, clientPhone, clientEmail } = request.body;
+        const { clientPhone, clientEmail } = request.body;
 
-        if (!clientPhone || !clientEmail || !clientName) {
+        if (!clientPhone && !clientEmail) {
             return response.status(400).json({
                 success: false,
-                message: "Name or Phone or Email anyone is required",
+                message: "Phone or Email is required",
                 error: true
             });
         }
 
         // Build query
         let query = [];
-
-        if (clientName) {
-            query.push({ clientName });
-        }
 
         if (clientPhone) {
             query.push({ clientPhone });
@@ -346,6 +343,69 @@ export const deleteUglyMug = async (request, response) => {
         });
     }
 };
+
+
+
+export const checkClientReport = async (request, response) => {
+    try {
+
+        const { email, mobile } = request.body;
+
+        if (!email && !mobile) {
+            return response.status(400).json({
+                message: "Email or mobile are required",
+                success: false,
+                error: true
+            });
+        }
+
+        let emailCheck = null;
+        let phoneCheck = null;
+
+        if (email) {
+            emailCheck = await axios.get(
+                `https://emailvalidation.abstractapi.com/v1/?api_key=${process.env.ABSTRACT_EMAIL_API_KEY}&email=${email}`
+            );
+        }
+
+        if (mobile) {
+            phoneCheck = await axios.get(
+                `https://phonevalidation.abstractapi.com/v1/?api_key=${process.env.ABSTRACT_PHONE_API_KEY}&phone=${mobile}`
+            );
+        }
+
+        return response.status(200).json({
+            success: true,
+            message: "details fetch successfully",
+            error: false,
+            emailData: emailCheck ? {
+                email: emailCheck.data.email,
+                valid: emailCheck.data.is_valid_format?.value,
+                deliverability: emailCheck.data.deliverability,
+                disposable: emailCheck.data.is_disposable_email?.value
+            } : null,
+
+            phoneData: phoneCheck ? {
+                valid: phoneCheck.data.valid,
+                number: phoneCheck.data.format?.international,
+                country: phoneCheck.data.country?.name,
+                carrier: phoneCheck.data.carrier,
+                type: phoneCheck.data.type
+            } : null
+        });
+
+    } catch (error) {
+        console.log("Fetch client report failed error: ", error);
+
+        return response.status(500).json({
+            message: error.response?.data || error.message,
+            success: false,
+            error: true,
+        });
+
+    }
+};
+
 
 
 
