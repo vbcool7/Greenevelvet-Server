@@ -348,10 +348,7 @@ export const deleteUglyMug = async (request, response) => {
 
 export const checkClientReport = async (request, response) => {
     try {
-
         const { email, mobile } = request.query;
-
-        console.log("req query", request.query);
 
         if (!email && !mobile) {
             return response.status(400).json({
@@ -361,53 +358,62 @@ export const checkClientReport = async (request, response) => {
             });
         }
 
-        let emailCheck = null;
-        let phoneCheck = null;
+        // Parallel execution for better speed
+        const [emailRes, phoneRes] = await Promise.all([
+            email ? axios.get(`https://emailreputation.abstractapi.com/v1/?api_key=${process.env.ABSTRACT_EMAIL_API_KEY}&email=${email}`).catch(e => null) : null,
+            mobile ? axios.get(`https://phoneintelligence.abstractapi.com/v1/?api_key=${process.env.ABSTRACT_PHONE_API_KEY}&phone=${mobile}`).catch(e => null) : null
+        ]);
 
-        if (email) {
-            emailCheck = await axios.get(
-                `https://emailreputation.abstractapi.com/v1/?api_key=${process.env.ABSTRACT_EMAIL_API_KEY}&email=${email}`
-            );
-        }
+        // 📧 Email Data Mapping (Advanced)
+        const emailData = emailRes ? {
+            email: emailRes.data.email_address,
+            isValid: emailRes.data.email_deliverability?.status === "deliverable",
+            trustScore: Math.round(emailRes.data.email_quality?.score * 100),
+            isDisposable: emailRes.data.email_quality?.is_disposable,
+            riskLevel: emailRes.data.email_risk?.address_risk_status, // "low", "medium", "high"
+            accountAgeDays: emailRes.data.email_quality?.minimum_age,
+            breachCount: emailRes.data.email_breaches?.total_breaches || 0,
+            provider: emailRes.data.email_sender?.email_provider_name
+        } : null;
 
-        if (mobile) {
-            phoneCheck = await axios.get(
-                `https://phoneintelligence.abstractapi.com/v1/?api_key=${process.env.ABSTRACT_PHONE_API_KEY}&phone=${mobile}`
-            );
+        // 📱 Phone Data Mapping (Advanced)
+        const phoneData = phoneRes ? {
+            number: phoneRes.data.phone_format?.international,
+            isValid: phoneRes.data.phone_validation?.is_valid,
+            type: phoneRes.data.phone_carrier?.line_type, // "mobile", "landline", "voip"
+            isVoIP: phoneRes.data.phone_validation?.is_voip, // Red flag if true
+            riskLevel: phoneRes.data.phone_risk?.risk_level,
+            isDisposable: phoneRes.data.phone_risk?.is_disposable,
+            location: `${phoneRes.data.phone_location?.city}, ${phoneRes.data.phone_location?.country_name}`,
+            carrier: phoneRes.data.phone_carrier?.name
+        } : null;
+
+        // 🛡️ Final Verdict Logic (Escort ki help ke liye)
+        // Agar dono safe hain toh client trusted hai
+        let finalStatus = "Neutral";
+        if (emailData?.riskLevel === "low" && phoneData?.riskLevel === "low" && !phoneData?.isVoIP) {
+            finalStatus = "Highly Trusted ✅";
+        } else if (emailData?.isDisposable || phoneData?.isDisposable || phoneData?.isVoIP) {
+            finalStatus = "Potential Risk / Fake ❌";
         }
 
         return response.status(200).json({
             success: true,
-            message: "details fetch successfully",
-            error: false,
-            emailData: emailCheck ? {
-                email: emailCheck.data.email,
-                valid: emailCheck.data.is_valid_format?.value,
-                deliverability: emailCheck.data.deliverability,
-                disposable: emailCheck.data.is_disposable_email?.value
-            } : null,
-
-            phoneData: phoneCheck ? {
-                valid: phoneCheck.data.valid,
-                number: phoneCheck.data.format?.international,
-                country: phoneCheck.data.country?.name,
-                carrier: phoneCheck.data.carrier,
-                type: phoneCheck.data.type
-            } : null
+            message: "Report generated successfully",
+            finalStatus,
+            emailData,
+            phoneData
         });
 
     } catch (error) {
-        console.log("Fetch client report failed error: ", error);
-
+        console.error("Fetch client report failed error: ", error);
         return response.status(500).json({
-            message: error.response?.data || error.message,
+            message: "Internal server error",
             success: false,
             error: true,
         });
-
     }
 };
-
 
 
 
