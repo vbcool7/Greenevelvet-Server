@@ -1,3 +1,8 @@
+import sgMail from "@sendgrid/mail";
+
+
+
+
 // ✅ Send Registration Notification to Admin/Model
 export const sendRegistrationNotification = async ({ email, modelName }) => {
   
