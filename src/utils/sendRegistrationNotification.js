@@ -1,12 +1,16 @@
 // ✅ Send Registration Notification to Admin/Model
 export const sendRegistrationNotification = async ({ email, modelName }) => {
+  
+  const isValidEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
 
-    if (!isValidEmail(email)) {
-        console.log(`Invalid email format: ${email} - skipping`);
-        return;
-    }
+  if (!isValidEmail(email)) {
+    console.log(`Invalid email format: ${email} - skipping`);
+    return;
+  }
 
-    const html = `
+  const html = `
 <!DOCTYPE html>
 <html>
 <body style="margin:0;padding:0;background-color:#f9f9f9;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
@@ -71,21 +75,21 @@ export const sendRegistrationNotification = async ({ email, modelName }) => {
 </html>
 `;
 
-    try {
-        const msg = {
-            to: email, // Admin's email
-            from: `"GREENE VELVET" <${process.env.SENDER_EMAIL}>`,
-            subject: `New Model Registration: ${modelName} - GreeneVelvet`,
-            html: html,
-        };
+  try {
+    const msg = {
+      to: email, // Admin's email
+      from: `"GREENE VELVET" <${process.env.SENDER_EMAIL}>`,
+      subject: `New Model Registration: ${modelName} - GreeneVelvet`,
+      html: html,
+    };
 
-        await sgMail.send(msg);
-        console.log(`Registration notification sent to ${email}`);
+    await sgMail.send(msg);
+    console.log(`Registration notification sent to ${email}`);
 
-    } catch (error) {
-        console.error(
-            `Notification email not sent to ${email}:`,
-            error.response?.body || error.message
-        );
-    }
+  } catch (error) {
+    console.error(
+      `Notification email not sent to ${email}:`,
+      error.response?.body || error.message
+    );
+  }
 };
