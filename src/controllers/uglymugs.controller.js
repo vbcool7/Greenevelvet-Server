@@ -366,13 +366,13 @@ export const checkClientReport = async (request, response) => {
 
         if (email) {
             emailCheck = await axios.get(
-                `https://emailvalidation.abstractapi.com/v1/?api_key=${process.env.ABSTRACT_EMAIL_API_KEY}&email=${email}`
+                `https://emailreputation.abstractapi.com/v1/?api_key=${process.env.ABSTRACT_EMAIL_API_KEY}&email=${email}`
             );
         }
 
         if (mobile) {
             phoneCheck = await axios.get(
-                `https://phonevalidation.abstractapi.com/v1/?api_key=${process.env.ABSTRACT_PHONE_API_KEY}&phone=${mobile}`
+                `https://phoneintelligence.abstractapi.com/v1/?api_key=${process.env.ABSTRACT_PHONE_API_KEY}&phone=${mobile}`
             );
         }
 
