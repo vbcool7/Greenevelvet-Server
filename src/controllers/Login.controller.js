@@ -4,6 +4,7 @@ import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import settingsModel from "../models/settingsModel.js";
 
+// Escort and Client login control
 export async function loginUsercontroller(request, response) {
     try {
         const { email, password } = request.body;
@@ -51,6 +52,14 @@ export async function loginUsercontroller(request, response) {
         if (user.status !== "Active") {
             return response.status(403).json({
                 message: "Contact to admin",
+                success: false,
+                error: true
+            });
+        }
+
+        if (!user.isEmailVerified) {
+            return response.status(403).json({
+                message: "Please verify your email before logging in.",
                 success: false,
                 error: true
             });
