@@ -28,6 +28,7 @@ import TourModel from "../models/tourModel.js";
 import { decrypt, encrypt } from "../utils/crypto.js";
 import sharp from "sharp";
 import { sendRegistrationNotification } from "../utils/sendRegistrationNotification.js";
+import cloudinary from "../config/cloudinary.js";
 
 
 
