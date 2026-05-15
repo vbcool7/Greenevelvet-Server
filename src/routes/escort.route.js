@@ -23,8 +23,8 @@ escortRouter.post("/adddetails", escortdetailscontroller)
 escortRouter.post("/upload-verification", upload.fields([{ name: "verificationselfie", maxCount: 1 }, { name: "verificationgovtId", maxCount: 1 },]), escortUploadverification);
 
 escortRouter.post('/change-password', protect(["Escort"]), escortChangePassword);
-escortRouter.post('/send-otp', escortForgotPassword)
-escortRouter.post('/verify-otp', escortVerifyOtp)
+escortRouter.post('/send-reset-password-otp', escortForgotPassword)
+escortRouter.post('/verify-reset-password-otp', escortVerifyOtp)
 escortRouter.post('/reset-password', escortResetPassword)
 
 // dashboard
