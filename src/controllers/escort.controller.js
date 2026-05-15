@@ -288,7 +288,14 @@ export const escortVerifyOtp = async (request, response) => {
         console.log("req body :", request.body);
 
         const { email, otp } = request.body;
-
+        
+        if(email == '' || otp == ''){
+             return response.status(400).json({
+                success: false,
+                message: "Email and OTP required 1",
+                error: true
+            });
+        }
         // 1. validation
         if (!email || !otp) {
             return response.status(400).json({
@@ -300,6 +307,9 @@ export const escortVerifyOtp = async (request, response) => {
 
         // 2. find admin
         const escort = await EscortModel.findOne({ email });
+
+        console.log("escort find ", escort);
+        console.log("resetOtp :", escort?.resetOtp);
 
         if (!escort || !escort.resetOtp) {
             return response.status(400).json({
