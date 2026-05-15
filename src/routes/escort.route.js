@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addBlogComment, addBooking, addNewstourCommentController, addTour, advanceSearchController, blockBlogComments, cancelBooking, cancelTour, changeMobilenumber, complteBooking, createBlog, createNewsTourcontroller, deleteBlog, deleteBooking, deleteEscortProfile, deleteNewsTourController, deleteTour, editEscortProfileDetails, escortdetailscontroller, escortLogincontroller, escortRatescontroller, escortServicescontroller, escortUploadverification, fetchAllBlogs, fetchAllNewsTourController, fetchBookings, fetchCitySliderEscorts, fetchEscortBlog, fetchEscortdetailscontroller, fetchEscortNewsTourcontroller, fetchFiltercityescortscontroller, fetchFilterHomescortscontroller, fetchHomeSliderEscorts, fetchSelectBlog, fetchSelectBooking, fetchSelectedBlogComments, fetchSelectedNewsTourComments, fetchSelectNewsTourController, getEscortContact, getToursByDate, hideEscortProfile, logoutEscortcontroller, registerEscortcontroller, sendOtpcontroller, toggleBlogLike, toggleFaceBlur, toggleNewstourLikeController, updateBlog, updateBooking, updateEscortProfile, updateHighlightscontroller, updateNewsTourController, updateTour, uploadAvatarcontroller, uploadImagescontroller, uploadVideoscontroller, verifiedEscortcontroller, verifyEmailcontroller, verifyMobileotp } from '../controllers/escort.controller.js'
+import { addBlogComment, addBooking, addNewstourCommentController, addTour, advanceSearchController, blockBlogComments, cancelBooking, cancelTour, changeMobilenumber, complteBooking, createBlog, createNewsTourcontroller, deleteBlog, deleteBooking, deleteEscortProfile, deleteNewsTourController, deleteTour, editEscortProfileDetails, escortChangePassword, escortdetailscontroller, escortForgotPassword, escortLogincontroller, escortRatescontroller, escortResetPassword, escortServicescontroller, escortUploadverification, escortVerifyOtp, fetchAllBlogs, fetchAllNewsTourController, fetchBookings, fetchCitySliderEscorts, fetchEscortBlog, fetchEscortdetailscontroller, fetchEscortNewsTourcontroller, fetchFiltercityescortscontroller, fetchFilterHomescortscontroller, fetchHomeSliderEscorts, fetchSelectBlog, fetchSelectBooking, fetchSelectedBlogComments, fetchSelectedNewsTourComments, fetchSelectNewsTourController, getEscortContact, getToursByDate, hideEscortProfile, logoutEscortcontroller, registerEscortcontroller, sendOtpcontroller, toggleBlogLike, toggleFaceBlur, toggleNewstourLikeController, updateBlog, updateBooking, updateEscortProfile, updateHighlightscontroller, updateNewsTourController, updateTour, uploadAvatarcontroller, uploadImagescontroller, uploadVideoscontroller, verifiedEscortcontroller, verifyEmailcontroller, verifyMobileotp } from '../controllers/escort.controller.js'
 import upload from "../middleware/multer.js";
 import { protect } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rateLimit.js";
@@ -21,6 +21,11 @@ escortRouter.post("/send-otp", sendOtpcontroller)
 escortRouter.post("/verify-otp", verifyMobileotp)
 escortRouter.post("/adddetails", escortdetailscontroller)
 escortRouter.post("/upload-verification", upload.fields([{ name: "verificationselfie", maxCount: 1 }, { name: "verificationgovtId", maxCount: 1 },]), escortUploadverification);
+
+escortRouter.post('/change-password', protect(["Escort"]), escortChangePassword);
+escortRouter.post('/send-otp', escortForgotPassword)
+escortRouter.post('/verify-otp', escortVerifyOtp)
+escortRouter.post('/reset-password', escortResetPassword)
 
 // dashboard
 escortRouter.get("/escort-details", fetchEscortdetailscontroller)
@@ -53,25 +58,25 @@ escortRouter.get("/fetch-selected-newstour-comments", fetchSelectedNewsTourComme
 
 
 // Blog (full CURD operation)
-escortRouter.post("/create-blog", upload.array("media", 3),createBlog);
+escortRouter.post("/create-blog", upload.array("media", 3), createBlog);
 escortRouter.patch("/update-blog", upload.array("media", 3), updateBlog);
 escortRouter.post("/delete-blog", deleteBlog);
 escortRouter.patch("/block-blog-comments", blockBlogComments);
-escortRouter.get("/fetch-all-blogs",fetchAllBlogs);
+escortRouter.get("/fetch-all-blogs", fetchAllBlogs);
 escortRouter.get("/fetch-escort-blog", fetchEscortBlog);
-escortRouter.get("/fetch-selected-blog",fetchSelectBlog);
-escortRouter.post("/create-blog-like",toggleBlogLike);
-escortRouter.post("/create-blog-comment",upload.single("media"),addBlogComment);
-escortRouter.get("/fetch-selected-blog-comments",fetchSelectedBlogComments);
+escortRouter.get("/fetch-selected-blog", fetchSelectBlog);
+escortRouter.post("/create-blog-like", toggleBlogLike);
+escortRouter.post("/create-blog-comment", upload.single("media"), addBlogComment);
+escortRouter.get("/fetch-selected-blog-comments", fetchSelectedBlogComments);
 
 // Bookings 
 escortRouter.post("/add-booking", addBooking)
-escortRouter.get("/fetch-escort-bookings",fetchBookings)
-escortRouter.patch("/update-booking",updateBooking)
-escortRouter.post("/delete-booking",deleteBooking)
-escortRouter.get("/fetch-select-booking",fetchSelectBooking)
-escortRouter.post("/cancel-booking",cancelBooking)
-escortRouter.post("/complete-booking",complteBooking)
+escortRouter.get("/fetch-escort-bookings", fetchBookings)
+escortRouter.patch("/update-booking", updateBooking)
+escortRouter.post("/delete-booking", deleteBooking)
+escortRouter.get("/fetch-select-booking", fetchSelectBooking)
+escortRouter.post("/cancel-booking", cancelBooking)
+escortRouter.post("/complete-booking", complteBooking)
 
 // Tours
 escortRouter.post("/add-tour", addTour);

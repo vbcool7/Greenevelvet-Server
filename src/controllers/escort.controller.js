@@ -29,6 +29,441 @@ import { decrypt, encrypt } from "../utils/crypto.js";
 import sharp from "sharp";
 import { sendRegistrationNotification } from "../utils/sendRegistrationNotification.js";
 import cloudinary from "../config/cloudinary.js";
+import { sendMail } from "../utils/sendMail.js";
+
+// change password
+export const escortChangePassword = async (request, response) => {
+    try {
+        const userId = request.user?._id;
+
+        const { currentPassword, newPassword, confirmPassword } = request.body;
+
+        // 1. Required check
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            return response.status(400).json({
+                message: "All fields are required",
+                success: false,
+                error: true
+            });
+        }
+
+        // 2. New & confirm match
+        if (newPassword !== confirmPassword) {
+            return response.status(400).json({
+                message: "New and Cinfirm Passwords do not match",
+                success: false,
+                error: true
+            });
+        }
+
+        // 3. Password strength
+        if (newPassword.length < 6) {
+            return response.status(400).json({
+                message: "Password must be at least 6 characters",
+                success: false,
+                error: true
+            });
+        }
+
+        // 4. Find user
+        const user = await EscortModel.findById(userId).select("+password");
+
+        if (!user) {
+            return response.status(404).json({
+                message: "User not found",
+                success: false,
+                error: true
+            });
+        }
+
+        // 5. Compare current password
+        const isMatch = await bcryptjs.compare(currentPassword, user.password);
+
+        if (!isMatch) {
+            return response.status(400).json({
+                message: "Current password is incorrect",
+                success: false,
+                error: true
+            });
+        }
+
+        // 6. Prevent same password reuse
+        const isSame = await bcryptjs.compare(newPassword, user.password);
+        if (isSame) {
+            return response.status(400).json({
+                message: "New password cannot be same as old password",
+                success: false,
+                error: true
+            });
+        }
+
+        // 7. Hash new password
+        const salt = await bcryptjs.genSalt(10);
+        const hashedPassword = await bcryptjs.hash(newPassword, salt);
+
+        await EscortModel.findByIdAndUpdate(userId, {
+            password: hashedPassword
+        });
+
+        return response.status(200).json({
+            message: "Password updated successfully",
+            success: true,
+            error: false
+        });
+
+    } catch (error) {
+        console.error("Change Password Error:", error);
+
+        return response.status(500).json({
+            message: "Something went wrong",
+            success: false,
+            error: true
+        });
+    }
+};
+
+// forgot password send otp
+export const escortForgotPassword = async (request, response) => {
+    try {
+        const { email } = request.body;
+
+        if (!email) {
+            return response.status(400).json({
+                message: "Email is required",
+                success: false,
+                error: true
+            });
+        }
+
+        const escort = await EscortModel.findOne({ email });
+
+        if (!escort) {
+            return response.status(200).json({
+                message: "If account exists, OTP sent",
+                success: true,
+                error: false
+            });
+        }
+
+        // cooldown check (30 sec)
+        if (escort.otpResendTime && escort.otpResendTime > Date.now()) {
+            return response.status(429).json({
+                message: "Please wait before requesting a new OTP",
+                success: false,
+                error: true
+            });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const hashedOtp = await bcryptjs.hash(otp, 10);
+        const expiry = Date.now() + 5 * 60 * 1000;
+        const resendCooldown = Date.now() + 30 * 1000; // 30 sec
+
+        console.log("otp", otp);
+
+        const updated = await EscortModel.findOneAndUpdate(
+            {
+                email,
+            },
+            {
+                resetOtp: hashedOtp,
+                otpExpiry: expiry,
+                otpResendTime: resendCooldown,
+                otpAttempts: 0
+            },
+            { new: true }
+        );
+
+        if (!updated) {
+            return response.status(429).json({
+                message: "OTP already generated. Please wait",
+                success: false,
+                error: true
+            });
+        }
+
+        const subject = "Password Reset OTP";
+
+        const html = `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background-color:#f9f9f9;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="padding:40px 0;">
+  <tr>
+    <td align="center">
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:460px;background:#ffffff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.05);border:1px solid #eeeeee;overflow:hidden;">
+        
+        <!-- Header Decor -->
+        <tr>
+          <td height="5" style="background-color:#00A68F;"></td>
+        </tr>
+
+        <!-- Logo Section -->
+        <tr>
+          <td style="padding:35px 40px 10px 40px;text-align:center;">
+            <h1 style="margin:0;color:#00A68F;font-size:24px;font-weight:800;letter-spacing:1px;">
+              GREENE VELVET
+            </h1>
+          </td>
+        </tr>
+
+        <!-- Content -->
+        <tr>
+          <td style="padding:20px 40px 40px 40px;text-align:center;">
+            <h2 style="margin:0 0 12px 0;color:#1a1a1a;font-size:20px;font-weight:600;">Verification Code</h2>
+            <p style="margin:0;color:#555555;font-size:15px;line-height:22px;">
+              Please use the one-time password (OTP) below to securely sign in or reset your password.
+            </p>
+
+            <!-- OTP Highlight -->
+            <div style="margin:30px 0;background-color:#f0faf9;border-radius:10px;padding:20px;border:1px solid #d1efea;">
+              <span style="display:block;font-size:12px;color:#00A68F;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Your OTP Code</span>
+              <span style="font-family:'Courier New',Courier,monospace;font-size:38px;font-weight:bold;color:#00A68F;letter-spacing:10px;">
+                ${otp}
+              </span>
+            </div>
+
+            <p style="margin:0;color:#888888;font-size:13px;">
+              This code is valid for <b style="color:#333;">5 minutes</b>. <br>
+              Security Note: Never share this code with anyone.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:25px 40px;background-color:#fcfcfc;border-top:1px solid #eeeeee;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#aaaaaa;line-height:18px;">
+              &copy; ${new Date().getFullYear()} <b>Greene Velvet</b> Solutions. <br>
+              Automatic security email, please do not reply.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+`;
+        try {
+            await sendMail(email, subject, html);
+        } catch (err) {
+            console.log("email send error", err);
+
+            await EscortModel.findByIdAndUpdate(escort._id, {
+                resetOtp: null,
+                otpExpiry: null
+            });
+
+            return response.status(500).json({
+                message: "Failed to send OTP",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: "OTP sent check email",
+            success: true,
+            error: false
+        });
+
+    } catch (error) {
+        console.error("otp send error: ", error);
+
+        return response.status(500).json({
+            message: "Something went wrong",
+            success: false,
+            error: true
+        });
+    }
+};
+
+// verify otp
+export const escortVerifyOtp = async (request, response) => {
+    try {
+        const { email, otp } = request.body;
+
+        // 1. validation
+        if (!email || !otp) {
+            return response.status(400).json({
+                success: false,
+                message: "Email and OTP required",
+                error: true
+            });
+        }
+
+        // 2. find admin
+        const escort = await EscortModel.findOne({ email });
+
+        if (!escort || !escort.resetOtp) {
+            return response.status(400).json({
+                success: false,
+                message: "Invalid request",
+                error: true
+            });
+        }
+
+        // 3. expiry check (safe)
+        if (!escort.otpExpiry || escort.otpExpiry < Date.now()) {
+            return response.status(400).json({
+                success: false,
+                message: "OTP expired",
+                error: true
+            });
+        }
+
+        // 4. attempts limit check
+        if (escort.otpAttempts >= 5) {
+            return response.status(429).json({
+                success: false,
+                message: "Too many attempts. Try again later",
+                error: true
+            });
+        }
+
+        // 5. OTP match
+        const isMatch = await bcryptjs.compare(otp, escort.resetOtp);
+
+        // ❌ WRONG OTP
+        if (!isMatch) {
+            await EscortModel.updateOne(
+                { email },
+                { $inc: { otpAttempts: 1 } }
+            );
+
+            return response.status(400).json({
+                success: false,
+                message: "Invalid OTP",
+                error: true
+            });
+        }
+
+        // 6. SUCCESS → clear OTP (NO save used)
+        await EscortModel.updateOne(
+            { email },
+            {
+                $unset: {
+                    resetOtp: "",
+                    otpExpiry: ""
+                },
+                $set: {
+                    otpAttempts: 0
+                }
+            }
+        );
+
+        return response.status(200).json({
+            success: true,
+            message: "OTP verified successfully",
+            error: false
+        });
+
+    } catch (error) {
+        console.error("Verify OTP Error:", error);
+
+        return response.status(500).json({
+            success: false,
+            message: "Something went wrong",
+            error: true
+        });
+    }
+};
+
+// reset password
+export const escortResetPassword = async (request, response) => {
+    try {
+        const { email, newPassword, confirmPassword } = request.body;
+
+        // 1. validation
+        if (!email || !newPassword || !confirmPassword) {
+            return response.status(400).json({
+                message: "All fields are required",
+                success: false,
+                error: true
+            });
+        }
+
+        // 2. New & confirm match
+        if (newPassword !== confirmPassword) {
+            return response.status(400).json({
+                message: "New and Cinfirm Passwords do not match",
+                success: false,
+                error: true
+            });
+        }
+
+        // 3. Password strength
+        if (newPassword.length < 6) {
+            return response.status(400).json({
+                message: "Password must be at least 6 characters",
+                success: false,
+                error: true
+            });
+        }
+
+
+        // 4. find admin
+        const escort = await EscortModel.findOne({ email });
+
+        if (!escort) {
+            return response.status(400).json({
+                message: "Invalid request",
+                success: false,
+                error: true
+            });
+        }
+
+        // 5. security check → OTP must be verified already
+        if (escort.resetOtp || escort.otpExpiry) {
+            return response.status(403).json({
+                message: "OTP not verified",
+                success: false,
+                error: true
+            });
+        }
+
+        // 6. hash new password
+        const hashedPassword = await bcryptjs.hash(newPassword, 10);
+
+        // 7. update password + clear any leftover fields (NO save)
+        await EscortModel.updateOne(
+            { email },
+            {
+                $set: {
+                    password: hashedPassword
+                },
+                $unset: {
+                    resetOtp: "",
+                    otpExpiry: ""
+                },
+                $setOnInsert: {
+                    otpAttempts: 0
+                }
+            }
+        );
+
+        return response.status(200).json({
+            success: true,
+            message: "Password reset successfully",
+            error: false
+        });
+
+    } catch (error) {
+        console.error("Reset Password Error:", error);
+
+        return response.status(500).json({
+            success: false,
+            message: "Something went wrong",
+            error: true
+        });
+    }
+};
+
+
 
 
 
