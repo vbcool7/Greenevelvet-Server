@@ -761,6 +761,7 @@ export async function fetchEscortdetailscontroller(request, response) {
     }
 }
 
+// escort profile details with fetch all related schema details
 export async function escortProfileDetails(request, response) {
     try {
         const { id } = request.query;
@@ -869,6 +870,16 @@ export async function updateEscortcontroller(request, response) {
             <p style="margin:0 0 25px 0;color:#555555;font-size:15px;line-height:22px;">
               Great news! Your account has been <b>successfully verified</b> by our admin team. You now have full access to your dashboard and features.
             </p>
+
+
+            <div style="background-color: #f0faf8; border-left: 4px solid #00A68F; padding: 15px; margin: 25px 0; text-align: left; border-radius: 4px;">
+              <p style="margin: 0 0 6px 0; color: #00A68F; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                💡 Quick Tip to Get More Bookings:
+              </p>
+              <p style="margin: 0; color: #333333; font-size: 13.5px; line-height: 20px;">
+                Please complete your profile by adding <b>photos/videos</b> to your gallery and updating your <b>rates & services</b>. A complete profile builds trust and attracts more clients instantly!
+              </p>
+            </div>
 
             <!-- Login Button -->
             <div style="margin:30px 0;">
