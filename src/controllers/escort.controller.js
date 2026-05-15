@@ -285,7 +285,6 @@ export const escortForgotPassword = async (request, response) => {
 // verify otp
 export const escortVerifyOtp = async (request, response) => {
     try {
-        console.log("req body :", request.body);
 
         const { email, otp } = request.body;
         
@@ -308,16 +307,14 @@ export const escortVerifyOtp = async (request, response) => {
         // 2. find admin
         const escort = await EscortModel.findOne({ email });
 
-        console.log("escort find ", escort);
-        console.log("resetOtp :", escort?.resetOtp);
 
-        if (!escort || !escort.resetOtp) {
-            return response.status(400).json({
-                success: false,
-                message: "Invalid request",
-                error: true
-            });
-        }
+        // if (!escort || !escort.resetOtp) {
+        //     return response.status(400).json({
+        //         success: false,
+        //         message: "Invalid request",
+        //         error: true
+        //     });
+        // }
 
         // 3. expiry check (safe)
         if (!escort.otpExpiry || escort.otpExpiry < Date.now()) {
