@@ -285,6 +285,8 @@ export const escortForgotPassword = async (request, response) => {
 // verify otp
 export const escortVerifyOtp = async (request, response) => {
     try {
+        console.log("req body :", request.body);
+
         const { email, otp } = request.body;
 
         // 1. validation
@@ -363,7 +365,7 @@ export const escortVerifyOtp = async (request, response) => {
         });
 
     } catch (error) {
-        console.error("Verify OTP Error:", error);
+        console.log("Verify OTP Error: ", error);
 
         return response.status(500).json({
             success: false,
