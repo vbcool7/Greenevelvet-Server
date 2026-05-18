@@ -1,7 +1,6 @@
 import fs from "fs";
 import cloudinary from "../config/cloudinary.js";
 
-
 export const uploadFromCloudinary = async (fileBuffer) => {
     try {
         if (!fileBuffer) throw new Error("File buffer is required");
@@ -11,6 +10,21 @@ export const uploadFromCloudinary = async (fileBuffer) => {
                 {
                     folder: "uploads",
                     resource_type: "image",
+                    transformation: [
+                        { quality: "auto", fetch_format: "auto" },
+
+                        {
+                            overlay: {
+                                font_family: "Arial",
+                                font_size: 45,
+                                font_weight: "bold",
+                                text: "greenevelvet.com"
+                            },
+                            color: "white",
+                            opacity: 35,
+                            gravity: "center"
+                        }
+                    ]
                 },
                 (error, result) => {
                     if (error) return reject(error);
@@ -28,3 +42,6 @@ export const uploadFromCloudinary = async (fileBuffer) => {
         throw new Error("Image upload failed");
     }
 };
+
+
+

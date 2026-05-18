@@ -1,9 +1,8 @@
 import cloudinary from "../config/cloudinary.js";
 
-// Function to upload video to Cloudinary
 const uploadVideoCloudinary = async (video, folder = "gallery/videos") => {
   try {
-    // Buffer create karna: multer buffer or web file
+
     const buffer = video?.buffer
       ? video.buffer
       : Buffer.from(await video.arrayBuffer());
@@ -12,7 +11,25 @@ const uploadVideoCloudinary = async (video, folder = "gallery/videos") => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder,
-          resource_type: "video" // Only video
+          resource_type: "video",
+          transformation: [
+            { quality: "auto", bitrate: "auto", fetch_format: "auto" },
+
+            {
+              overlay: {
+                font_family: "Arial",
+                font_size: 30,
+                font_weight: "bold",
+                text: "greenevelvet.com"
+              },
+              color: "white",
+              opacity: 35,
+              gravity: "south_east",
+              x: 30,
+              y: 30
+
+            }
+          ]
         },
         (error, result) => {
           if (error) {

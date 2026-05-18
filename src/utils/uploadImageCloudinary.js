@@ -12,7 +12,22 @@ const uploadImageCloudinary = async (image, folder = "gallery/images") => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder,
-          resource_type: "image" // Only image
+          resource_type: "image", // Only image
+          transformation: [
+            { quality: "auto", fetch_format: "auto" },
+
+            {
+              overlay: {
+                font_family: "Arial",
+                font_size: 45,
+                font_weight: "bold",
+                text: "greenevelvet.com"
+              },
+              color: "white",
+              opacity: 35,
+              gravity: "center"
+            }
+          ]
         },
         (error, result) => {
           if (error) {

@@ -287,9 +287,9 @@ export const escortVerifyOtp = async (request, response) => {
     try {
 
         const { email, otp } = request.body;
-        
-        if(email == '' || otp == ''){
-             return response.status(400).json({
+
+        if (email == '' || otp == '') {
+            return response.status(400).json({
                 success: false,
                 message: "Email and OTP required 1",
                 error: true
@@ -308,13 +308,13 @@ export const escortVerifyOtp = async (request, response) => {
         const escort = await EscortModel.findOne({ email });
 
 
-        // if (!escort || !escort.resetOtp) {
-        //     return response.status(400).json({
-        //         success: false,
-        //         message: "Invalid request",
-        //         error: true
-        //     });
-        // }
+        if (!escort || !escort.resetOtp) {
+            return response.status(400).json({
+                success: false,
+                message: "Invalid request",
+                error: true
+            });
+        }
 
         // 3. expiry check (safe)
         if (!escort.otpExpiry || escort.otpExpiry < Date.now()) {
@@ -1285,6 +1285,95 @@ export async function uploadImagescontroller(request, response) {
 }
 
 // upload gallery videos
+// export async function uploadVideoscontroller(request, response) {
+//     try {
+//         const { escortId, deletedVideos } = request.body;
+
+//         if (!escortId) {
+//             return response.status(400).json({
+//                 message: "escortId required",
+//                 success: false,
+//                 error: true
+//             });
+//         }
+
+//         const deletedArr = deletedVideos ? JSON.parse(deletedVideos) : [];
+
+//         // 1️⃣ Delete videos from Cloudinary & DB
+//         if (deletedArr.length > 0) {
+//             const escort = await EscortModel.findOne({ escortId });
+//             if (escort && escort.gallery?.videos?.length) {
+
+//                 // Cloudinary delete
+//                 for (let urlOrObj of deletedArr) {
+//                     // If frontend sends { public_id, url } object
+//                     if (typeof urlOrObj === "object" && urlOrObj.public_id) {
+//                         await deleteVideoCloudinary(urlOrObj.public_id);
+//                     }
+//                 }
+
+//                 // DB delete using URL
+//                 const urlsToDelete = deletedArr.map(item => (typeof item === "object" ? item.url : item)).filter(Boolean);
+//                 if (urlsToDelete.length > 0) {
+//                     await EscortModel.updateOne(
+//                         { escortId },
+//                         { $pull: { "gallery.videos": { url: { $in: urlsToDelete } } } }
+//                     );
+//                 }
+//             }
+//         }
+
+//         // 2️⃣ Upload new videos to Cloudinary
+//         let uploadedVideos = [];
+//         if (request.files && request.files.length > 0) {
+//             for (let file of request.files) {
+//                 const uploadResult = await uploadVideoCloudinary(file, "gallery/videos");
+//                 uploadedVideos.push({
+//                     public_id: uploadResult.public_id,
+//                     url: uploadResult.secure_url
+//                 });
+//             }
+
+//             // Push new videos to DB
+//             await EscortModel.updateOne(
+//                 { escortId },
+//                 { $push: { "gallery.videos": { $each: uploadedVideos } } }
+//             );
+//         }
+
+//         // 3️⃣ Fetch updated escort
+//         const updatedEscort = await EscortModel.findOne({ escortId }).lean();
+
+//         // 4️⃣ Keep only last 6 videos
+//         const last6Videos = updatedEscort.gallery.videos.slice(-6);
+//         await EscortModel.updateOne(
+//             { escortId },
+//             { $set: { "gallery.videos": last6Videos } }
+//         );
+
+//         return response.status(200).json({
+//             message: "Video gallery updated successfully",
+//             success: true,
+//             error: false,
+//             data: {
+//                 ...updatedEscort,
+//                 gallery: {
+//                     ...updatedEscort.gallery,
+//                     videos: last6Videos
+//                 }
+//             }
+//         });
+
+//     } catch (error) {
+//         console.error(error);
+//         return response.status(500).json({
+//             message: error.message || error,
+//             success: false,
+//             error: true
+//         });
+//     }
+// }
+
 export async function uploadVideoscontroller(request, response) {
     try {
         const { escortId, deletedVideos } = request.body;
@@ -1299,20 +1388,18 @@ export async function uploadVideoscontroller(request, response) {
 
         const deletedArr = deletedVideos ? JSON.parse(deletedVideos) : [];
 
-        // 1️⃣ Delete videos from Cloudinary & DB
         if (deletedArr.length > 0) {
             const escort = await EscortModel.findOne({ escortId });
             if (escort && escort.gallery?.videos?.length) {
 
-                // Cloudinary delete
+                // Delete from Cloudinary
                 for (let urlOrObj of deletedArr) {
-                    // If frontend sends { public_id, url } object
                     if (typeof urlOrObj === "object" && urlOrObj.public_id) {
                         await deleteVideoCloudinary(urlOrObj.public_id);
                     }
                 }
 
-                // DB delete using URL
+                // Delete from DB
                 const urlsToDelete = deletedArr.map(item => (typeof item === "object" ? item.url : item)).filter(Boolean);
                 if (urlsToDelete.length > 0) {
                     await EscortModel.updateOne(
@@ -1323,43 +1410,59 @@ export async function uploadVideoscontroller(request, response) {
             }
         }
 
-        // 2️⃣ Upload new videos to Cloudinary
-        let uploadedVideos = [];
-        if (request.files && request.files.length > 0) {
-            for (let file of request.files) {
-                const uploadResult = await uploadVideoCloudinary(file, "gallery/videos");
-                uploadedVideos.push({
-                    public_id: uploadResult.public_id,
-                    url: uploadResult.secure_url
-                });
-            }
+        // check current DB before upload
+        const currentEscort = await EscortModel.findOne({ escortId }).lean();
+        const existingVideos = currentEscort?.gallery?.videos || [];
 
-            // Push new videos to DB
-            await EscortModel.updateOne(
-                { escortId },
-                { $push: { "gallery.videos": { $each: uploadedVideos } } }
-            );
+        // 2️⃣ run upload process in background for cuurent videos upload
+        if (request.files && request.files.length > 0) {
+
+
+            (async () => {
+                try {
+                    let uploadedVideos = [];
+                    for (let file of request.files) {
+                        const uploadResult = await uploadMediaCloudinary(file, "gallery/videos");
+                        uploadedVideos.push({
+                            public_id: uploadResult.public_id,
+                            url: uploadResult.secure_url
+                        });
+                    }
+
+                    // push new videos in DB 
+                    await EscortModel.updateOne(
+                        { escortId },
+                        { $push: { "gallery.videos": { $each: uploadedVideos } } }
+                    );
+
+                    // maintain limit max 6 videos
+                    const finalFetch = await EscortModel.findOne({ escortId }).lean();
+                    const limitedVideos = finalFetch.gallery.videos.slice(-6);
+
+                    await EscortModel.updateOne(
+                        { escortId },
+                        { $set: { "gallery.videos": limitedVideos } }
+                    );
+
+                    console.log(`[Background Upload] Escort ${escortId} के लिए वीडियोस सफलतापूर्वक अपलोड हो गए।`);
+                } catch (bgError) {
+                    console.error("[Background Upload Error]:", bgError);
+                }
+            })();
         }
 
-        // 3️⃣ Fetch updated escort
-        const updatedEscort = await EscortModel.findOne({ escortId }).lean();
-
-        // 4️⃣ Keep only last 6 videos
-        const last6Videos = updatedEscort.gallery.videos.slice(-6);
-        await EscortModel.updateOne(
-            { escortId },
-            { $set: { "gallery.videos": last6Videos } }
-        );
-
+        // 3️⃣send to user success upload message 
         return response.status(200).json({
-            message: "Video gallery updated successfully",
+            message: request.files && request.files.length > 0
+                ? "वीडियो बैकग्राउंड में अपलोड हो रहे हैं और जल्द ही लाइव हो जाएंगे।"
+                : "वीडियो गैलरी सफलतापूर्वक अपडेट हो गई है।",
             success: true,
             error: false,
             data: {
-                ...updatedEscort,
+                ...currentEscort,
                 gallery: {
-                    ...updatedEscort.gallery,
-                    videos: last6Videos
+                    ...currentEscort.gallery,
+                    videos: existingVideos 
                 }
             }
         });
