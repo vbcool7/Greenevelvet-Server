@@ -17,7 +17,7 @@ export const createUglyMug = async (request, response) => {
             });
         }
 
-        if (!clientName || !clientPhone || !reason || !location || !incidentType || !incidentDate) {
+        if (!clientPhone || !reason || !location || !incidentType || !incidentDate) {
             return response.status(400).json({
                 message: "clientPhone, reason, location, incidentDate and incidentType are required.",
                 success: false,
