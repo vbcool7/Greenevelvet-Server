@@ -1013,6 +1013,7 @@ export async function fetchEscortdetailscontroller(request, response) {
             .populate("escortprefer")
             .populate("services")
             .populate("rates")
+            .populate("bookings")
 
         if (!escortDetails) {
             return response.status(400).json({
