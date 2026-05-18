@@ -1530,6 +1530,144 @@ export async function escortServicescontroller(request, response) {
     }
 }
 
+// update service
+export async function UpdateService(request, response) {
+
+    try {
+
+        const {
+            _id,
+            escortId,
+            title,
+            label,
+            price,
+            description,
+            isActive
+        } = request.body;
+
+        // validation
+        if (!_id) {
+
+            return response.status(400).json({
+                message: "Service id is missing",
+                success: false,
+                error: true
+            });
+
+        }
+
+        const service = await ServiceModel.findById(_id);
+
+        // not found
+        if (!service) {
+
+            return response.status(404).json({
+                message: "Service not found",
+                success: false,
+                error: true
+            });
+
+        }
+
+        // update
+        const updatedService = await ServiceModel.findByIdAndUpdate(
+            _id,
+            {
+                escortId,
+                title,
+                label,
+                price,
+                description,
+                isActive
+            },
+            {
+                new: true
+            }
+        );
+
+        return response.status(200).json({
+            message: "Service updated successfully",
+            success: true,
+            error: false,
+            data: updatedService
+        });
+
+    } catch (error) {
+        console.log("service update error ", error);
+
+        return response.status(500).json({
+            message: error.message || "server error",
+            success: false,
+            error: true
+        });
+
+    }
+
+}
+
+export async function DeleteService(request, response) {
+
+    try {
+
+        const { _id } = request.body;
+
+        // validation
+        if (!_id) {
+
+            return response.status(400).json({
+                message: "Service id is missing",
+                success: false,
+                error: true
+            });
+
+        }
+
+        // check service
+        const service = await ServiceModel.findById(_id);
+
+        if (!service) {
+
+            return response.status(404).json({
+                message: "Service not found",
+                success: false,
+                error: true
+            });
+
+        }
+
+        // delete
+        await ServiceModel.findByIdAndDelete(_id);
+
+        await EscortModel.findOneAndUpdate(
+            { escortId: service.escortId },
+            {
+                $pull: {
+                    services: _id
+                }
+            }
+        );
+
+
+        return response.status(200).json({
+            message: "Service deleted successfully",
+            success: true,
+            error: false
+        });
+
+    } catch (error) {
+        console.log("service delete error ", error);
+        return response.status(500).json({
+            message: error.message || "server error",
+            success: false,
+            error: true
+        });
+
+    }
+
+}
+
+
+
 // escort rates
 export async function escortRatescontroller(request, response) {
     try {
@@ -1581,6 +1719,141 @@ export async function escortRatescontroller(request, response) {
         });
     }
 }
+
+// escort update rate
+export async function updateRate(request, response) {
+
+    try {
+
+        const {
+            _id,
+            escortId,
+            label,
+            price,
+            duration,
+            isActive
+        } = request.body;
+
+        if (!_id) {
+
+            return response.status(400).json({
+                message: "Rate id is missing",
+                success: false,
+                error: true
+            });
+
+        }
+
+        // check existing rate
+        const rate = await RatesModel.findById(_id);
+
+        if (!rate) {
+
+            return response.status(404).json({
+                message: "Rate not found",
+                success: false,
+                error: true
+            });
+
+        }
+
+        // update rate
+        const updatedRate = await RatesModel.findByIdAndUpdate(
+            _id,
+            {
+                escortId,
+                label,
+                price,
+                duration,
+                isActive
+            },
+            {
+                new: true
+            }
+        );
+
+        return response.status(200).json({
+            message: "Rate updated successfully",
+            success: true,
+            error: false,
+            data: updatedRate
+        });
+
+    } catch (error) {
+        console.log("update rate error", error);
+
+        return response.status(500).json({
+            message: error.message || "server error",
+            success: false,
+            error: true
+        });
+
+    }
+
+}
+
+// escort rate delete 
+export async function deleteRate(request, response) {
+
+    try {
+
+        const { _id } = request.body;
+
+        if (!_id) {
+
+            return response.status(400).json({
+                message: "Rate id is missing",
+                success: false,
+                error: true
+            });
+
+        }
+
+        // check existing rate
+        const rate = await RatesModel.findById(_id);
+
+        if (!rate) {
+
+            return response.status(404).json({
+                message: "Rate not found",
+                success: false,
+                error: true
+            });
+
+        }
+
+        // delete rate
+        await RatesModel.findByIdAndDelete(_id);
+
+        // remove rate id from escort model
+        await EscortModel.findOneAndUpdate(
+            { escortId: rate.escortId },
+            {
+                $pull: {
+                    rates: _id
+                }
+            }
+        );
+
+        return response.status(200).json({
+            message: "Rate deleted successfully",
+            success: true,
+            error: false
+        });
+
+    } catch (error) {
+        console.log("delete rate error", error);
+
+        return response.status(500).json({
+            message: error.message || "server error",
+            success: false,
+            error: true
+        });
+
+    }
+
+}
+
 
 // fetch escorts added services  => not in use bcoz -> use populate and fetch rates and services
 export async function fetchescortServicescontroller(request, response) {

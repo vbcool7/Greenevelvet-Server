@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addBlogComment, addBooking, addNewstourCommentController, addTour, advanceSearchController, blockBlogComments, cancelBooking, cancelTour, changeMobilenumber, complteBooking, createBlog, createNewsTourcontroller, deleteBlog, deleteBooking, deleteEscortProfile, deleteNewsTourController, deleteTour, editEscortProfileDetails, escortChangePassword, escortdetailscontroller, escortForgotPassword, escortLogincontroller, escortRatescontroller, escortResetPassword, escortServicescontroller, escortUploadverification, escortVerifyOtp, fetchAllBlogs, fetchAllNewsTourController, fetchBookings, fetchCitySliderEscorts, fetchEscortBlog, fetchEscortdetailscontroller, fetchEscortNewsTourcontroller, fetchFiltercityescortscontroller, fetchFilterHomescortscontroller, fetchHomeSliderEscorts, fetchSelectBlog, fetchSelectBooking, fetchSelectedBlogComments, fetchSelectedNewsTourComments, fetchSelectNewsTourController, getEscortContact, getToursByDate, hideEscortProfile, logoutEscortcontroller, registerEscortcontroller, sendOtpcontroller, toggleBlogLike, toggleFaceBlur, toggleNewstourLikeController, updateBlog, updateBooking, updateEscortProfile, updateHighlightscontroller, updateNewsTourController, updateTour, uploadAvatarcontroller, uploadImagescontroller, uploadVideoscontroller, verifiedEscortcontroller, verifyEmailcontroller, verifyMobileotp } from '../controllers/escort.controller.js'
+import { addBlogComment, addBooking, addNewstourCommentController, addTour, advanceSearchController, blockBlogComments, cancelBooking, cancelTour, changeMobilenumber, complteBooking, createBlog, createNewsTourcontroller, deleteBlog, deleteBooking, deleteEscortProfile, deleteNewsTourController, deleteRate, DeleteService, deleteTour, editEscortProfileDetails, escortChangePassword, escortdetailscontroller, escortForgotPassword, escortLogincontroller, escortRatescontroller, escortResetPassword, escortServicescontroller, escortUploadverification, escortVerifyOtp, fetchAllBlogs, fetchAllNewsTourController, fetchBookings, fetchCitySliderEscorts, fetchEscortBlog, fetchEscortdetailscontroller, fetchEscortNewsTourcontroller, fetchFiltercityescortscontroller, fetchFilterHomescortscontroller, fetchHomeSliderEscorts, fetchSelectBlog, fetchSelectBooking, fetchSelectedBlogComments, fetchSelectedNewsTourComments, fetchSelectNewsTourController, getEscortContact, getToursByDate, hideEscortProfile, logoutEscortcontroller, registerEscortcontroller, sendOtpcontroller, toggleBlogLike, toggleFaceBlur, toggleNewstourLikeController, updateBlog, updateBooking, updateEscortProfile, updateHighlightscontroller, updateNewsTourController, updateRate, UpdateService, updateTour, uploadAvatarcontroller, uploadImagescontroller, uploadVideoscontroller, verifiedEscortcontroller, verifyEmailcontroller, verifyMobileotp } from '../controllers/escort.controller.js'
 import upload from "../middleware/multer.js";
 import { protect } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rateLimit.js";
@@ -35,8 +35,16 @@ escortRouter.patch("/blur-avatar-face", protect(["Escort"]), toggleFaceBlur)
 escortRouter.post("/upload-gallery-images", upload.array("photos", 6), uploadImagescontroller)
 escortRouter.post("/upload-gallery-videos", upload.array("videos", 6), uploadVideoscontroller)
 escortRouter.patch("/update-highlights", updateHighlightscontroller)
-escortRouter.post("/add-services", escortServicescontroller)
-escortRouter.post("/add-rates", escortRatescontroller)
+
+// add services , update and delete
+escortRouter.post("/add-services", escortServicescontroller);
+escortRouter.patch("/update-service", UpdateService);
+escortRouter.post("/delete-service", DeleteService);
+
+// add rates, update and delete
+escortRouter.post("/add-rates", escortRatescontroller);
+escortRouter.patch("/update-rate", updateRate);
+escortRouter.post("/delete-rate", deleteRate);
 
 escortRouter.get("/fetch-escorts", verifiedEscortcontroller)
 
