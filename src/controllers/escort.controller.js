@@ -3550,21 +3550,32 @@ export const addBooking = async (request, response) => {
         const {
             userId,
             escortId,
+
             date,
+
             startTime,
             endTime,
+
             isAllDay,
+            notAvailable,
+
             status,
             title,
-            notAvailable,
-            type // booking | availability
+
+            type, // booking | availability
+
+            availabilityMode, // single | multiple | weekly
+            repeatWeekly,
+
+            weekDays = []
+
         } = request.body;
 
-        // ===============================
-        // Validation
-        // ===============================
+        // =========================================
+        // VALIDATION
+        // =========================================
 
-        if (!userId || !escortId || !date || !type) {
+        if (!userId || !escortId || !type) {
 
             return response.status(400).json({
                 message: "Required fields missing",
@@ -3574,9 +3585,53 @@ export const addBooking = async (request, response) => {
 
         }
 
-        // ===============================
-        // Time Setup
-        // ===============================
+        // Single date required
+        if (
+            availabilityMode === "single" &&
+            !date
+        ) {
+
+            return response.status(400).json({
+                message: "Date is required",
+                success: false,
+                error: true
+            });
+
+        }
+
+        // Multiple / Weekly days required
+        if (
+            (availabilityMode === "multiple" ||
+                availabilityMode === "weekly") &&
+            weekDays.length === 0
+        ) {
+
+            return response.status(400).json({
+                message: "Please select week days",
+                success: false,
+                error: true
+            });
+
+        }
+
+        // Same time block
+        if (
+            !isAllDay &&
+            !notAvailable &&
+            startTime === endTime
+        ) {
+
+            return response.status(400).json({
+                message: "Start and end time cannot be same",
+                success: false,
+                error: true
+            });
+
+        }
+
+        // =========================================
+        // TIME SETUP
+        // =========================================
 
         let start = startTime;
         let end = endTime;
@@ -3588,164 +3643,305 @@ export const addBooking = async (request, response) => {
 
         }
 
-        // ===============================
-        // Create Proper DateTime
-        // ===============================
+        // =========================================
+        // DAY MAPPING
+        // =========================================
 
-        let startDateTime = new Date(`${date}T${start}:00`);
-        let endDateTime = new Date(`${date}T${end}:00`);
+        const daysMap = {
+            Sunday: 0,
+            Monday: 1,
+            Tuesday: 2,
+            Wednesday: 3,
+            Thursday: 4,
+            Friday: 5,
+            Saturday: 6
+        };
 
-        // ✅ Overnight Support
-        // Example:
-        // 11 PM → 2 AM
-        // 23:00 → 02:00
+        // =========================================
+        // GET NEXT DATE BY DAY
+        // =========================================
 
-        if (endDateTime <= startDateTime) {
+        const getNextDateByDay = (targetDay) => {
 
-            endDateTime.setDate(
-                endDateTime.getDate() + 1
+            const today = new Date();
+
+            const currentDay = today.getDay();
+
+            const targetDayIndex = daysMap[targetDay];
+
+            let diff = targetDayIndex - currentDay;
+
+            // passed days => next week
+            if (diff < 0) {
+
+                diff += 7;
+
+            }
+
+            const nextDate = new Date(today);
+
+            nextDate.setDate(today.getDate() + diff);
+
+            return nextDate.toISOString().split("T")[0];
+
+        };
+
+        // =========================================
+        // CONFLICT CHECK FUNCTION
+        // =========================================
+
+        const checkConflict = async (
+            selectedDate,
+            start,
+            end,
+            type
+        ) => {
+
+            let startDateTime = new Date(
+                `${selectedDate}T${start}:00`
             );
 
-        }
-
-        // ===============================
-        // Get Same Date Records
-        // ===============================
-
-        const existingSlots = await BookingModel.find({
-            escortId,
-            date
-        });
-
-        // ===============================
-        // Conflict Check
-        // ===============================
-
-        let hasConflict = false;
-
-        for (const slot of existingSlots) {
-
-            let slotStart = new Date(
-                `${new Date(slot.date).toISOString().split("T")[0]}T${slot.startTime}:00`
+            let endDateTime = new Date(
+                `${selectedDate}T${end}:00`
             );
 
-            let slotEnd = new Date(
-                `${new Date(slot.date).toISOString().split("T")[0]}T${slot.endTime}:00`
-            );
+            // overnight support
+            if (endDateTime <= startDateTime) {
 
-            // Overnight Existing Slot
-            if (slotEnd <= slotStart) {
-
-                slotEnd.setDate(
-                    slotEnd.getDate() + 1
+                endDateTime.setDate(
+                    endDateTime.getDate() + 1
                 );
 
             }
 
-            const overlap =
-                startDateTime < slotEnd &&
-                endDateTime > slotStart;
-
-            if (!overlap) continue;
-
-            // =====================================
-            // RULES
-            // =====================================
-
-            // ❌ Availability inside Booking NOT allowed
-
-            if (
-                type === "availability" &&
-                slot.type === "booking"
-            ) {
-
-                hasConflict = true;
-                break;
-
-            }
-
-            // ✅ Booking inside Availability ALLOWED
-
-            if (
-                type === "booking" &&
-                slot.type === "availability"
-            ) {
-
-                continue;
-
-            }
-
-            // ❌ Same type overlap block
-
-            hasConflict = true;
-            break;
-
-        }
-
-        if (hasConflict) {
-
-            return response.status(400).json({
-                message:
-                    type === "booking"
-                        ? "Time slot already booked"
-                        : "Availability conflicts with booking",
-                success: false,
-                error: true
+            const existingSlots = await BookingModel.find({
+                escortId,
+                date: selectedDate
             });
 
-        }
+            for (const slot of existingSlots) {
 
-        // ===============================
-        // Create Record
-        // ===============================
+                let slotStart = new Date(
+                    `${slot.date}T${slot.startTime}:00`
+                );
 
-        const booking = await BookingModel.create({
+                let slotEnd = new Date(
+                    `${slot.date}T${slot.endTime}:00`
+                );
 
-            userId,
-            escortId,
-            date,
+                // overnight existing slot
+                if (slotEnd <= slotStart) {
 
-            startTime: start,
-            endTime: end,
+                    slotEnd.setDate(
+                        slotEnd.getDate() + 1
+                    );
 
-            isAllDay,
-            status: status || "active",
-            title,
-            notAvailable,
-            type
-
-        });
-
-        // ===============================
-        // Push into Escort
-        // ===============================
-
-        await EscortModel.findOneAndUpdate(
-
-            { escortId },
-
-            {
-                $push: {
-                    bookings: booking._id
                 }
+
+                const overlap =
+                    startDateTime < slotEnd &&
+                    endDateTime > slotStart;
+
+                if (!overlap) continue;
+
+                // availability inside booking not allowed
+                if (
+                    type === "availability" &&
+                    slot.type === "booking"
+                ) {
+
+                    return true;
+
+                }
+
+                // booking inside availability allowed
+                if (
+                    type === "booking" &&
+                    slot.type === "availability"
+                ) {
+
+                    continue;
+
+                }
+
+                // same type overlap block
+                return true;
+
             }
 
-        );
+            return false;
 
-        // ===============================
-        // Success
-        // ===============================
+        };
+
+        // =========================================
+        // CREATE RECORD FUNCTION
+        // =========================================
+
+        const createRecord = async (selectedDate) => {
+
+            const hasConflict = await checkConflict(
+                selectedDate,
+                start,
+                end,
+                type
+            );
+
+            if (hasConflict) {
+
+                return null;
+
+            }
+
+            const booking = await BookingModel.create({
+
+                userId,
+                escortId,
+
+                date: selectedDate,
+
+                startTime: start,
+                endTime: end,
+
+                isAllDay,
+                notAvailable,
+
+                status: status || "active",
+
+                title,
+
+                type,
+
+                availabilityMode,
+                repeatWeekly,
+
+                weekDays
+
+            });
+
+            await EscortModel.findOneAndUpdate(
+
+                { escortId },
+
+                {
+                    $push: {
+                        bookings: booking._id
+                    }
+                }
+
+            );
+
+            return booking;
+
+        };
+
+        // =========================================
+        // MAIN LOGIC
+        // =========================================
+
+        let createdRecords = [];
+
+        // =========================================
+        // SINGLE
+        // =========================================
+
+        if (
+            availabilityMode === "single" ||
+            type === "booking"
+        ) {
+
+            const booking = await createRecord(date);
+
+            if (!booking) {
+
+                return response.status(400).json({
+                    message: type === "booking"
+                        ? "Time slot already booked"
+                        : "Availability conflicts with booking",
+                    success: false,
+                    error: true
+                });
+
+            }
+
+            createdRecords.push(booking);
+
+        }
+
+        // =========================================
+        // MULTIPLE
+        // =========================================
+
+        else if (
+            availabilityMode === "multiple"
+        ) {
+
+            for (const day of weekDays) {
+
+                const calculatedDate =
+                    getNextDateByDay(day);
+
+                const booking =
+                    await createRecord(calculatedDate);
+
+                if (booking) {
+
+                    createdRecords.push(booking);
+
+                }
+
+            }
+
+        }
+
+        // =========================================
+        // WEEKLY
+        // =========================================
+
+        else if (
+            availabilityMode === "weekly"
+        ) {
+
+            const today = new Date();
+
+            const currentDay = today.getDay();
+
+            for (const day of weekDays) {
+
+                const dayIndex = daysMap[day];
+
+                // current week remaining days only
+                if (dayIndex >= currentDay) {
+
+                    const calculatedDate =
+                        getNextDateByDay(day);
+
+                    const booking =
+                        await createRecord(calculatedDate);
+
+                    if (booking) {
+
+                        createdRecords.push(booking);
+
+                    }
+
+                }
+
+            }
+
+        }
+
+        // =========================================
+        // SUCCESS
+        // =========================================
 
         return response.status(201).json({
-
-            message:
-                type === "booking"
-                    ? "Booking added successfully"
-                    : "Availability added successfully",
-
+            message: type === "booking"
+                ? "Booking added successfully"
+                : "Availability added successfully",
             success: true,
             error: false,
-            data: booking
+            totalCreated: createdRecords.length,
+            data: createdRecords
 
         });
 
@@ -3754,7 +3950,6 @@ export const addBooking = async (request, response) => {
         console.log("create booking error", error);
 
         return response.status(500).json({
-
             message: error.message || "Server error",
             success: false,
             error: true

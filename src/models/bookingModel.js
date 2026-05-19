@@ -18,18 +18,18 @@ const bookingSchema = new mongoose.Schema({
     // Booking Date
     date: {
         type: String,   // "YYYY-MM-DD"
-        required: true
+        default: ""
     },
 
     // Time Slot
     startTime: {
         type: String,   // "09:00"
-        required: true
+        default: ""
     },
 
     endTime: {
         type: String,   // "10:00"
-        required: true
+        default: ""
     },
 
     // All Day Booking
@@ -57,6 +57,33 @@ const bookingSchema = new mongoose.Schema({
     title: {
         type: String,
         default: ""
+    },
+
+    availabilityMode: {
+        type: String,
+        enum: ["single", "multiple", "weekly"],
+        default: "single",
+    },
+
+    repeatWeekly: {
+        type: Boolean,
+        default: false
+    },
+    weekDays: {
+        type: [String],
+        enum: [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
+        ],
+        default: [],
+    },
+    repeatUntil: {
+        type: String
     },
 
 
