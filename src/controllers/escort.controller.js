@@ -2067,7 +2067,8 @@ export async function fetchFiltercityescortscontroller(request, response) {
         };
 
         // 🔹 Fetch escorts (NO populate)
-        const escortList = await EscortModel.find(query);
+        const escortList = await EscortModel.find(query)
+        .populate("bookings");
 
 
         if (escortList.length === 0) {
