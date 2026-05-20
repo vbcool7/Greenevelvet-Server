@@ -898,6 +898,90 @@ export async function escortUploadverification(request, response) {
 
 }
 
+// registration process upload gallery images 
+export async function registerGalleryController(request, response) {
+    try {
+
+        const { escortId } = request.body;
+
+        if (!escortId) {
+            return response.status(400).json({
+                message: "escortId required",
+                success: false,
+                error: true
+            });
+        }
+
+        if (!request.files || request.files.length < 3) {
+            return response.status(400).json({
+                message: "Minimum 3 images required",
+                success: false,
+                error: true
+            });
+        }
+
+        if (request.files.length > 6) {
+            return response.status(400).json({
+                message: "Maximum 6 images allowed",
+                success: false,
+                error: true
+            });
+        }
+
+        const escort = await EscortModel.findOne({ escortId });
+
+        if (!escort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+        let uploadedImages = [];
+
+        for (let file of request.files) {
+
+            const uploadResult = await uploadImageCloudinary(file, "gallery/images");
+
+            uploadedImages.push({
+                public_id: uploadResult.public_id,
+                url: uploadResult.secure_url
+            });
+        }
+
+        await EscortModel.updateOne(
+            { escortId },
+            {
+                $set: {
+                    "gallery.photos": uploadedImages
+                }
+            }
+        );
+
+        const updatedEscort = await EscortModel
+            .findOne({ escortId })
+            .lean();
+
+        return response.status(200).json({
+            message: "Gallery uploaded successfully",
+            success: true,
+            error: false,
+            data: updatedEscort
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        return response.status(500).json({
+            message: error.message || error,
+            success: false,
+            error: true
+        });
+    }
+}
+
 // Subcribe plan controll
 export async function subcribePlans(request, response) {
     try {
@@ -1102,7 +1186,7 @@ export async function uploadAvatarcontroller(request, response) {
 
         if (!escortId) {
             return response.status(400).json({
-                message: "escortId required",
+                message: "escort Id required",
                 success: false,
                 error: true
             })
@@ -1110,7 +1194,7 @@ export async function uploadAvatarcontroller(request, response) {
 
         if (!request.files?.avatar) {
             return response.status(400).json({
-                message: "avatar required",
+                message: "profile image required",
                 success: false,
                 error: true
             })
@@ -1135,7 +1219,7 @@ export async function uploadAvatarcontroller(request, response) {
         }
 
         return response.status(200).json({
-            message: "avatar uploaded successfully",
+            message: "profile image uploaded successfully",
             success: true,
             error: false,
             data: {
@@ -1605,6 +1689,7 @@ export async function UpdateService(request, response) {
 
 }
 
+// delete services
 export async function DeleteService(request, response) {
 
     try {
@@ -5152,7 +5237,7 @@ export async function fetchHomeSliderEscorts(request, response) {
         // City filter only if city is provided
         if (city) filter.city = city;
 
-        console.log("req filter: ", filter);
+        console.log("request filter: ", filter);
 
         const escorts = await EscortModel.find(filter);
 
