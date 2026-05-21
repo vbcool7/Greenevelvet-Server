@@ -1952,3 +1952,199 @@ export async function deleteNewsandtour(request, response) {
 
 // ======================================================<  >==============================================================
 
+// approve / reject avatar controller
+export async function verifyAvatar(request, response) {
+
+    try {
+
+        const { escortId, status } = request.body;
+
+        // allowed status
+        const allowedStatus = ["Pending", "Approved", "Rejected"];
+
+        if (!escortId || !status) {
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "escortId and status are required"
+            });
+        }
+
+        if (!allowedStatus.includes(status)) {
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "Invalid status"
+            });
+        }
+
+        // update avatar status
+        const updatedEscort = await EscortModel.findOneAndUpdate(
+            { escortId },
+            {
+                $set: {
+                    "avatar.status": status
+                }
+            },
+            { new: true }
+        );
+
+        if (!updatedEscort) {
+            return response.status(404).json({
+                success: false,
+                error: true,
+                message: "Escort not found"
+            });
+        }
+
+        return response.status(200).json({
+            success: true,
+            error: false,
+            message: `Avatar ${status} successfully`,
+            data: updatedEscort.avatar
+        });
+
+    } catch (error) {
+        console.log("verify avatr error ", error);
+
+        return response.status(500).json({
+            success: false,
+            error: true,
+            message: error.message || error
+        });
+
+    }
+
+}
+
+// approve / reject Gallery Photos
+export async function verifyGalleryPhotos(request, response) {
+
+    try {
+
+        const { escortId, public_id, status } = request.body;
+
+        const allowedStatus = ["Pending", "Approved", "Rejected"];
+
+        if (!escortId || !public_id || !status) {
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "escortId, public_id and status are required"
+            });
+        }
+
+        if (!allowedStatus.includes(status)) {
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "Invalid status"
+            });
+        }
+
+        // update single image status
+        const updatedEscort = await EscortModel.findOneAndUpdate(
+            {
+                escortId,
+                "gallery.photos.public_id": public_id
+            },
+            {
+                $set: {
+                    "gallery.photos.$.status": status
+                }
+            },
+            { new: true }
+        );
+
+        if (!updatedEscort) {
+            return response.status(404).json({
+                success: false,
+                error: true,
+                message: "Escort or image not found"
+            });
+        }
+
+        return response.status(200).json({
+            success: true,
+            error: false,
+            message: `Photo ${status} successfully`
+        });
+
+    } catch (error) {
+        console.log("galley photos status update error ", error);
+
+        return response.status(500).json({
+            success: false,
+            error: true,
+            message: error.message || error
+        });
+
+    }
+
+}
+
+// approve / reject Gallery Videos
+export async function verifyGalleryVideos(request, response) {
+
+    try {
+
+        const { escortId, public_id, status } = request.body;
+
+        const allowedStatus = ["Pending", "Approved", "Rejected"];
+
+        if (!escortId || !public_id || !status) {
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "escortId, public_id and status are required"
+            });
+        }
+
+        if (!allowedStatus.includes(status)) {
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "Invalid status"
+            });
+        }
+
+        // update single video status
+        const updatedEscort = await EscortModel.findOneAndUpdate(
+            {
+                escortId,
+                "gallery.videos.public_id": public_id
+            },
+            {
+                $set: {
+                    "gallery.videos.$.status": status
+                }
+            },
+            { new: true }
+        );
+
+        if (!updatedEscort) {
+            return response.status(404).json({
+                success: false,
+                error: true,
+                message: "Escort or video not found"
+            });
+        }
+
+        return response.status(200).json({
+            success: true,
+            error: false,
+            message: `Video ${status} successfully`
+        });
+
+    } catch (error) {
+        console.log("galley videos status update error ", error);
+
+        return response.status(500).json({
+            success: false,
+            error: true,
+            message: error.message || error
+        });
+
+    }
+
+}

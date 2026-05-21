@@ -119,13 +119,21 @@ const EscortSchema = new mongoose.Schema({
         default: false
     },
 
+    /* ======================= Documents upload =========================== */
+
     verificationselfie: {
         type: String
     },
     verificationgovtId: {
         type: String
     },
-
+    hasAcceptedDocsOwnership: {
+        type: Boolean,
+        default: false
+    },
+    docsOwnershipAcceptedAt: {
+        type: Date
+    },
     docsuploadStatus: {
         type: String,
         default: "Not uploaded"
@@ -331,8 +339,31 @@ const EscortSchema = new mongoose.Schema({
 
     /* ================= GALLERY ================= */
     avatar: {
+        url: {
+            type: String,
+            default: ""
+        },
+        public_id: {
+            type: String,
+            default: ""
+        },
+        status: {
+            type: String,
+            enum: ['Pending', 'Approved', 'Rejected'],
+            default: 'Pending'
+        }
+    },
+    isAvatarApproved: {
         type: String,
-        default: ""
+        enum: ['Pending', 'Approved', 'Rejected'],
+        default: 'Pending'
+    },
+    hasAcceptedAvatarOwnership: {
+        type: Boolean,
+        default: false
+    },
+    avatarOwnershipAcceptedAt: {
+        type: Date
     },
     isFaceBlurred: {
         type: Boolean,
@@ -342,15 +373,39 @@ const EscortSchema = new mongoose.Schema({
         photos: [
             {
                 public_id: { type: String },
-                url: { type: String }
+                url: { type: String },
+                status: {
+                    type: String,
+                    enum: ['Pending', 'Approved', 'Rejected'],
+                    default: 'Pending'
+                }
             }
         ],
         videos: [
             {
                 public_id: { type: String },
-                url: { type: String }
+                url: { type: String },
+                status: {
+                    type: String,
+                    enum: ['Pending', 'Approved', 'Rejected'],
+                    default: 'Pending'
+                }
             }
         ]
+    },
+    hasAcceptedImageOwnership: {
+        type: Boolean,
+        default: false
+    },
+    imageOwnershipAcceptedAt: {
+        type: Date
+    },
+    hasAcceptedVideoOwnership: {
+        type: Boolean,
+        default: false
+    },
+    videoOwnershipAcceptedAt: {
+        type: Date
     },
 
     /* ================= ANALYTICS ================= */

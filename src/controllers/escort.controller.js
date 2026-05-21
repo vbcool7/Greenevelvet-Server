@@ -30,6 +30,7 @@ import sharp from "sharp";
 import { sendRegistrationNotification } from "../utils/sendRegistrationNotification.js";
 import cloudinary from "../config/cloudinary.js";
 import { sendMail } from "../utils/sendMail.js";
+import { deleteFromCloudinary } from "../utils/deleteFromCloudinary.js";
 
 // change password
 export const escortChangePassword = async (request, response) => {
@@ -843,7 +844,7 @@ export async function escortUploadverification(request, response) {
 
         if (!escortId) {
             return response.status(400).json({
-                message: "escortId required",
+                message: "escort Id required",
                 success: false,
                 error: true
             })
@@ -857,6 +858,16 @@ export async function escortUploadverification(request, response) {
             })
         }
 
+        const escort = await EscortModel.findOne({ escortId });
+
+        if (!escort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
         const selfieUpload = await uploadImageCloudinary(request.files.verificationselfie[0], "verification/verificationselfie");
         const govtIdUpload = await uploadImageCloudinary(request.files.verificationgovtId[0], "verification/verificationgovtId");
 
@@ -866,17 +877,12 @@ export async function escortUploadverification(request, response) {
                 verificationselfie: selfieUpload.secure_url,
                 verificationgovtId: govtIdUpload.secure_url,
                 docsuploadStatus: "pending",
+                hasAcceptedDocsOwnership: true,
+                docsOwnershipAcceptedAt: new Date(),
+
             },
             { new: true }
         );
-
-        if (!uploadEscort) {
-            return response.status(404).json({
-                message: "Escort not found",
-                success: false,
-                error: true
-            });
-        }
 
         return response.json({
             message: "Verification documents uploaded successfully",
@@ -889,6 +895,8 @@ export async function escortUploadverification(request, response) {
         });
 
     } catch (error) {
+        console.log("docs upload error ", error);
+
         return response.status(500).json({
             message: error.message || error,
             error: true,
@@ -954,7 +962,9 @@ export async function registerGalleryController(request, response) {
             { escortId },
             {
                 $set: {
-                    "gallery.photos": uploadedImages
+                    "gallery.photos": uploadedImages,
+                    hasAcceptedImageOwnership: true,
+                    imageOwnershipAcceptedAt: new Date(),
                 }
             }
         );
@@ -999,8 +1009,6 @@ export async function subcribePlans(request, response) {
         })
     }
 }
-
-
 
 // Escort Login controll
 export async function escortLogincontroller(request, response) {
@@ -1200,12 +1208,34 @@ export async function uploadAvatarcontroller(request, response) {
             })
         }
 
+        const existingEscort = await EscortModel.findOne({ escortId });
+
+        if (!existingEscort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+        if (existingEscort?.avatar?.public_id) {
+
+            await deleteFromCloudinary(existingEscort.avatar.public_id);
+
+        }
+
         const avatarUpload = await uploadImageCloudinary(request.files.avatar[0], "profileImg/avatar");
 
         const uploadEscort = await EscortModel.findOneAndUpdate(
             { escortId },
             {
-                avatar: avatarUpload.secure_url,
+                avatar: {
+                    url: avatarUpload.secure_url,
+                    public_id: avatarUpload.public_id,
+                    status: "Pending"
+                },
+                hasAcceptedAvatarOwnership: true,
+                avatarOwnershipAcceptedAt: new Date()
             },
             { new: true }
         );
@@ -1332,7 +1362,13 @@ export async function uploadImagescontroller(request, response) {
             // Push new images to DB
             await EscortModel.updateOne(
                 { escortId },
-                { $push: { "gallery.photos": { $each: uploadedImages } } }
+                {
+                    $push: {
+                        "gallery.photos": { $each: uploadedImages },
+                        hasAcceptedImageOwnership: true,
+                        imageOwnershipAcceptedAt: new Date()
+                    }
+                }
             );
         }
 
@@ -1422,7 +1458,13 @@ export async function uploadVideoscontroller(request, response) {
             // Push new videos to DB
             await EscortModel.updateOne(
                 { escortId },
-                { $push: { "gallery.videos": { $each: uploadedVideos } } }
+                {
+                    $push: {
+                        "gallery.videos": { $each: uploadedVideos },
+                        hasAcceptedVideoOwnership: true,
+                        videoOwnershipAcceptedAt: new Date()
+                    }
+                }
             );
         }
 
@@ -2068,7 +2110,7 @@ export async function fetchFiltercityescortscontroller(request, response) {
 
         // 🔹 Fetch escorts (NO populate)
         const escortList = await EscortModel.find(query)
-        .populate("bookings");
+            .populate("bookings");
 
 
         if (escortList.length === 0) {
