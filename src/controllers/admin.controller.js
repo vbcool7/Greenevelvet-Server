@@ -2187,10 +2187,12 @@ export async function verifyUploadImages(request, response) {
             });
         }
 
+        let updatedEscort = null;
+
         if (type === "avatar") {
 
             // update avatar status
-            const updatedEscort = await EscortModel.findOneAndUpdate(
+            updatedEscort = await EscortModel.findOneAndUpdate(
                 { escortId },
                 {
                     $set: {
@@ -2206,7 +2208,7 @@ export async function verifyUploadImages(request, response) {
         if (type === "gallery") {
 
             // update single image status
-            const updatedEscort = await EscortModel.findOneAndUpdate(
+            updatedEscort = await EscortModel.findOneAndUpdate(
                 {
                     escortId,
                     "gallery.photos.url": imageUrl
