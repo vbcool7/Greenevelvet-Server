@@ -2177,7 +2177,7 @@ export async function verifyUploadImages(request, response) {
             });
         }
 
-        const escort = await EscortModel.findOne(escortId);
+        const escort = await EscortModel.findOne({ escortId });
 
         if (!escort) {
             return response.status(404).json({
