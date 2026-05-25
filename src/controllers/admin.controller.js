@@ -2209,7 +2209,7 @@ export async function verifyUploadImages(request, response) {
             const updatedEscort = await EscortModel.findOneAndUpdate(
                 {
                     escortId,
-                    "gallery.photos.url": url
+                    "gallery.photos.url": imageUrl
                 },
                 {
                     $set: {
