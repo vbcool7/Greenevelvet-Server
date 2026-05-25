@@ -2203,7 +2203,7 @@ export async function verifyUploadImages(request, response) {
         }
 
 
-        if (type === "avatar") {
+        if (type === "gallery") {
 
             // update single image status
             const updatedEscort = await EscortModel.findOneAndUpdate(
