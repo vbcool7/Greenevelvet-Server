@@ -2155,6 +2155,8 @@ export async function verifyUploadImages(request, response) {
 
     try {
 
+        console.log("req body check ", request.body);
+
         const { escortId, imageUrl, status, type } = request.body;
 
         const allowedStatus = ["Pending", "Approved", "Rejected"];
