@@ -13,6 +13,7 @@ import NewsAndTourModel from '../models/newsandtourModel.js';
 import NewstourCommentsModel from '../models/newstourCommentsModel.js';
 import NewstourLikesModel from '../models/newstourLikesModel.js';
 import { decrypt } from '../utils/crypto.js';
+import { error } from 'console';
 
 // Admin login
 export async function adminlogincontroller(request, response) {
@@ -2022,11 +2023,11 @@ export async function verifyGalleryPhotos(request, response) {
 
     try {
 
-        const { escortId, public_id, status } = request.body;
+        const { escortId, imageUrl, status, type } = request.body;
 
         const allowedStatus = ["Pending", "Approved", "Rejected"];
 
-        if (!escortId || !public_id || !status) {
+        if (!escortId || !imageUrl || !status || !type) {
             return response.status(400).json({
                 success: false,
                 error: true,
@@ -2138,6 +2139,102 @@ export async function verifyGalleryVideos(request, response) {
 
     } catch (error) {
         console.log("galley videos status update error ", error);
+
+        return response.status(500).json({
+            success: false,
+            error: true,
+            message: error.message || error
+        });
+
+    }
+
+}
+
+// avatar and gallery images status update and verify
+export async function verifyUploadImages(request, response) {
+
+    try {
+
+        const { escortId, imageUrl, status, type } = request.body;
+
+        const allowedStatus = ["Pending", "Approved", "Rejected"];
+
+        if (!escortId || !imageUrl || !status || !type) {
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "escortId, image url, type and status are required"
+            });
+        }
+
+        if (!allowedStatus.includes(status)) {
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "Invalid status"
+            });
+        }
+
+        const escort = await EscortModel.findOne(escortId);
+
+        if (!escort) {
+            return response.status(404).json({
+                success: false,
+                error: true,
+                message: "Escort not found"
+            });
+        }
+
+        if (type === "avatar") {
+
+            // update avatar status
+            const updatedEscort = await EscortModel.findOneAndUpdate(
+                { escortId },
+                {
+                    $set: {
+                        "avatar.status": status
+                    }
+                },
+                { new: true }
+            );
+
+        }
+
+
+        if (type === "avatar") {
+
+            // update single image status
+            const updatedEscort = await EscortModel.findOneAndUpdate(
+                {
+                    escortId,
+                    "gallery.photos.url": url
+                },
+                {
+                    $set: {
+                        "gallery.photos.$.status": status
+                    }
+                },
+                { new: true }
+            );
+
+        }
+
+        if (!updatedEscort) {
+            return response.status(404).json({
+                success: false,
+                error: true,
+                message: "Escort or image not found"
+            });
+        }
+
+        return response.status(200).json({
+            success: true,
+            error: false,
+            message: `Photo ${status} successfully`
+        });
+
+    } catch (error) {
+        console.log("image status update error ", error);
 
         return response.status(500).json({
             success: false,

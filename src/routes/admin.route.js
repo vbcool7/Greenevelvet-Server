@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { adminlogincontroller, adminlogoutcontroller, changePassword, deleteBlog, deleteClient, deleteEscortcontroller, deleteNewsandtour, deleteTour, escortProfileDetails, fetchBlogDetails, fetchBlogs, fetchClientdetails, fetchClients, fetchEscortcontroller, fetchEscortdetailscontroller, fetchNewsandtourDetails, fetchNewsandtours, fetchTourDetails, fetchTours, forgotPassword, getAdminDetails, resetPassword, updateAdminName, updateBlogStatus, updateClient, updateEscortcontroller, updateNewsandtourStatus, verifiedEscortcontroller, verifyAvatar, verifyGalleryPhotos, verifyGalleryVideos, verifyOtp } from '../controllers/admin.controller.js';
+import { adminlogincontroller, adminlogoutcontroller, changePassword, deleteBlog, deleteClient, deleteEscortcontroller, deleteNewsandtour, deleteTour, escortProfileDetails, fetchBlogDetails, fetchBlogs, fetchClientdetails, fetchClients, fetchEscortcontroller, fetchEscortdetailscontroller, fetchNewsandtourDetails, fetchNewsandtours, fetchTourDetails, fetchTours, forgotPassword, getAdminDetails, resetPassword, updateAdminName, updateBlogStatus, updateClient, updateEscortcontroller, updateNewsandtourStatus, verifiedEscortcontroller, verifyAvatar, verifyGalleryPhotos, verifyGalleryVideos, verifyOtp, verifyUploadImages } from '../controllers/admin.controller.js';
 import { protect } from '../middleware/auth.js';
 
 const adminRouter = Router();
@@ -37,6 +37,7 @@ adminRouter.get("/fetch-verified-escorts", verifiedEscortcontroller)
 adminRouter.patch("/verify-avatar", verifyAvatar);
 adminRouter.patch("/verify-gallery-photos", verifyGalleryPhotos);
 adminRouter.patch("/verify-gallery-videos", verifyGalleryVideos);
+adminRouter.patch('/verify-images', verifyUploadImages);
 
 // clients fetch update and delete operation
 adminRouter.get("/fetch-clients", fetchClients)
