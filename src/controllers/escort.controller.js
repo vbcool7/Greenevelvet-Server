@@ -1365,9 +1365,11 @@ export async function uploadImagescontroller(request, response) {
                 {
                     $push: {
                         "gallery.photos": { $each: uploadedImages },
+                    },
+                    $set: {
                         hasAcceptedImageOwnership: true,
                         imageOwnershipAcceptedAt: new Date()
-                    }
+                    },
                 }
             );
         }
@@ -1461,6 +1463,8 @@ export async function uploadVideoscontroller(request, response) {
                 {
                     $push: {
                         "gallery.videos": { $each: uploadedVideos },
+                    },
+                    $set: {
                         hasAcceptedVideoOwnership: true,
                         videoOwnershipAcceptedAt: new Date()
                     }
