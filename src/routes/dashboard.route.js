@@ -4,7 +4,7 @@ import { getClientsdata, getEscortsdata } from "../controllers/dashboard.control
 
 const dashboardRouter = Router();
 
-dashboardRouter.get('/get-escorts-data', getEscortsdata);
-dashboardRouter.get('/get-clients-data', getClientsdata);
+dashboardRouter.get('/escorts-data', getEscortsdata);
+dashboardRouter.get('/clients-data', getClientsdata);
 
 export default dashboardRouter;
