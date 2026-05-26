@@ -2155,8 +2155,6 @@ export async function verifyUploadImages(request, response) {
 
     try {
 
-        console.log("req body check ", request.body);
-
         const { escortId, imageUrl, status, type } = request.body;
 
         const allowedStatus = ["Pending", "Approved", "Rejected"];
@@ -2223,11 +2221,29 @@ export async function verifyUploadImages(request, response) {
 
         }
 
+        if (type === "video") {
+
+            // update single image status
+            updatedEscort = await EscortModel.findOneAndUpdate(
+                {
+                    escortId,
+                    "gallery.videos.url": imageUrl
+                },
+                {
+                    $set: {
+                        "gallery.videos.$.status": status
+                    }
+                },
+                { new: true }
+            );
+
+        }
+
         if (!updatedEscort) {
             return response.status(404).json({
                 success: false,
                 error: true,
-                message: "Escort or image not found"
+                message: "image or video not found"
             });
         }
 
