@@ -13,6 +13,7 @@ import settingsRouter from "./routes/settigns.route.js";
 import subcribedRouter from "./routes/subcribedplan.route.js";
 import uglymugsRouter from "./routes/uglymugs.route.js";
 import extraRouter from "./routes/extra.route.js";
+import dashboardRouter from "./routes/dashboard.route.js";
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.get("/health", (req, res) => {
 app.set("trust proxy", true);
 
 /* Routes */
+app.use('/dashboard', dashboardRouter);
 app.use('/geo', geoRouter);
 app.use('/admin', adminRouter);
 app.use('/escort', escortRouter);
