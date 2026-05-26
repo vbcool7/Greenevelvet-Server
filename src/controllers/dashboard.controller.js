@@ -6,6 +6,7 @@ import EscortModel from "../models/escortModel.js";
 export async function getEscortsdata(request, response) {
 
     try {
+        console.log("api call");
 
         const escorts = await EscortModel.find()
             .select("-password")
@@ -41,6 +42,7 @@ export async function getEscortsdata(request, response) {
 export async function getClientsdata(request, response) {
 
     try {
+        console.log("api call");
 
         const clients = await ClientModel.find()
             .select("-password")
