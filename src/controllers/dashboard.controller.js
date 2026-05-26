@@ -1,5 +1,5 @@
 import ClientModel from "../models/clientModel.js";
-import EscortModel from "../models/escortModel,js";
+import EscortModel from "../models/escortModel.js";
 
 
 // get all escorts data
