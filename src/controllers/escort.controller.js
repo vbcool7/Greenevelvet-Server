@@ -2269,12 +2269,12 @@ export const advanceSearchController = async (request, response) => {
             };
         }
 
-        query.avatar = {
+        query["avatar.url"] = {
             $exists: true,
-            $ne: null,
-            $type: "string",
-            $ne: ""
+            $nin: [null, ""]
         };
+
+        query["avatar.status"] = "Approved";
 
         // ---------- Aggregation Pipeline ----------
         let pipeline = [
