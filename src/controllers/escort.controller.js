@@ -2055,7 +2055,7 @@ export async function fetchFiltercityescortscontroller(request, response) {
         if (filters.isVisible === true) query.isVisible = true;
         if (filters.incall === true) query.incall = true;
         if (filters.outcall === true) query.outcall = true;
-        if (filters.fmt === true) query.fmt = true;
+        if (filters.fmty === true) query.fmty = true;
 
         if (filters.adverties_category && filters.adverties_category !== "Any") {
             query.adverties_category = filters.adverties_category;
@@ -2106,11 +2106,12 @@ export async function fetchFiltercityescortscontroller(request, response) {
             query.rateFrom = { $gte: minRate };
         }
 
-        query.avatar = {
+        query["avatar.url"] = {
             $exists: true,
-            $type: "string",
             $nin: [null, ""]
         };
+
+        query["avatar.status"] = "Approved";
 
         // 🔹 Fetch escorts (NO populate)
         const escortList = await EscortModel.find(query)
