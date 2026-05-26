@@ -16,7 +16,6 @@ export async function getEscortsdata(request, response) {
             .populate("blog")
             .populate("newsTour")
             .populate("bookings")
-            .populate("availability_plan");
 
         return response.status(200).json({
             success: true,
