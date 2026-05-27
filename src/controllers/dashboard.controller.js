@@ -78,6 +78,7 @@ export const getBookingsData = async (request, response) => {
                 city
                 isVerified
                 avatar
+                totalAmountPaid
             `
             });
 

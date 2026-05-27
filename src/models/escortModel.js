@@ -230,6 +230,11 @@ const EscortSchema = new mongoose.Schema({
         }
     ],
 
+    totalAmountPaid: {
+        type: String,
+        default: null
+    },
+
     /* ================= PASSWORD & OTP ================= */
     forgot_password: {
         type: String,
