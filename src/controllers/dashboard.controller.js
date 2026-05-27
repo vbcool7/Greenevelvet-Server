@@ -61,15 +61,12 @@ export async function getClientsdata(request, response) {
 
 }
 
-
 // bookings and availability
 export const getBookingsData = async (request, response) => {
 
     try {
 
-        const { date } = request.query;
-
-        const bookings = await BookingModel.find({ date, status: "Active" })
+        const bookings = await BookingModel.find()
             .populate({
                 path: "userId",
                 match: {
