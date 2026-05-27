@@ -1,3 +1,4 @@
+import BookingModel from "../models/bookingModel.js";
 import ClientModel from "../models/clientModel.js";
 import EscortModel from "../models/escortModel.js";
 
@@ -9,13 +10,7 @@ export async function getEscortsdata(request, response) {
         console.log("api call");
 
         const escorts = await EscortModel.find()
-            .select("-password")
-            .populate("tours")
-            .populate("services")
-            .populate("rates")
-            .populate("blog")
-            .populate("newsTour")
-            .populate("bookings")
+            .select("-password");
 
         return response.status(200).json({
             success: true,
@@ -65,4 +60,51 @@ export async function getClientsdata(request, response) {
     }
 
 }
+
+
+// bookings and availability
+export const getBookingsData = async (request, response) => {
+
+    try {
+
+        const { date } = request.query;
+
+        const bookings = await BookingModel.find({ date, status: "Active" })
+            .populate({
+                path: "userId",
+                match: {
+                    isVerified: true
+                },
+                select: `
+                name
+                country
+                city
+                isVerified
+                avatar
+            `
+            });
+
+        // REMOVE NULL ESCORTS
+        const filteredBookings = bookings.filter(
+            (item) => item.userId !== null
+        );
+
+        return response.status(200).json({
+            message: "Bookings fetched successfully",
+            success: true,
+            error: false,
+            data: filteredBookings
+        });
+
+    } catch (error) {
+
+        return response.status(500).json({
+            message: error.message || "Server error",
+            success: false,
+            error: true
+        });
+
+    }
+};
+
 
