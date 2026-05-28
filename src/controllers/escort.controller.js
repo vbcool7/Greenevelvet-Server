@@ -1262,7 +1262,7 @@ export async function uploadAvatarcontroller(request, response) {
                 type: "VERIFICATION",
                 title: "New Profile image upload",
                 message: `${uploadEscort.name} has upload new profile image and is waiting for approval.`,
-                link: `/dashboard/viewescortprofile/${uploadEscort._id}`
+                link: `/viewescortprofile/${uploadEscort._id}`
             });
             console.log("🟢 Notification load data: ", load);
         }
