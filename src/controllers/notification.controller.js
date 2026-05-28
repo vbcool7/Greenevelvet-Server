@@ -5,6 +5,8 @@ import NotificationModel from "../models/notificationModel.js";
 export const getMyNotifications = async (request, response) => {
     try {
 
+        console.log("notification fetch api call");
+
         const currentUserId = request.user?._id;
         const currentUserModel = request.user?.role;
 
@@ -34,6 +36,8 @@ export const getMyNotifications = async (request, response) => {
 // Mark a specific notification as read
 export const markNotificationAsRead = async (request, response) => {
     try {
+        console.log("notification markRead api call");
+
         const { id } = request.params;
         const currentUserId = request.user?._id;
 
@@ -65,7 +69,7 @@ export const markNotificationAsRead = async (request, response) => {
         });
     } catch (error) {
         console.error("❌ Error in markNotificationAsRead:", error);
-        
+
         return response.status(500).json({
             success: false,
             message: error.message || "Internal Server Error"

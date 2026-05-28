@@ -3,6 +3,8 @@ import NotificationModel from "../models/notificationModel.js";
 
 /* Universal helper to send notifications (DB + Real-time Socket)*/
 export const createAndSendNotification = async (app, {
+
+
     recipientId,
     recipientModel, // 'Admin', 'Escort', ya 'Client'
     senderId = null,
@@ -13,6 +15,8 @@ export const createAndSendNotification = async (app, {
     link = ""
 }) => {
     try {
+        console.log("add notification api call and body", );
+        
         // 1. Database me save karo
         const newNotification = await NotificationModel.create({
             recipient: recipientId,
