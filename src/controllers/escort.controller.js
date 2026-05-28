@@ -1252,7 +1252,7 @@ export async function uploadAvatarcontroller(request, response) {
 
         const admin = await AdminModel.find();
 
-        await createAndSendNotification(req.app, {
+        await createAndSendNotification(request.app, {
             recipientId: admin._id,
             recipientModel: "Admin",
             senderId: uploadEscort._id,
