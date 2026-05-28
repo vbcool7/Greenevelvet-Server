@@ -15,8 +15,12 @@ export const createAndSendNotification = async (app, {
     link = ""
 }) => {
     try {
-        console.log("add notification api call and body", );
-        
+        console.log("add notification api call", "recipientModel", recipientId,
+            "recipientModel", recipientModel, "senderId", senderId,
+            "senderModel", senderModel, "type", type, "title", title,
+            "message", message, "link", link
+        );
+
         // 1. Database me save karo
         const newNotification = await NotificationModel.create({
             recipient: recipientId,

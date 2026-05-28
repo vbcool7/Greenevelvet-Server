@@ -1250,18 +1250,23 @@ export async function uploadAvatarcontroller(request, response) {
             });
         }
 
-        const admin = await AdminModel.find();
+        const admin = await AdminModel.findOne();
+        if (!admin) {
+            console.error("❌ Notification skipped: No Admin found in database.");
+        } else {
+            const load = await createAndSendNotification(request.app, {
+                recipientId: admin._id,
+                recipientModel: "Admin",
+                senderId: uploadEscort._id,
+                senderModel: "Escort",
+                type: "VERIFICATION",
+                title: "New Profile image upload",
+                message: `${uploadEscort.name} has upload new profile image and is waiting for approval.`,
+                link: `/dashboard/viewescortprofile/${uploadEscort._id}`
+            });
+            console.log("🟢 Notification load data: ", load);
+        }
 
-        await createAndSendNotification(request.app, {
-            recipientId: admin._id,
-            recipientModel: "Admin",
-            senderId: uploadEscort._id,
-            senderModel: "Escort",
-            type: "VERIFICATION",
-            title: "New Profile image upload",
-            message: `${uploadEscort.name} has upload new profile image and is waiting for approval.`,
-            link: `/dashboard/viewescortprofile/${uploadEscort._id}`
-        });
 
         return response.status(200).json({
             message: "profile image uploaded successfully",
