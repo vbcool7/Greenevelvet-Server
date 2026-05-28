@@ -5,8 +5,8 @@ import NotificationModel from "../models/notificationModel.js";
 export const getMyNotifications = async (request, response) => {
     try {
 
-        const currentUserId = request?.user?.id;
-        const currentUserModel = request?.user?.role;
+        const currentUserId = request.user?._id;
+        const currentUserModel = request.user?.role;
 
         const notifications = await NotificationModel.find({
             recipient: currentUserId,
@@ -35,7 +35,7 @@ export const getMyNotifications = async (request, response) => {
 export const markNotificationAsRead = async (request, response) => {
     try {
         const { id } = request.params;
-        const currentUserId = request?.user?.id;
+        const currentUserId = request.user?._id;
 
         const notification = await NotificationModel.findById(id);
 
