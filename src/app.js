@@ -14,6 +14,7 @@ import subcribedRouter from "./routes/subcribedplan.route.js";
 import uglymugsRouter from "./routes/uglymugs.route.js";
 import extraRouter from "./routes/extra.route.js";
 import dashboardRouter from "./routes/dashboard.route.js";
+import notificationRouter from "./routes/notification.route.js";
 
 const app = express();
 
@@ -64,6 +65,7 @@ app.use('/settings', settingsRouter);
 app.use('/escrow', subcribedRouter);
 app.use('/uglymugs', uglymugsRouter);
 app.use('/extra', extraRouter);
+app.use('/notification', notificationRouter);
 
 
 

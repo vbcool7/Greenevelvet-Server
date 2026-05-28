@@ -31,6 +31,8 @@ import { sendRegistrationNotification } from "../utils/sendRegistrationNotificat
 import cloudinary from "../config/cloudinary.js";
 import { sendMail } from "../utils/sendMail.js";
 import { deleteFromCloudinary } from "../utils/deleteFromCloudinary.js";
+import { createAndSendNotification } from "../utils/notificationHelper.js";
+import AdminModel from "../models/adminModel.js";
 
 // change password
 export const escortChangePassword = async (request, response) => {
@@ -1247,6 +1249,19 @@ export async function uploadAvatarcontroller(request, response) {
                 error: true
             });
         }
+
+        const admin = await AdminModel.find();
+
+        await createAndSendNotification(req.app, {
+            recipientId: admin._id,
+            recipientModel: "Admin",
+            senderId: uploadEscort._id,
+            senderModel: "Escort",
+            type: "VERIFICATION",
+            title: "New Profile image upload",
+            message: `${uploadEscort.name} has upload new profile image and is waiting for approval.`,
+            link: `/dashboard/viewescortprofile/${uploadEscort._id}`
+        });
 
         return response.status(200).json({
             message: "profile image uploaded successfully",

@@ -24,6 +24,8 @@ const io = new Server(server, {
     }
 });
 
+app.set("io", io);
+
 // Socket logic
 io.on("connection", (socket) => {
     console.log("🟢 User connected:", socket.id);
@@ -31,6 +33,12 @@ io.on("connection", (socket) => {
     socket.on("join_room", ({ roomId, role }) => {
         socket.join(roomId);
         console.log(`${role} joined room ${roomId}`);
+    });
+
+    socket.on("register_notification_room", ({ userId, role }) => {
+        const notificationRoom = `notification_${role}_${userId}`;
+        socket.join(notificationRoom);
+        console.log(`🔔 Notification room active for [${role}]: ${notificationRoom}`);
     });
 
     socket.on("send_message", (data) => {
