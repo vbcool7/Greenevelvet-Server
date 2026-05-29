@@ -985,8 +985,8 @@ export async function registerGalleryController(request, response) {
                 senderId: updatedEscort._id,
                 senderModel: "Escort",
                 type: "VERIFICATION",
-                title: "New profile awaiting verification",
-                message: `${updatedEscort.name} has uploaded a profile and gallery images and is waiting for approval.`,
+                title: "New Profile Awaiting Verification",
+                message: `A new advertiser account (${newEscort.name}) has been created. Review documents and gallery images to verify`,
                 link: `/dashboard/awaiting-verification`
             });
         }
@@ -2915,7 +2915,7 @@ export const toggleNewstourLikeController = async (request, response) => {
             { $push: { newstourLikes: like._id } }
         );
 
-        const post = await NewsAndTourModel.findOne({ postId });
+        const post = await NewsAndTourModel.findById(postId);
 
         const Client = await ClientModel.findOne({ userId });
 
@@ -2925,12 +2925,12 @@ export const toggleNewstourLikeController = async (request, response) => {
             const load = await createAndSendNotification(request.app, {
                 recipientId: post.userId,
                 recipientModel: "Escort",
-                senderId: userId,
+                senderId: Client._id,
                 senderModel: "Client",
-                type: "NEW Comments",
-                title: "New Comments on News and Tour",
-                message: `${Client.name} has co a new news and tour. Click to review.`,
-                link: `/dashboard/newsandtours-moderation`
+                type: "NEW LIKE",
+                title: "New Like on News and Tour",
+                message: `${Client.name} has like your news and tour. Click to view.`,
+                link: `/escortnewstour/${post._id}`
             });
         }
 
@@ -3004,6 +3004,25 @@ export const addNewstourCommentController = async (request, response) => {
             { _id: postId },
             { $push: { newstourComments: newComment._id } }
         );
+
+        const post = await NewsAndTourModel.findById(postId);
+
+        const Client = await ClientModel.findOne({ userId });
+
+        if (!post.userId) {
+            console.error("❌ Notification skipped: No Escort found in database.");
+        } else {
+            const load = await createAndSendNotification(request.app, {
+                recipientId: post.userId,
+                recipientModel: "Escort",
+                senderId: Client._id,
+                senderModel: "Client",
+                type: "NEW Comments",
+                title: "New Comments on News and Tour",
+                message: `${Client.name} has Comments your news and tour. Click to view.`,
+                link: `/escortnewstour/${post._id}`
+            });
+        }
 
         return response.status(200).json({
             message: "Comment added",
@@ -3174,6 +3193,22 @@ export const createBlog = async (request, response) => {
             { $push: { blog: post._id } }
         );
 
+        const admin = await AdminModel.findOne();
+        if (!admin) {
+            console.error("❌ Notification skipped: No Admin found in database.");
+        } else {
+            const load = await createAndSendNotification(request.app, {
+                recipientId: admin._id,
+                recipientModel: "Admin",
+                senderId: updatedEscort._id,
+                senderModel: "Escort",
+                type: "NEW BLOG",
+                title: "New blog published",
+                message: `${updatedEscort.name} has published a new blog. Click to review.`,
+                link: `/dashboard/blog-moderation`
+            });
+        }
+
         return response.status(201).json({
             message: "Blog created successfully",
             success: true,
@@ -3193,6 +3228,8 @@ export const createBlog = async (request, response) => {
                 )
             );
         }
+
+
 
         return response.status(500).json({
             message: error.message || "Server Error",
@@ -3646,6 +3683,25 @@ export const toggleBlogLike = async (request, response) => {
             { $push: { blogLikes: like._id } }
         );
 
+        const post = await BlogModel.findById(postId);
+
+        const Client = await ClientModel.findOne({ userId });
+
+        if (!post.userId) {
+            console.error("❌ Notification skipped: No Escort found in database.");
+        } else {
+            const load = await createAndSendNotification(request.app, {
+                recipientId: post.userId,
+                recipientModel: "Escort",
+                senderId: Client._id,
+                senderModel: "Client",
+                type: "NEW LIKE",
+                title: "New Like on blog",
+                message: `${Client.name} has Like your blog. Click to view.`,
+                link: `/blog`
+            });
+        }
+
         response.status(201).json({
             message: "Post liked",
             success: true,
@@ -3717,6 +3773,25 @@ export const addBlogComment = async (request, response) => {
             { _id: postId },
             { $push: { blogComments: newComment._id } }
         );
+
+        const post = await BlogModel.findById(postId);
+
+        const Client = await ClientModel.findOne({ userId });
+
+        if (!post.userId) {
+            console.error("❌ Notification skipped: No Escort found in database.");
+        } else {
+            const load = await createAndSendNotification(request.app, {
+                recipientId: post.userId,
+                recipientModel: "Escort",
+                senderId: Client._id,
+                senderModel: "Client",
+                type: "NEW COMMENTS",
+                title: "New Comments on blog",
+                message: `${Client.name} has Comments your blog. Click to view.`,
+                link: `/blog`
+            });
+        }
 
         return response.status(200).json({
             message: "Comment added",
