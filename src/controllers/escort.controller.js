@@ -975,6 +975,22 @@ export async function registerGalleryController(request, response) {
             .findOne({ escortId })
             .lean();
 
+        const admin = await AdminModel.findOne();
+        if (!admin) {
+            console.error("❌ Notification skipped: No Admin found in database.");
+        } else {
+            const load = await createAndSendNotification(request.app, {
+                recipientId: admin._id,
+                recipientModel: "Admin",
+                senderId: updatedEscort._id,
+                senderModel: "Escort",
+                type: "VERIFICATION",
+                title: "New profile awaiting verification",
+                message: `${updatedEscort.name} has uploaded a profile and gallery images and is waiting for approval.`,
+                link: `/dashboard/awaiting-verification`
+            });
+        }
+
         return response.status(200).json({
             message: "Gallery uploaded successfully",
             success: true,
@@ -1403,6 +1419,22 @@ export async function uploadImagescontroller(request, response) {
             { $set: { "gallery.photos": last6Images } }
         );
 
+        const admin = await AdminModel.findOne();
+        if (!admin) {
+            console.error("❌ Notification skipped: No Admin found in database.");
+        } else {
+            const load = await createAndSendNotification(request.app, {
+                recipientId: admin._id,
+                recipientModel: "Admin",
+                senderId: updatedEscort._id,
+                senderModel: "Escort",
+                type: "VERIFICATION",
+                title: "New gallery images uploaded",
+                message: `${updatedEscort.name} has uploaded a gallery images and is waiting for approval.`,
+                link: `/viewescortprofile/${updatedEscort._id}`
+            });
+        }
+
         return response.status(200).json({
             message: "Gallery updated successfully",
             success: true,
@@ -1500,6 +1532,22 @@ export async function uploadVideoscontroller(request, response) {
             { escortId },
             { $set: { "gallery.videos": last6Videos } }
         );
+
+        const admin = await AdminModel.findOne();
+        if (!admin) {
+            console.error("❌ Notification skipped: No Admin found in database.");
+        } else {
+            const load = await createAndSendNotification(request.app, {
+                recipientId: admin._id,
+                recipientModel: "Admin",
+                senderId: updatedEscort._id,
+                senderModel: "Escort",
+                type: "VERIFICATION",
+                title: "New gallery videos uploaded",
+                message: `${updatedEscort.name} has uploaded a gallery videos and is waiting for approval.`,
+                link: `/viewescortprofile/${updatedEscort._id}`
+            });
+        }
 
         return response.status(200).json({
             message: "Video gallery updated successfully",
@@ -2457,10 +2505,27 @@ export const createNewsTourcontroller = async (request, response) => {
         console.log("post :", post);
 
         // ✅ push post id into escort model
-        await EscortModel.findOneAndUpdate(
+        const updatedEscort = await EscortModel.findOneAndUpdate(
             { escortId },
             { $push: { newsTour: post._id } }
         );
+
+
+        const admin = await AdminModel.findOne();
+        if (!admin) {
+            console.error("❌ Notification skipped: No Admin found in database.");
+        } else {
+            const load = await createAndSendNotification(request.app, {
+                recipientId: admin._id,
+                recipientModel: "Admin",
+                senderId: updatedEscort._id,
+                senderModel: "Escort",
+                type: "NEW POST",
+                title: "New News and tour published",
+                message: `${updatedEscort.name} has published a new news and tour. Click to review.`,
+                link: `/dashboard/newsandtours-moderation`
+            });
+        }
 
         return response.status(201).json({
             message: "News & Tour post created successfully",
@@ -2805,7 +2870,6 @@ export const toggleNewstourLikeController = async (request, response) => {
 
         const { postId, userId } = request.body;
 
-        console.log("like request body : ", request.body);
 
         if (!userId) {
             return response.status(401).json({
@@ -2820,7 +2884,6 @@ export const toggleNewstourLikeController = async (request, response) => {
             userId
         });
 
-        console.log("existingLike : ", existingLike);
 
         if (existingLike) {
 
@@ -2846,12 +2909,30 @@ export const toggleNewstourLikeController = async (request, response) => {
             userId
         });
 
-        console.log("Like : ", like);
 
         await NewsAndTourModel.updateOne(
             { _id: postId },
             { $push: { newstourLikes: like._id } }
         );
+
+        const post = await NewsAndTourModel.findOne({ postId });
+
+        const Client = await ClientModel.findOne({ userId });
+
+        if (!post.userId) {
+            console.error("❌ Notification skipped: No Escort found in database.");
+        } else {
+            const load = await createAndSendNotification(request.app, {
+                recipientId: post.userId,
+                recipientModel: "Escort",
+                senderId: userId,
+                senderModel: "Client",
+                type: "NEW Comments",
+                title: "New Comments on News and Tour",
+                message: `${Client.name} has co a new news and tour. Click to review.`,
+                link: `/dashboard/newsandtours-moderation`
+            });
+        }
 
         response.status(201).json({
             message: "Post liked",

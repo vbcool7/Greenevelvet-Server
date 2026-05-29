@@ -4,7 +4,7 @@ const notificationSchema = new mongoose.Schema({
     recipient: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
-        refPath: 'recipientModel' 
+        refPath: 'recipientModel'
     },
     recipientModel: {
         type: String,
@@ -37,6 +37,11 @@ const notificationSchema = new mongoose.Schema({
     },
     link: {
         type: String, // (e.g., '/dashboard/bookings')
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now,
+        expires: 2592000 // 30 Days (30 * 24 * 60 * 60)
     }
 }, { timestamps: true });
 

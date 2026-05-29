@@ -5,14 +5,17 @@ import NotificationModel from "../models/notificationModel.js";
 export const getMyNotifications = async (request, response) => {
     try {
 
-        console.log("notification fetch api call");
 
         const currentUserId = request.user?._id;
         const currentUserModel = request.user?.role;
 
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
         const notifications = await NotificationModel.find({
             recipient: currentUserId,
-            recipientModel: currentUserModel
+            recipientModel: currentUserModel,
+            createdAt: { $gte: sevenDaysAgo },
         })
             .populate("sender", "name email avatar city country")
             .sort({ createdAt: -1 });

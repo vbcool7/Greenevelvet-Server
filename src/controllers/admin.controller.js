@@ -669,9 +669,17 @@ export async function fetchEscortcontroller(request, response) {
 
         if (role) filter.role = role;
 
-        // filter.isEmailVerified = false;
         filter.isVerified = false;
 
+        filter.isEmailVerified = true;
+
+        filter.verificationSelfie = { $ne: "" };
+
+        filter.verificationgovtId = { $ne: "" };
+
+        filter["avatar.url"] = { $ne: "" };
+
+        filter["gallery.photos.2"] = { $exists: true };
 
         const escorts = await EscortModel.find(filter)
             .sort({ createdAt: -1 });
