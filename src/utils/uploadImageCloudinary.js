@@ -1,11 +1,24 @@
 import cloudinary from "../config/cloudinary.js";
+import sharp from "sharp";
 
 const uploadImageCloudinary = async (image, folder = "gallery/images") => {
   try {
-    // Buffer create karna: multer buffer or web file
+    // Buffer create: multer buffer or web file
     const buffer = image?.buffer
       ? image.buffer
       : Buffer.from(await image.arrayBuffer());
+
+
+    const metadata = await sharp(buffer).metadata();
+
+    const imageWidth = metadata.width || 1000;
+
+    // Dynamic font size
+    const dynamicFontSize = Math.round(imageWidth * 0.05);
+
+    // Min / Max control
+    const fontSize = Math.max(25, Math.min(dynamicFontSize, 80));
+
 
     // Return promise for upload_stream
     return new Promise((resolve, reject) => {
@@ -19,7 +32,7 @@ const uploadImageCloudinary = async (image, folder = "gallery/images") => {
             {
               overlay: {
                 font_family: "Arial",
-                font_size: 45,
+                font_size: fontSize,
                 font_weight: "bold",
                 text: "greenevelvet.com"
               },

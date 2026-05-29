@@ -1,9 +1,20 @@
 import fs from "fs";
 import cloudinary from "../config/cloudinary.js";
+import sharp from "sharp";
 
 export const uploadFromCloudinary = async (fileBuffer) => {
     try {
         if (!fileBuffer) throw new Error("File buffer is required");
+        
+        const metadata = await sharp(fileBuffer).metadata();
+
+        const imageWidth = metadata.width || 1000;
+
+        // Dynamic font size
+        const dynamicFontSize = Math.round(imageWidth * 0.05);
+
+        // Min / Max control
+        const fontSize = Math.max(25, Math.min(dynamicFontSize, 80));
 
         return await new Promise((resolve, reject) => {
             cloudinary.uploader.upload_stream(
@@ -16,7 +27,7 @@ export const uploadFromCloudinary = async (fileBuffer) => {
                         {
                             overlay: {
                                 font_family: "Arial",
-                                font_size: 45,
+                                font_size: fontSize,
                                 font_weight: "bold",
                                 text: "greenevelvet.com"
                             },

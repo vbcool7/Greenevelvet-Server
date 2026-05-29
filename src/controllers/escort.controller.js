@@ -1264,7 +1264,6 @@ export async function uploadAvatarcontroller(request, response) {
                 message: `${uploadEscort.name} has upload new profile image and is waiting for approval.`,
                 link: `/viewescortprofile/${uploadEscort._id}`
             });
-            console.log("🟢 Notification load data: ", load);
         }
 
 
