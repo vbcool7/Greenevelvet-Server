@@ -17,7 +17,7 @@ const uploadImageCloudinary = async (image, folder = "gallery/images") => {
     const dynamicFontSize = Math.round(imageWidth * 0.05);
 
     // Min / Max control
-    const fontSize = Math.max(25, Math.min(dynamicFontSize, 80));
+    const fontSize = Math.max(30, Math.min(dynamicFontSize, 80));
 
 
     // Return promise for upload_stream
