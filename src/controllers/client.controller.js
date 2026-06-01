@@ -72,7 +72,7 @@ export async function registerClientcontroller(request, response) {
 
 
         return response.status(200).json({
-            message: "User register successfully",
+            message: "Registration successful! Please check your email and verify your email address to activate your account.",
             error: false,
             success: true,
             data: save
@@ -186,7 +186,7 @@ export async function fetchClientcontroller(request, response) {
             })
         }
 
-        const clientDetails = await ClientModel.findOne({ clientId })
+        const clientDetails = await ClientModel.findOne({ clientId }).select("-password");
 
         if (clientDetails.length === 0) {
             return response.status(400).json({
@@ -270,4 +270,150 @@ export async function uploadAvatarcontroller(request, response) {
         })
     }
 
+}
+
+
+// edit and update Client account details 
+export async function updateClientProfile(request, response) {
+    try {
+        const { _id, onlineStatus, contactVisible, muteNotifications } = request.body;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "User id required",
+                success: false,
+                error: true
+            });
+        }
+
+        // ✅ only defined fields
+        const updateData = {};
+        if (onlineStatus !== undefined) updateData.onlineStatus = onlineStatus;
+        if (contactVisible !== undefined) updateData.contactVisible = contactVisible;
+        if (muteNotifications !== undefined) updateData.muteNotifications = muteNotifications;
+
+        const updatedClient = await ClientModel.findByIdAndUpdate(
+            _id,
+            { $set: updateData },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedClient) {
+            return response.status(404).json({
+                message: "Client not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: "Profile updated successfully",
+            success: true,
+            error: false,
+            data: updatedClient
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            error: true,
+            success: false
+        });
+    }
+}
+
+//  permanent delete Client profile
+export async function deleteClientProfile(request, response) {
+    try {
+        const { _id } = request.body;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "User id required",
+                success: false,
+                error: true
+            });
+        }
+
+        // ✅ delete escort
+        const deletedClient = await ClientModel.findByIdAndDelete(_id);
+
+        if (!deletedClient) {
+            return response.status(404).json({
+                message: "Client not found",
+                success: false,
+                error: true
+            });
+        }
+
+
+        return response.status(200).json({
+            message: "Client profile and related data deleted",
+            success: true,
+            error: false
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
+
+//  edit escort profile details 
+export async function editClientProfileDetails(request, response) {
+    try {
+        const {
+            _id,
+            name,
+            country,
+            city
+        } = request.body;
+
+        // ✅ REQUIRED CHECK
+        if (!_id) {
+            return response.status(400).json({
+                message: "User id required",
+                success: false,
+                error: true
+            });
+        }
+
+        const updateData = {};
+
+        if (name !== undefined) updateData.name = name;
+        if (country !== undefined) updateData.country = country;
+        if (city !== undefined) updateData.city = city;
+
+        // ✅ UPDATE USER
+        const updatedClient = await ClientModel.findByIdAndUpdate(
+            _id,
+            { $set: updateData },
+            { new: true }
+        );
+
+        if (!updatedClient) {
+            return response.status(404).json({
+                message: "Client not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: "Profile updated successfully",
+            success: true,
+            error: false,
+            data: updatedClient
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
 }

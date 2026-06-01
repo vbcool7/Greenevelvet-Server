@@ -5621,7 +5621,7 @@ export const getEscortContact = async (request, response) => {
 // edit and update escort account details 
 export async function updateEscortProfile(request, response) {
     try {
-        const { _id, name, onlineStatus, displayContact, notifications } = request.body;
+        const { _id, name, onlineStatus, contactVisible, muteNotifications } = request.body;
 
         if (!_id) {
             return response.status(400).json({
@@ -5635,8 +5635,8 @@ export async function updateEscortProfile(request, response) {
         const updateData = {};
         if (name !== undefined) updateData.name = name;
         if (onlineStatus !== undefined) updateData.onlineStatus = onlineStatus;
-        if (displayContact !== undefined) updateData.displayContact = displayContact;
-        if (notifications !== undefined) updateData.notifications = notifications;
+        if (contactVisible !== undefined) updateData.contactVisible = contactVisible;
+        if (muteNotifications !== undefined) updateData.muteNotifications = muteNotifications;
 
         const updatedEscort = await EscortModel.findByIdAndUpdate(
             _id,

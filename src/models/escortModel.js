@@ -312,6 +312,10 @@ const EscortSchema = new mongoose.Schema({
             ref: "Notifications"
         }
     ],
+    muteNotification: {
+        type: Boolean,
+        default: false
+    },
     rating: [
         {
             type: mongoose.Schema.ObjectId,

@@ -152,6 +152,10 @@ const ClientSchema = new mongoose.Schema({
             ref: "Notifications"
         }
     ],
+    muteNotification:{
+        type: Boolean,
+        default: false
+    },
 
     /* ================= GALLERY ================= */
     avatar: {
@@ -193,6 +197,10 @@ const ClientSchema = new mongoose.Schema({
         default: null
     },
     isEmailVerified: {
+        type: Boolean,
+        default: false
+    },
+    contactVisible:{
         type: Boolean,
         default: false
     },
