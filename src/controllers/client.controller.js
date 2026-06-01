@@ -7,6 +7,7 @@ import uploadImageCloudinary from "../utils/uploadImageCloudinary.js";
 import EscortModel from "../models/escortModel.js";
 import { sendVerificationEmail } from "../utils/emailService.js";
 import { sendRegistrationNotification } from "../utils/sendRegistrationNotification.js";
+import { encrypt } from "../utils/crypto.js";
 
 // client register controll
 export async function registerClientcontroller(request, response) {
@@ -423,9 +424,6 @@ export async function clientChangeMobile(request, response) {
     try {
         const { clientId, mobile, countryCode } = request.body;
 
-        const mobileEncrypted = encrypt(request.body.mobile);
-
-
         if (!clientId || !mobile) {
             return response.status(400).json({
                 message: "ClientId and mobile is required",
@@ -437,7 +435,7 @@ export async function clientChangeMobile(request, response) {
         const updateMobile = await ClientModel.findOneAndUpdate(
             { escortId },
             {
-                mobile: mobileEncrypted,
+                mobile: mobile,
                 isMobileVerified: false,
                 countryCode: countryCode,
             }
