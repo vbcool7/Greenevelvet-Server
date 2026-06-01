@@ -433,7 +433,7 @@ export async function clientChangeMobile(request, response) {
         }
 
         const updateMobile = await ClientModel.findOneAndUpdate(
-            { escortId },
+            { clientId },
             {
                 mobile: mobile,
                 isMobileVerified: false,
