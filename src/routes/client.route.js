@@ -1,5 +1,5 @@
 import { request, response, Router } from "express";
-import { clientChangeMobile, clientVerifyEmail, deleteClientProfile, editClientProfileDetails, fetchClientcontroller, logoutClientcontroller, registerClientcontroller, updateClientProfile, uploadAvatarcontroller } from "../controllers/client.controller.js";
+import { clientChangeMobile, clientChangePassword, clientVerifyEmail, deleteClientProfile, editClientProfileDetails, fetchClientcontroller, logoutClientcontroller, registerClientcontroller, updateClientProfile, uploadAvatarcontroller } from "../controllers/client.controller.js";
 import { protect } from "../middleware/auth.js";
 import upload from "../middleware/multer.js";
 
@@ -21,6 +21,6 @@ clientRouter.patch("/client-edit-profile-details", editClientProfileDetails);
 clientRouter.patch("/client-update-details", updateClientProfile);
 clientRouter.patch("/client-change-mobile", clientChangeMobile);
 clientRouter.delete("/client-delete-profile", deleteClientProfile);
-
+clientRouter.patch("/client-change-password", protect(["Client"]), clientChangePassword);
 
 export default clientRouter
