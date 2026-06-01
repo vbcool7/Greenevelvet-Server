@@ -312,7 +312,7 @@ const EscortSchema = new mongoose.Schema({
             ref: "Notifications"
         }
     ],
-    muteNotification: {
+    muteNotifications: {
         type: Boolean,
         default: false
     },
@@ -467,6 +467,7 @@ const EscortSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    
 
     website: String,
 

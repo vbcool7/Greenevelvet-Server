@@ -152,7 +152,7 @@ const ClientSchema = new mongoose.Schema({
             ref: "Notifications"
         }
     ],
-    muteNotification:{
+    muteNotifications:{
         type: Boolean,
         default: false
     },
