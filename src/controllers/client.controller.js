@@ -417,3 +417,55 @@ export async function editClientProfileDetails(request, response) {
         });
     }
 }
+
+// change mobile
+export async function clientChangeMobile(request, response) {
+    try {
+        const { clientId, mobile, countryCode } = request.body;
+
+        const mobileEncrypted = encrypt(request.body.mobile);
+
+
+        if (!clientId || !mobile) {
+            return response.status(400).json({
+                message: "ClientId and mobile is required",
+                success: false,
+                error: true
+            })
+        }
+
+        const updateMobile = await ClientModel.findOneAndUpdate(
+            { escortId },
+            {
+                mobile: mobileEncrypted,
+                isMobileVerified: false,
+                countryCode: countryCode,
+            }
+        )
+
+        if (!updateMobile) {
+            return response.status(404).json({
+                message: "User not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.json({
+            message: "Mobile number change successfully",
+            success: true,
+            error: false,
+            data: {
+                mobile: mobile,
+                countryCode: countryCode,
+            },
+        });
+
+    } catch (error) {
+        return response.json({
+            message: error.message || error,
+            success: false,
+            error: true
+        })
+    }
+}
