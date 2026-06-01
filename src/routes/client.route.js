@@ -17,7 +17,7 @@ clientRouter.get("/fetch-client-details", fetchClientcontroller);
 clientRouter.patch("/upload-avatar", upload.fields([{ name: "avatar", maxCount: 1 }]), uploadAvatarcontroller);
 
 
-clientRouter.patch("/client-edit-porofile-details", editClientProfileDetails);
+clientRouter.patch("/client-edit-profile-details", editClientProfileDetails);
 clientRouter.patch("/client-update-details", updateClientProfile);
 clientRouter.patch("/client-change-mobile", clientChangeMobile);
 clientRouter.delete("/client-delete-profile", deleteClientProfile);
