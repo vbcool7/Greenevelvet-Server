@@ -26,7 +26,7 @@ const ClientSchema = new mongoose.Schema({
         select: false
     },
     mobile: {
-        type: Number,
+        type: String,
         required: [true, "Provide account type"],
         unique: true
     },
@@ -152,7 +152,7 @@ const ClientSchema = new mongoose.Schema({
             ref: "Notifications"
         }
     ],
-    muteNotifications:{
+    muteNotifications: {
         type: Boolean,
         default: false
     },
@@ -200,7 +200,7 @@ const ClientSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    contactVisible:{
+    contactVisible: {
         type: Boolean,
         default: false
     },
