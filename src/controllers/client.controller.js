@@ -315,6 +315,8 @@ export async function updateClientProfile(request, response) {
         });
 
     } catch (error) {
+        console.log("update error ", error);
+        
         return response.status(500).json({
             message: error.message || "Internal server error",
             error: true,
