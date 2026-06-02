@@ -138,7 +138,7 @@ export async function logoutClientcontroller(request, response) {
         const { clientId, role } = request.body;
 
         if (!clientId || !role) {
-            return res.status(400).json({
+            return response.status(400).json({
                 message: "Invalid token",
                 success: false,
                 error: true
@@ -562,3 +562,145 @@ export const clientChangePassword = async (request, response) => {
         });
     }
 };
+
+
+// add favorites escort 
+export async function toggleFavoriteEscort(request, response) {
+    try {
+        const id = request.user?._id;
+
+        const { escortId } = request.body;
+
+        if (!escortId) {
+            return response.status(400).json({
+                message: "Escort ID are required",
+                success: false,
+                error: true
+            });
+        }
+
+        const client = await ClientModel.findOne({ id });
+
+        if (!client) {
+            return response.status(404).json({
+                message: "User not found",
+                success: false,
+                error: true
+            });
+        }
+
+        const escortExists = await EscortModel.findById(escortId);
+
+        if (!escortExists) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+        const alreadyFavorite = client.favorites.some(
+            (id) => id.toString() === escortId.toString()
+        );
+
+        if (alreadyFavorite) {
+            await ClientModel.updateOne(
+                { id },
+                {
+                    $pull: {
+                        favorites: escortId
+                    }
+                }
+            );
+
+            return response.status(200).json({
+                message: "Escort removed from favorites",
+                success: true,
+                error: false,
+                isFavorite: false
+            });
+        }
+
+        await ClientModel.updateOne(
+            { id },
+            {
+                $addToSet: {
+                    favorites: escortId
+                }
+            }
+        );
+
+        return response.status(200).json({
+            message: "Escort added to favorites",
+            success: true,
+            error: false,
+            isFavorite: true
+        });
+
+    } catch (error) {
+        console.log("toggle favorite error", error);
+
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
+
+// fetch favorites escort 
+export async function getFavoriteEscorts(request, response) {
+    try {
+        const { id } = request.user?._id;
+
+        if (!id) {
+            return response.status(400).json({
+                message: "User not found",
+                success: false,
+                error: true
+            });
+        }
+
+        const client = await ClientModel.findOne({ id })
+            .populate({
+                path: "favorites",
+                select: `
+                    escortId
+                    name
+                    avatar
+                    city
+                    country
+                    age
+                    onlineStatus
+                    isVerified
+                    last_login_date
+                `
+            });
+
+        if (!client) {
+            return response.status(404).json({
+                message: "Client not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: "Favorite escorts fetched successfully",
+            success: true,
+            error: false,
+            count: client.favorites.length,
+            data: client.favorites
+        });
+
+    } catch (error) {
+        console.log("favorite escorts error", error);
+
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
+

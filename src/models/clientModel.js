@@ -115,6 +115,12 @@ const ClientSchema = new mongoose.Schema({
     },
 
     /* ================= RELATIONS (REFERENCES) ================= */
+    favorites: [
+        {
+            type: mongoose.Schema.ObjectId,
+            ref: "Escort"
+        }
+    ],
     bookings: [
         {
             type: mongoose.Schema.ObjectId,
