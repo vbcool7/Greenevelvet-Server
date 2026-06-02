@@ -567,7 +567,7 @@ export const clientChangePassword = async (request, response) => {
 // add favorites escort 
 export async function toggleFavoriteEscort(request, response) {
     try {
-        const id = request.user?._id;
+        const _id = request.user?._id;
 
         const { escortId } = request.body;
 
@@ -579,7 +579,7 @@ export async function toggleFavoriteEscort(request, response) {
             });
         }
 
-        const client = await ClientModel.findById(id);
+        const client = await ClientModel.findById(_id);
 
         if (!client) {
             return response.status(404).json({
@@ -605,7 +605,7 @@ export async function toggleFavoriteEscort(request, response) {
 
         if (alreadyFavorite) {
             await ClientModel.updateOne(
-                { id },
+                { _id },
                 {
                     $pull: {
                         favorites: escortId
@@ -622,7 +622,7 @@ export async function toggleFavoriteEscort(request, response) {
         }
 
         await ClientModel.updateOne(
-            { id },
+            { _id },
             {
                 $addToSet: {
                     favorites: escortId
@@ -651,9 +651,9 @@ export async function toggleFavoriteEscort(request, response) {
 // fetch favorites escort 
 export async function getFavoriteEscorts(request, response) {
     try {
-        const { id } = request.user?._id;
+        const { _id } = request.user?._id;
 
-        if (!id) {
+        if (!_id) {
             return response.status(400).json({
                 message: "User not found",
                 success: false,
@@ -661,7 +661,7 @@ export async function getFavoriteEscorts(request, response) {
             });
         }
 
-        const client = await ClientModel.findOne({ id })
+        const client = await ClientModel.findOne({ _id })
             .populate({
                 path: "favorites",
                 select: `
