@@ -579,7 +579,7 @@ export async function toggleFavoriteEscort(request, response) {
             });
         }
 
-        const client = await ClientModel.findById({ id });
+        const client = await ClientModel.findById(id);
 
         if (!client) {
             return response.status(404).json({
