@@ -371,6 +371,7 @@ export async function editClientProfileDetails(request, response) {
         const {
             _id,
             name,
+            mobile,
             country,
             city
         } = request.body;
@@ -387,6 +388,7 @@ export async function editClientProfileDetails(request, response) {
         const updateData = {};
 
         if (name !== undefined) updateData.name = name;
+        if (mobile !== undefined) updateData.mobile = mobile;
         if (country !== undefined) updateData.country = country;
         if (city !== undefined) updateData.city = city;
 
