@@ -2256,7 +2256,7 @@ export async function fetchFilterHomescortscontroller(request, response) {
         const escortList = await EscortModel.find(query)
             .skip(skip)
             .limit(parseInt(limit))
-            .select("escortId name city country gender account_type adverties_category highlights avatar rateFrom isFaceBlurred")
+            .select("escortId name age city country gender account_type adverties_category highlights avatar rateFrom isFaceBlurred")
             .lean();
 
         const total = await EscortModel.countDocuments(query);
