@@ -674,6 +674,7 @@ export async function getFavoriteEscorts(request, response) {
                     onlineStatus
                     isVerified
                     last_login_date
+                    isFaceBlurred
                 `
             });
 
