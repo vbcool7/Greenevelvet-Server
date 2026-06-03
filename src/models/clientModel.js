@@ -83,7 +83,19 @@ const ClientSchema = new mongoose.Schema({
         type: Date,
         default: "",
     },
-
+    
+    isOnline: {
+        type: Boolean,
+        default: false
+    },
+    lastSeen: {
+        type: Date,
+        default: Date.now
+    },
+    currentSocketId: {
+        type: String,
+        default: null
+    },
 
     /* ================= payment ================= */
     payment_history: [

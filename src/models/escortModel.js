@@ -175,6 +175,19 @@ const EscortSchema = new mongoose.Schema({
         default: true
     },
 
+    isOnline: {
+        type: Boolean,
+        default: false
+    },
+    lastSeen: {
+        type: Date,
+        default: Date.now
+    },
+    currentSocketId: {
+        type: String,
+        default: null
+    },
+
     /* ================= AVAILABILITY SYSTEM ================= */
     available: {
         type: Boolean,
@@ -467,7 +480,7 @@ const EscortSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    
+
 
     website: String,
 
