@@ -2917,7 +2917,7 @@ export const toggleNewstourLikeController = async (request, response) => {
 
         const post = await NewsAndTourModel.findById(postId);
 
-        const Client = await ClientModel.findOne({ userId });
+        const Client = await ClientModel.findOne(userId);
 
         if (!post.userId) {
             console.error("❌ Notification skipped: No Escort found in database.");
@@ -5853,3 +5853,5 @@ export async function editEscortProfileDetails(request, response) {
         });
     }
 }
+
+
