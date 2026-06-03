@@ -2910,27 +2910,26 @@ export const toggleNewstourLikeController = async (request, response) => {
         });
 
 
-        await NewsAndTourModel.updateOne(
+        const postUpdated = await NewsAndTourModel.updateOne(
             { _id: postId },
             { $push: { newstourLikes: like._id } }
         );
 
-        const post = await NewsAndTourModel.findById({ _id: postId });
 
-        const Client = await ClientModel.findOne({ _id: userId });
-
-        if (!post.userId) {
+        const Client = await ClientModel.findById(userId);
+        
+        if (!postUpdated.userId) {
             console.error("❌ Notification skipped: No Escort found in database.");
         } else {
             const load = await createAndSendNotification(request.app, {
-                recipientId: post.userId,
+                recipientId: postUpdated.userId,
                 recipientModel: "Escort",
                 senderId: Client._id,
                 senderModel: "Client",
                 type: "NEW LIKE",
                 title: "New Like on News and Tour",
                 message: `${Client.name} has like your news and tour. Click to view.`,
-                link: `/escortnewstour/${post._id}`
+                link: `/escortnewstour/${postUpdated._id}`
             });
         }
 
