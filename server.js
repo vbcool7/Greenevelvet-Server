@@ -6,7 +6,7 @@ import { Server } from "socket.io";
 import app from "./src/app.js";
 import connectDB from "./src/config/db.js";
 import { autoTourStatusCron } from "./src/Cron/autoTourStatusCron.js";
-
+import { handleChatSockets } from "./src/socket/chatSocket.js";
 const PORT = process.env.PORT || 8080;
 
 // HTTP server create
@@ -28,6 +28,8 @@ const io = new Server(server, {
 });
 
 app.set("io", io);
+
+handleChatSockets(io);
 
 // Socket logic
 io.on("connection", (socket) => {
