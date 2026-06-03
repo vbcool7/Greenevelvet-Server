@@ -2915,7 +2915,7 @@ export const toggleNewstourLikeController = async (request, response) => {
             { $push: { newstourLikes: like._id } }
         );
 
-        const post = await NewsAndTourModel.findById(postId);
+        const post = await NewsAndTourModel.findById({ _id: postId });
 
         const Client = await ClientModel.findOne({ _id: userId });
 
