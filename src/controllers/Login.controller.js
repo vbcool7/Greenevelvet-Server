@@ -48,6 +48,46 @@ export async function loginUsercontroller(request, response) {
 
         let _id = user?._id;
 
+
+        if (user.status === "Pending") {
+
+            const registrationSteps = {
+                1: "/signupadvertiser",
+                2: "/welcometogreenvelvet",
+                3: "/confirmmobilenumber",
+                4: "/profiledetails",
+                5: "/identityverification",
+                6: "/uploadprofileimage",
+                7: "/uploadprofilegalleryphotos"
+            };
+
+            if (user.lastCompletedStep >= 7) {
+                return response.status(200).json({
+                    success: true,
+                    message: "Your profile is under review. Please wait for admin approval.",
+                    registrationCompleted: true,
+                    verificationStatus: "Pending",
+                });
+            }
+
+            const nextStep = user.lastCompletedStep + 1;
+
+            const redirectUrl = `${registrationSteps[nextStep]}/${user.escortId}`;
+
+            return response.status(403).json({
+                message: "Please Complete your registration",
+                success: false,
+                error: true,
+                registrationCompleted: false,
+                escortId: user.escortId,
+                lastCompletedStep: user.lastCompletedStep,
+                nextStep,
+                redirectUrl
+            });
+        }
+
+
+
         // ⚠️ Status check 
         if (user.status !== "Active") {
             return response.status(403).json({

@@ -479,7 +479,7 @@ export const escortResetPassword = async (request, response) => {
 
 
 
-// Escort Register controll
+// Escort Register controll step-1
 export async function registerEscortcontroller(request, response) {
     try {
 
@@ -540,6 +540,7 @@ export async function registerEscortcontroller(request, response) {
             adverties_category,
             emailVerifyToken: token,
             emailVerifyExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            lastCompletedStep: 1,
         }
 
 
@@ -577,7 +578,7 @@ export async function registerEscortcontroller(request, response) {
     }
 }
 
-// Escort verify email controll
+// Escort verify email controll step-2
 export async function verifyEmailcontroller(request, response) {
     try {
         const { token } = request.query;
@@ -594,6 +595,7 @@ export async function verifyEmailcontroller(request, response) {
         escort.isEmailVerified = true;
         escort.emailVerifyToken = null;
         escort.emailVerifyExpiry = null;
+        escort.lastCompletedStep = 2;
 
         await escort.save();
 
@@ -731,7 +733,7 @@ export async function sendOtpcontroller(request, response) {
 
 }
 
-// Escort verify mobile otp controll
+// Escort verify mobile otp controll step-3
 export async function verifyMobileotp(request, response) {
     try {
         let { escortId, mobile, otp, countryCode } = request.body; // 👈 let use karo
@@ -784,6 +786,7 @@ export async function verifyMobileotp(request, response) {
         );
 
         record.isUsed = true;
+        record.lastCompletedStep = 3;
         await record.save();
 
         return response.json({
@@ -802,7 +805,7 @@ export async function verifyMobileotp(request, response) {
     }
 }
 
-// Escort add details controll
+// Escort add details controll step-4
 export async function escortdetailscontroller(request, response) {
     try {
         const { escortId, ...restData } = request.body;
@@ -819,7 +822,7 @@ export async function escortdetailscontroller(request, response) {
         // ✅ Link to main Escort table
         await EscortModel.findOneAndUpdate(
             { escortId },
-            { $set: restData },   // 👈 direct fields save
+            { $set: { ...restData, lastCompletedStep: 4 } },   // 👈 direct fields save
             { new: true, upsert: true }
         );
 
@@ -839,7 +842,7 @@ export async function escortdetailscontroller(request, response) {
     }
 }
 
-// Escort upload verification doc controll
+// Escort upload verification doc controll step-5
 export async function escortUploadverification(request, response) {
     try {
         const { escortId } = request.body;
@@ -881,6 +884,7 @@ export async function escortUploadverification(request, response) {
                 docsuploadStatus: "pending",
                 hasAcceptedDocsOwnership: true,
                 docsOwnershipAcceptedAt: new Date(),
+                lastCompletedStep: 5,
 
             },
             { new: true }
@@ -908,7 +912,7 @@ export async function escortUploadverification(request, response) {
 
 }
 
-// registration process upload gallery images 
+// registration process upload gallery images  step-7
 export async function registerGalleryController(request, response) {
     try {
 
@@ -967,6 +971,7 @@ export async function registerGalleryController(request, response) {
                     "gallery.photos": uploadedImages,
                     hasAcceptedImageOwnership: true,
                     imageOwnershipAcceptedAt: new Date(),
+                    lastCompletedStep: 7,
                 }
             }
         );
@@ -986,7 +991,7 @@ export async function registerGalleryController(request, response) {
                 senderModel: "Escort",
                 type: "VERIFICATION",
                 title: "New Profile Awaiting Verification",
-                message: `A new advertiser account (${newEscort.name}) has been created. Review documents and gallery images to verify`,
+                message: `A new advertiser account (${updatedEscort.name}) has been created. Review documents and gallery images to verify`,
                 link: `/dashboard/awaiting-verification`
             });
         }
@@ -1205,7 +1210,7 @@ export async function logoutEscortcontroller(request, response) {
     }
 }
 
-// upload Avatar
+// upload Avatar step-6
 export async function uploadAvatarcontroller(request, response) {
     try {
         const { escortId } = request.body;
@@ -1253,7 +1258,8 @@ export async function uploadAvatarcontroller(request, response) {
                     status: "Pending"
                 },
                 hasAcceptedAvatarOwnership: true,
-                avatarOwnershipAcceptedAt: new Date()
+                avatarOwnershipAcceptedAt: new Date(),
+                lastCompletedStep: 6,
             },
             { new: true }
         );
