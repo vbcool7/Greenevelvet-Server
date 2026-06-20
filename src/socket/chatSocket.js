@@ -1,6 +1,6 @@
-import EscortModel from '../models/EscortModel.js';
-import ChatRoomModel from '../models/ChatRoomModel.js';
-import ChatMessageModel from '../models/ChatMessageModel.js';
+import EscortModel from '../models/escortModel.js';
+import ChatRoomModel from '../models/chatRoomModel.js';
+import ChatMessageModel from '../models/chatMessageModel.js';
 import ClientModel from '../models/clientModel.js';
 
 export const handleChatSockets = (io) => {
