@@ -63,6 +63,12 @@ export async function adminlogincontroller(request, response) {
             { expiresIn: "3d" }
         );
 
+        admin.refresh_token = token;
+        admin.last_login_date = new Date();
+        admin.onlineStatus = true;
+
+        await admin.save();
+
         response.cookie("token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
@@ -679,7 +685,7 @@ export async function fetchEscortcontroller(request, response) {
 
         filter["avatar.url"] = { $ne: "" };
 
-        filter["gallery.photos.2"] = { $exists: true };
+        // filter["gallery.photos.2"] = { $exists: true };
 
         const escorts = await EscortModel.find(filter)
             .sort({ createdAt: -1 });
