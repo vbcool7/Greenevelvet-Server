@@ -683,7 +683,7 @@ export async function fetchEscortcontroller(request, response) {
 
         filter.verificationgovtId = { $ne: "" };
 
-        filter["avatar.url"] = { $ne: "" };
+        // filter["avatar.url"] = { $ne: "" };
 
         // filter["gallery.photos.2"] = { $exists: true };
 
