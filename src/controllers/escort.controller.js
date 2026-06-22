@@ -1356,7 +1356,7 @@ export async function uploadAvatarcontroller(request, response) {
         if (!admin) {
             console.error("❌ Notification skipped: No Admin found in database.");
         } else {
-            if (uploadEscort.status === "Pending") {
+            if (uploadEscort.status === "Active") {
                 const load = await createAndSendNotification(request.app, {
                     recipientId: admin._id,
                     recipientModel: "Admin",
