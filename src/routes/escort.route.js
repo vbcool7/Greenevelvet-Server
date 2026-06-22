@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addBlogComment, addBooking, addNewstourCommentController, addTour, advanceSearchController, blockBlogComments, cancelBooking, cancelTour, changeMobilenumber, complteBooking, createBlog, createNewsTourcontroller, deleteBlog, deleteBooking, deleteEscortProfile, deleteNewsTourController, deleteRate, DeleteService, deleteTour, editEscortProfileDetails, escortChangePassword, escortdetailscontroller, escortForgotPassword, escortLogincontroller, escortRatescontroller, escortResetPassword, escortServicescontroller, escortUploadverification, escortVerifyOtp, fetchAllBlogs, fetchAllNewsTourController, fetchBookings, fetchCitySliderEscorts, fetchEscortBlog, fetchEscortdetailscontroller, fetchEscortNewsTourcontroller, fetchFiltercityescortscontroller, fetchFilterHomescortscontroller, fetchHomeSliderEscorts, fetchSelectBlog, fetchSelectBooking, fetchSelectedBlogComments, fetchSelectedNewsTourComments, fetchSelectNewsTourController, getEscortContact, getToursByDate, hideEscortProfile, logoutEscortcontroller, registerEscortcontroller, registerGalleryController, sendOtpcontroller, toggleBlogLike, toggleFaceBlur, toggleNewstourLikeController, updateBlog, updateBooking, updateEscortProfile, updateHighlightscontroller, updateNewsTourController, updateRate, UpdateService, updateTour, uploadAvatarcontroller, uploadImagescontroller, uploadVideoscontroller, verifiedEscortcontroller, verifyEmailcontroller, verifyMobileotp } from '../controllers/escort.controller.js'
+import { addBlogComment, addBooking, addNewstourCommentController, addTour, advanceSearchController, blockBlogComments, cancelBooking, cancelTour, changeMobilenumber, complteBooking, createBlog, createNewsTourcontroller, deleteBlog, deleteBooking, deleteEscortProfile, deleteNewsTourController, deleteRate, DeleteService, deleteTour, editEscortProfileDetails, escortChangePassword, escortdetailscontroller, escortForgotPassword, escortLogincontroller, escortRatescontroller, escortResetPassword, escortServicescontroller, escortUploadverification, escortVerifyOtp, fetchAllBlogs, fetchAllNewsTourController, fetchBookings, fetchCitySliderEscorts, fetchEscortBlog, fetchEscortdetailscontroller, fetchEscortNewsTourcontroller, fetchFiltercityescortscontroller, fetchFilterHomescortscontroller, fetchHomeSliderEscorts, fetchSelectBlog, fetchSelectBooking, fetchSelectedBlogComments, fetchSelectedNewsTourComments, fetchSelectNewsTourController, getEscortContact, getToursByDate, hideEscortProfile, logoutEscortcontroller, registerEscortcontroller, registerGalleryController, resendEmailVerification, sendOtpcontroller, toggleBlogLike, toggleFaceBlur, toggleNewstourLikeController, updateBlog, updateBooking, updateEscortProfile, updateHighlightscontroller, updateNewsTourController, updateRate, UpdateService, updateTour, uploadAvatarcontroller, uploadImagescontroller, uploadVideoscontroller, verifiedEscortcontroller, verifyEmailcontroller, verifyMobileotp } from '../controllers/escort.controller.js'
 import upload from "../middleware/multer.js";
 import { protect } from "../middleware/auth.js";
 import { rateLimit } from "../middleware/rateLimit.js";
@@ -16,12 +16,13 @@ escortRouter.get("/escort-data", protect(["Escort"]), async (request, response) 
 // registration
 escortRouter.post('/register', registerEscortcontroller)
 escortRouter.get("/verify-email", verifyEmailcontroller)
+escortRouter.post("/resend-email-verification", resendEmailVerification);
 escortRouter.post("/change-mobilenumber", changeMobilenumber)
 escortRouter.post("/send-otp", sendOtpcontroller)
 escortRouter.post("/verify-otp", verifyMobileotp)
 escortRouter.post("/adddetails", escortdetailscontroller)
 escortRouter.post("/upload-verification", upload.fields([{ name: "verificationselfie", maxCount: 1 }, { name: "verificationgovtId", maxCount: 1 },]), escortUploadverification);
-escortRouter.post("/register-gallery-upload",upload.array("photos", 6), registerGalleryController)
+escortRouter.post("/register-gallery-upload", upload.array("photos", 6), registerGalleryController)
 
 escortRouter.post('/change-password', protect(["Escort"]), escortChangePassword);
 escortRouter.post('/send-reset-password-otp', escortForgotPassword)

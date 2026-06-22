@@ -554,8 +554,6 @@ export async function registerEscortcontroller(request, response) {
 
         await sendVerificationEmail(normalizedEmail, verifyLink, escortId);
 
-        await sendRegistrationNotification({ email: process.env.ADMIN_RECEIVER_EMAIL, modelName: name })
-
         return response.status(200).json({
             message: "Verification link sent to your email",
             error: false,
@@ -589,7 +587,19 @@ export async function verifyEmailcontroller(request, response) {
         });
 
         if (!escort) {
-            return response.redirect("https://www.greenevelvet.com/link-expired");
+            const expiredEscort = await EscortModel.findOne({
+                emailVerifyToken: token
+            });
+
+            if (expiredEscort) {
+                return response.redirect(
+                    `https://www.greenevelvet.com/link-expired/${expiredEscort.escortId}`
+                );
+            }
+
+            return response.redirect(
+                "https://www.greenevelvet.com/link-expired"
+            );
         }
 
         escort.isEmailVerified = true;
@@ -616,6 +626,72 @@ export async function verifyEmailcontroller(request, response) {
             success: false,
             error: true,
         })
+    }
+}
+
+// Resend email verification
+export async function resendEmailVerification(request, response) {
+    try {
+        const { escortId } = request.body;
+
+        if (!escortId) {
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "Escort ID is required"
+            });
+        }
+
+        const escort = await EscortModel.findOne({ escortId });
+
+        if (!escort) {
+            return response.status(404).json({
+                success: false,
+                error: true,
+                message: "Escort not found"
+            });
+        }
+
+        if (escort.isEmailVerified) {
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "Email already verified"
+            });
+        }
+
+        // Generate new verification token
+        const token = crypto.randomBytes(32).toString("hex");
+
+        escort.emailVerifyToken = token;
+        escort.emailVerifyExpiry = new Date(
+            Date.now() + 24 * 60 * 60 * 1000 // 24 hours
+        );
+
+        await escort.save();
+
+        const verifyLink = `https://greenvelvet-api.onrender.com/escort/verify-email?token=${token}&escortId=${escort.escortId}`;
+
+        await sendVerificationEmail(
+            escort.email,
+            verifyLink,
+            escort.escortId
+        );
+
+        return response.status(200).json({
+            success: true,
+            error: false,
+            message: "Verification email sent successfully"
+        });
+
+    } catch (error) {
+        console.error("Resend Email Verification Error:", error);
+
+        return response.status(500).json({
+            success: false,
+            error: true,
+            message: error.message || "Something went wrong"
+        });
     }
 }
 
@@ -980,6 +1056,10 @@ export async function registerGalleryController(request, response) {
             .findOne({ escortId })
             .lean();
 
+
+        await sendRegistrationNotification({ email: process.env.ADMIN_RECEIVER_EMAIL, modelName: updatedEscort.name })
+
+
         const admin = await AdminModel.findOne();
         if (!admin) {
             console.error("❌ Notification skipped: No Admin found in database.");
@@ -1276,16 +1356,18 @@ export async function uploadAvatarcontroller(request, response) {
         if (!admin) {
             console.error("❌ Notification skipped: No Admin found in database.");
         } else {
-            const load = await createAndSendNotification(request.app, {
-                recipientId: admin._id,
-                recipientModel: "Admin",
-                senderId: uploadEscort._id,
-                senderModel: "Escort",
-                type: "VERIFICATION",
-                title: "New Profile image upload",
-                message: `${uploadEscort.name} has upload new profile image and is waiting for approval.`,
-                link: `/viewescortprofile/${uploadEscort._id}`
-            });
+            if (uploadEscort.status === "Pending") {
+                const load = await createAndSendNotification(request.app, {
+                    recipientId: admin._id,
+                    recipientModel: "Admin",
+                    senderId: uploadEscort._id,
+                    senderModel: "Escort",
+                    type: "VERIFICATION",
+                    title: "New Profile image upload",
+                    message: `${uploadEscort.name} has upload new profile image and is waiting for approval.`,
+                    link: `/viewescortprofile/${uploadEscort._id}`
+                });
+            }
         }
 
 
