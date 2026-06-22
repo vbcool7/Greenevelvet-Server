@@ -91,6 +91,7 @@ export async function adminlogincontroller(request, response) {
         });
 
     } catch (error) {
+        console.log("admin login error ", error);
         return response.status(500).json({
             message: error.message || "Internal server error",
             success: false,
@@ -683,9 +684,9 @@ export async function fetchEscortcontroller(request, response) {
 
         filter.verificationgovtId = { $ne: "" };
 
-        // filter["avatar.url"] = { $ne: "" };
+        filter["avatar.url"] = { $ne: "" };
 
-        // filter["gallery.photos.2"] = { $exists: true };
+        filter["gallery.photos.2"] = { $exists: true };
 
         const escorts = await EscortModel.find(filter)
             .sort({ createdAt: -1 });
