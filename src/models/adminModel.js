@@ -22,7 +22,6 @@ const AdminSchema = new mongoose.Schema({
     },
     mobile: {
         type: Number,
-        required: [true, "Provide mobile"],
         unique: true
     },
     role: {
