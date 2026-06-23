@@ -531,7 +531,6 @@ export async function registerEscortcontroller(request, response) {
             name,
             email: normalizedEmail,
             password: hashPassword,
-            mobile: mobileEncrypted,
             country,
             countryCode,
             city,
