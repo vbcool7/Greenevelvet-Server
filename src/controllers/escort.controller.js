@@ -773,6 +773,77 @@ export async function sendOtpcontroller(request, response) {
             })
         }
 
+        let escortMobile = escort.mobile;
+
+        try {
+            if (escortMobile?.startsWith("enc:")) {
+                escortMobile = decrypt(escortMobile.replace("enc:", ""));
+            } else {
+                escortMobile = decrypt(escortMobile);
+            }
+        } catch {
+            escortMobile = "";
+        }
+
+
+        // If mobile changed, check duplicate in Escorts
+        if (escortMobile !== mobile) {
+
+            const escorts = await EscortModel.find(
+                { escortId: { $ne: escortId } },
+                { mobile: 1, escortId: 1 }
+            );
+
+            for (const item of escorts) {
+
+                let dbMobile = item.mobile;
+
+                try {
+                    if (dbMobile?.startsWith("enc:")) {
+                        dbMobile = decrypt(dbMobile.replace("enc:", ""));
+                    } else {
+                        dbMobile = decrypt(dbMobile);
+                    }
+                } catch {
+                    continue;
+                }
+
+                if (dbMobile === mobile) {
+                    return response.status(400).json({
+                        success: false,
+                        error: true,
+                        message: "Mobile No. Already Exists"
+                    });
+                }
+            }
+
+            // Check duplicate in Clients
+            const clients = await ClientModel.find({}, { mobile: 1 });
+
+            for (const client of clients) {
+
+                let dbMobile = client.mobile;
+
+                try {
+                    if (dbMobile?.startsWith("enc:")) {
+                        dbMobile = decrypt(dbMobile.replace("enc:", ""));
+                    } else {
+                        dbMobile = decrypt(dbMobile);
+                    }
+                } catch {
+                    continue;
+                }
+
+                if (dbMobile === mobile) {
+                    return response.status(400).json({
+                        success: false,
+                        error: true,
+                        message: "Mobile No. Already Exists"
+                    });
+                }
+            }
+        }
+
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
         await otpModel.create({
@@ -819,6 +890,7 @@ export async function sendOtpcontroller(request, response) {
         }
 
 
+
     } catch (error) {
         console.log("OTP send error", error.response?.data);
 
@@ -842,6 +914,7 @@ export async function sendOtpcontroller(request, response) {
 // Escort verify mobile otp controll step-3
 export async function verifyMobileotp(request, response) {
     try {
+
         let { escortId, mobile, otp, countryCode } = request.body; // 👈 let use karo
 
         console.log("mobile and otp", mobile, otp);
@@ -854,16 +927,11 @@ export async function verifyMobileotp(request, response) {
             });
         }
 
-        // clean mobile number
-
-        console.log("clean mobile:", mobile, "otp:", otp);
-
         const escort = await EscortModel.findOne({ escortId });
-        console.log("search escort by mobile", escort);
 
         if (!escort) {
             return response.status(404).json({
-                message: "Mobile number not registered",
+                message: "Unauthorized access",
                 success: false,
                 error: true
             });
@@ -885,10 +953,11 @@ export async function verifyMobileotp(request, response) {
                 error: true
             });
         }
+        const mobileEncrypted = "enc:" + encrypt(mobile);
 
         await EscortModel.updateOne(
             { escortId },
-            { $set: { isMobileVerified: true } } // ✅ correct field
+            { $set: { isMobileVerified: true, mobile: mobileEncrypted, countryCode: countryCode } } // ✅ correct field
         );
 
         record.isUsed = true;
