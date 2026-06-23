@@ -763,6 +763,8 @@ export async function sendOtpcontroller(request, response) {
 
         const { escortId, mobile, countryCode } = request.body;
 
+        console.log("req.body", request.body);
+
         const escort = await EscortModel.findOne({ escortId });
 
         if (!escort) {
