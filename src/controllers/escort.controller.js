@@ -705,7 +705,7 @@ export async function changeMobilenumber(request, response) {
 
         if (!escortId || !mobile) {
             return response.status(400).json({
-                message: "EscortId and mobile is required",
+                message: "Escort Id and mobile is required",
                 success: false,
                 error: true
             })
@@ -739,11 +739,21 @@ export async function changeMobilenumber(request, response) {
         });
 
     } catch (error) {
+        console.log("change mobile error", error);
+
+        if (error.code === 11000 && error.keyPattern?.mobile) {
+            return response.status(400).json({
+                success: false,
+                message: "Mobile No. Already Exists"
+            });
+        }
+
         return response.json({
             message: error.message || error,
             success: false,
             error: true
         })
+
     }
 }
 
@@ -789,14 +799,26 @@ export async function sendOtpcontroller(request, response) {
             }
         );
 
+        console.log("Mobile no. and OTP ", mobile, otp);
         console.log("CELLCAST RESPONSE:", cellcastResponse.data);
 
-        return response.json({
-            message: "Otp sent successfully",
-            success: true,
-            error: false,
+        if (cellcastResponse?.meta?.code === 200) {
+            return response.status(200).json({
+                success: true,
+                error: false,
+                message: "Otp Sent Successfully"
+            });
+        }
 
-        })
+        if (cellcastResponse?.meta?.status === "RECIPIENTS_ERROR") {
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "Invalid Mobile Number"
+            });
+        }
+
+
     } catch (error) {
         console.log("SEND OTP ERROR:", error.response?.data || error.message);
 
