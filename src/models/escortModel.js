@@ -27,7 +27,6 @@ const EscortSchema = new mongoose.Schema({
     },
     mobile: {
         type: String,
-        required: [true, "Provide account type"],
         unique: true
     },
     country: {
@@ -118,7 +117,7 @@ const EscortSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    
+
     lastCompletedStep: {
         type: Number,
         default: 0
