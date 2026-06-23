@@ -810,7 +810,7 @@ export async function sendOtpcontroller(request, response) {
             });
         }
 
-        if (cellcastResponse?.meta?.status === "RECIPIENTS_ERROR") {
+        if (cellcastResponse?.meta?.code === 400) {
             return response.status(400).json({
                 success: false,
                 error: true,
