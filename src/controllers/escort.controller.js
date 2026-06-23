@@ -923,7 +923,7 @@ export async function verifyMobileotp(request, response) {
 
         let { escortId, mobile, otp, countryCode } = request.body; // 👈 let use karo
 
-        console.log("mobile and otp", mobile, otp);
+        console.log("verify otp , escortId ,mobile , contyrcode and otp ", escortId, mobile, countryCode, otp);
 
         if (!mobile || !otp) {
             return response.status(400).json({
