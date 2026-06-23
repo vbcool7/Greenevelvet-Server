@@ -854,10 +854,14 @@ export async function sendOtpcontroller(request, response) {
             expiresAt: new Date(Date.now() + 5 * 60 * 1000) // 5 min
         });
 
+        const fullMobile = countryCode + mobile;
+
+        console.log("fullMobile", fullMobile);
+
         // Prepare SMS payload
         const smsPayload = {
             sms_text: `Your Greene Velvet OTP is ${otp}`,
-            numbers: [mobile],
+            numbers: [fullMobile],
         };
 
         // Send SMS using Cellcast API
@@ -872,7 +876,7 @@ export async function sendOtpcontroller(request, response) {
             }
         );
 
-        console.log("Mobile no. and OTP ", mobile, otp);
+        console.log("Mobile no. and OTP ", fullMobile, otp);
         console.log("CELLCAST RESPONSE:", cellcastResponse.data);
 
         if (cellcastResponse?.data?.meta?.code === 200) {
