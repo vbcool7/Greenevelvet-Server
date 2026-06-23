@@ -802,7 +802,7 @@ export async function sendOtpcontroller(request, response) {
         console.log("Mobile no. and OTP ", mobile, otp);
         console.log("CELLCAST RESPONSE:", cellcastResponse.data);
 
-        if (cellcastResponse?.meta?.code === 200) {
+        if (cellcastResponse?.data?.meta?.code === 200) {
             return response.status(200).json({
                 success: true,
                 error: false,
@@ -810,7 +810,7 @@ export async function sendOtpcontroller(request, response) {
             });
         }
 
-        if (cellcastResponse?.meta?.code === 400) {
+        if (cellcastResponse?.data?.meta?.status === "RECIPIENTS_ERROR") {
             return response.status(400).json({
                 success: false,
                 error: true,
@@ -820,7 +820,15 @@ export async function sendOtpcontroller(request, response) {
 
 
     } catch (error) {
-        console.log("SEND OTP ERROR:", error.response?.data || error.message);
+        console.log("OTP send error", error.response?.data);
+
+        if (error.response?.data?.meta?.code === 400) {
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "Invalid Mobile Number"
+            });
+        }
 
         return response.status(500).json({
             message: error.message || error,
