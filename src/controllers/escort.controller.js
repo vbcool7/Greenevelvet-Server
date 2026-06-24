@@ -687,27 +687,27 @@ export async function verifyEmailcontroller(request, response) {
 // Resend email verification
 export async function resendEmailVerification(request, response) {
     try {
-        const { escortId } = request.body;
+        const { id } = request.body;
 
-        if (!escortId) {
+        if (!id) {
             return response.status(400).json({
                 success: false,
                 error: true,
-                message: "Escort ID is required"
+                message: "ID is required"
             });
         }
 
-        const escort = await EscortModel.findOne({ escortId });
+        const pendingEscort = await PendingEscortModel.findById(id);
 
-        if (!escort) {
+        if (!pendingEscort) {
             return response.status(404).json({
                 success: false,
                 error: true,
-                message: "Escort not found"
+                message: "User not found"
             });
         }
 
-        if (escort.isEmailVerified) {
+        if (pendingEscort.isEmailVerified) {
             return response.status(400).json({
                 success: false,
                 error: true,
@@ -718,19 +718,18 @@ export async function resendEmailVerification(request, response) {
         // Generate new verification token
         const token = crypto.randomBytes(32).toString("hex");
 
-        escort.emailVerifyToken = token;
-        escort.emailVerifyExpiry = new Date(
+        pendingEscort.emailVerifyToken = token;
+        pendingEscort.emailVerifyExpiry = new Date(
             Date.now() + 24 * 60 * 60 * 1000 // 24 hours
         );
 
-        await escort.save();
+        await pendingEscort.save();
 
-        const verifyLink = `https://greenvelvet-api.onrender.com/escort/verify-email?token=${token}&escortId=${escort.escortId}`;
+        const verifyLink = `https://greenvelvet-api.onrender.com/escort/verify-email?token=${token}&id=${pendingEscort._id}`;
 
         await sendVerificationEmail(
-            escort.email,
+            pendingEscort.email,
             verifyLink,
-            escort.escortId
         );
 
         return response.status(200).json({
