@@ -44,6 +44,12 @@ const pendingEscortSchema = new mongoose.Schema(
             default: "Escort"
         },
 
+        status: {
+            type: String,
+            enum: ["Pending", "Active", "Inactive", "Suspended"],
+            default: "Pending"
+        },
+
         lastCompletedStep: {
             type: Number,
             default: 0
