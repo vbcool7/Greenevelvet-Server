@@ -34,6 +34,7 @@ import { deleteFromCloudinary } from "../utils/deleteFromCloudinary.js";
 import { createAndSendNotification } from "../utils/notificationHelper.js";
 import AdminModel from "../models/adminModel.js";
 import NotificationModel from "../models/notificationModel.js";
+import PendingEscortModel from "../models/PendingEscortModel.js";
 
 // change password
 export const escortChangePassword = async (request, response) => {
@@ -486,8 +487,6 @@ export async function registerEscortcontroller(request, response) {
 
         const { name, email, password, mobile, country, countryCode, city, account_classification, account_type, adverties_category } = request.body
 
-        const mobileEncrypted = "enc:" + encrypt(mobile);
-
         console.log(request.body);
 
         if (!name || !email || !password || !mobile) {
@@ -520,12 +519,12 @@ export async function registerEscortcontroller(request, response) {
             })
         }
 
-        const escortId = await generatedescortId()
+        // const escortId = await generatedescortId()
 
-        const token = crypto.randomBytes(32).toString("hex")
+        const token = crypto.randomBytes(32).toString("hex");
 
-        const salt = await bcryptjs.genSalt(10)
-        const hashPassword = await bcryptjs.hash(password, salt)
+        const salt = await bcryptjs.genSalt(10);
+        const hashPassword = await bcryptjs.hash(password, salt);
 
         const payload = {
             escortId,
@@ -544,24 +543,25 @@ export async function registerEscortcontroller(request, response) {
         }
 
 
-        const newEscort = new EscortModel(payload)
-        const save = await newEscort.save()
+        const pendingEscort = new PendingEscortModel(payload)
+        const save = await pendingEscort.save()
 
-        console.log("newEscort", newEscort);
+        console.log("pendingEscort ", pendingEscort);
 
 
         const verifyLink = `https://greenvelvet-api.onrender.com/escort/verify-email?token=${token}`
 
-        await sendVerificationEmail(normalizedEmail, verifyLink, escortId);
+        await sendVerificationEmail(normalizedEmail, verifyLink);
 
         return response.status(200).json({
             message: "Verification link sent to your email",
             error: false,
             success: true,
             data: {
-                escortId: save.escortId,
                 mobile: mobile,
                 email: save.email,
+                id: save._id,
+
             }
         })
 
@@ -581,19 +581,21 @@ export async function verifyEmailcontroller(request, response) {
     try {
         const { token } = request.query;
 
-        const escort = await EscortModel.findOne({
+        const pendingEscort = await PendingEscortModel.findOne({
             emailVerifyToken: token,
-            emailVerifyExpiry: { $gt: Date.now() },
-        });
+            emailVerifyExpiry: { $gt: Date.now() }
+        }).select("+password");
 
-        if (!escort) {
-            const expiredEscort = await EscortModel.findOne({
+
+        if (!pendingEscort) {
+
+            const expiredEscort = await PendingEscortModel.findOne({
                 emailVerifyToken: token
             });
 
             if (expiredEscort) {
                 return response.redirect(
-                    `https://www.greenevelvet.com/link-expired/${expiredEscort.escortId}`
+                    `https://www.greenevelvet.com/link-expired/${expiredEscort._id || ""}`
                 );
             }
 
@@ -602,25 +604,79 @@ export async function verifyEmailcontroller(request, response) {
             );
         }
 
-        escort.isEmailVerified = true;
-        escort.emailVerifyToken = null;
-        escort.emailVerifyExpiry = null;
-        escort.lastCompletedStep = 2;
+        // Safety check
+        const existingEscort = await EscortModel.findOne({
+            email: pendingEscort.email
+        });
 
-        await escort.save();
+        if (existingEscort) {
+            await PendingEscortModel.deleteOne({
+                _id: pendingEscort._id
+            });
+
+            return response.status(409).json({
+                message: "Escort already exists with this email",
+                success: false,
+                error: true
+            });
+        }
+
+        const existingClient = await ClientModel.findOne({
+            email: pendingEscort.email
+        });
+
+        if (existingClient) {
+            await PendingEscortModel.deleteOne({
+                _id: pendingEscort._id
+            });
+
+            return response.status(409).json({
+                message: "This email is already registered as Client",
+                success: false,
+                error: true
+            });
+        }
+
+        // Convert pending escort to plain object
+        const escortData = pendingEscort.toObject();
+
+        delete escortData._id;
+        delete escortData.createdAt;
+        delete escortData.updatedAt;
+
+        escortData.isEmailVerified = true;
+        escortData.emailVerifyToken = null;
+        escortData.emailVerifyExpiry = null;
+        escortData.lastCompletedStep = 2;
+
+        // Id generate for new escort
+        const escortId = await generatedescortId();
+
+        escortData.escortId = escortId;
+
+        // Create Escort
+        const escort = await EscortModel.create(escortData);
+
+        // Delete pending record
+        await PendingEscortModel.deleteOne({
+            _id: pendingEscort._id
+        });
+
 
         if (!escort || !escort.escortId) {
             return response.status(400).json({
-                message: "Invalid escort data",
+                message: "Failed to create escort account",
                 error: true,
                 success: false
             });
         }
 
-        response.redirect(`https://www.greenevelvet.com/confirmmobilenumber/${escort.escortId}`);
+        return response.redirect(`https://www.greenevelvet.com/confirmmobilenumber/${escort.escortId}`);
 
 
     } catch (error) {
+        console.log("verifyEmailcontroller error", error);
+
         return response.status(500).json({
             message: error.message || error,
             success: false,

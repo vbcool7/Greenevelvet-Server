@@ -7,7 +7,7 @@ const isValidEmail = (email) =>
 // ✅ Set API Key
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-export const sendVerificationEmail = async (email, link, escortId) => {
+export const sendVerificationEmail = async (email, link) => {
 
     if (!isValidEmail(email)) {
         console.log(`Invalid email format: ${email} - skipping`);

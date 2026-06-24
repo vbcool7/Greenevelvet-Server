@@ -16,8 +16,8 @@ const EscortSchema = new mongoose.Schema({
     },
     email: {
         type: String,
-        required: [true, "Provide email"],
         unique: true,
+        required: [true, "Provide Email"],
         lowercase: true
     },
     password: {
@@ -84,7 +84,7 @@ const EscortSchema = new mongoose.Schema({
             ref: 'Address'
         }
     ],
-    
+
 
     /* ================= STATUS & VERIFICATION ================= */
     isEmailVerified: {
