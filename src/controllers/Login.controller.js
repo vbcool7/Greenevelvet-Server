@@ -38,7 +38,7 @@ export async function loginUsercontroller(request, response) {
         if (!user) {
             user = await EscortModel.findOne({ email }).select("+password");
             role = "Escort";
-        }       
+        }
 
         // 🔍 If not Escort → check Client
         if (!user) {
@@ -90,7 +90,11 @@ export async function loginUsercontroller(request, response) {
 
             const nextStep = user.lastCompletedStep + 1;
 
-            const redirectUrl = `${registrationSteps[nextStep]}/${user.escortId}`;
+            if (user.lastCompletedStep === 1) {
+                const redirectUrl = `${registrationSteps[nextStep]}/${user._id}`;
+            } else {
+                const redirectUrl = `${registrationSteps[nextStep]}/${user.escortId}`;
+            }
 
             return response.status(403).json({
                 message: "Please Complete your registration",
