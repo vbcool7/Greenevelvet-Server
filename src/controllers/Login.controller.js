@@ -90,10 +90,12 @@ export async function loginUsercontroller(request, response) {
 
             const nextStep = user.lastCompletedStep + 1;
 
+            let redirectUrl;
+
             if (user.lastCompletedStep === 1) {
-                const redirectUrl = `${registrationSteps[nextStep]}/${user._id}`;
+                redirectUrl = `${registrationSteps[nextStep]}/${user._id}`;
             } else {
-                const redirectUrl = `${registrationSteps[nextStep]}/${user.escortId}`;
+                redirectUrl = `${registrationSteps[nextStep]}/${user.escortId}`;
             }
 
             return response.status(403).json({
