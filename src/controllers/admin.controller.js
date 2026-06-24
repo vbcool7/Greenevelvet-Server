@@ -994,7 +994,7 @@ export async function updateEscortcontroller(request, response) {
 </body>
 </html>
 `;
-        if (isVerified) {
+        if (escort?.isVerified) {
 
             if (action === "Active") {
                 updateData = {
