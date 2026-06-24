@@ -717,6 +717,7 @@ export async function fetchEscortcontroller(request, response) {
         })
 
     } catch (error) {
+        console.log("fetch awaiting verification escorts", error);
         return response.status(500).json({
             message: error.message || error,
             error: true,
@@ -771,6 +772,8 @@ export async function fetchEscortdetailscontroller(request, response) {
         })
 
     } catch (error) {
+        console.log("fetch escorts details", error);
+
         return response.status(500).json({
             message: error.message || error,
             success: false,
@@ -1086,6 +1089,8 @@ export async function updateEscortcontroller(request, response) {
         })
 
     } catch (error) {
+        console.log("update escort error", error);
+
         return response.status(500).json({
             message: error.message || error,
             success: false,
@@ -1157,6 +1162,8 @@ export async function deleteEscortcontroller(request, response) {
         })
 
     } catch (error) {
+        console.log("delete escorts", error);
+
         return response.status(500).json({
             message: error.message || error,
             success: false,
@@ -1192,6 +1199,7 @@ export async function verifiedEscortcontroller(request, response) {
         })
 
     } catch (error) {
+        console.log("verified escort error", error);
         return response.status(500).json({
             message: error.message || error,
             error: true,
