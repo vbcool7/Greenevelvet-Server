@@ -1018,11 +1018,10 @@ export async function verifyMobileotp(request, response) {
 
         await EscortModel.updateOne(
             { escortId },
-            { $set: { isMobileVerified: true, mobile: mobileEncrypted, countryCode: countryCode } } // ✅ correct field
+            { $set: { isMobileVerified: true, mobile: mobileEncrypted, countryCode: countryCode, lastCompletedStep: 3 } } // ✅ correct field
         );
 
         record.isUsed = true;
-        record.lastCompletedStep = 3;
         await record.save();
 
         return response.json({

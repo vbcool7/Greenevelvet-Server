@@ -3,6 +3,7 @@ import EscortModel from "../models/escortModel.js";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import settingsModel from "../models/settingsModel.js";
+import PendingEscortModel from "../models/PendingEscortModel.js";
 
 // Escort and Client login control
 export async function loginUsercontroller(request, response) {
@@ -25,6 +26,11 @@ export async function loginUsercontroller(request, response) {
                 success: false,
                 error: true
             })
+        }
+
+        if (!user) {
+            user = await PendingEscortModel.findOne({ email }).select("+password");
+            role = "Escort";
         }
 
         // 🔍 First check Escort
