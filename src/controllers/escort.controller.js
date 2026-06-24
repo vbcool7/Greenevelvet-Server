@@ -1361,9 +1361,6 @@ export async function fetchEscortdetailscontroller(request, response) {
         }
 
         const escortDetails = await EscortModel.findOne({ escortId })
-            .populate("escortdetail")
-            .populate("escortessential")
-            .populate("escortprefer")
             .populate("services")
             .populate("rates")
             .populate("bookings")
