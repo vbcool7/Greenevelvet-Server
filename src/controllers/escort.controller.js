@@ -1397,6 +1397,7 @@ export async function fetchEscortdetailscontroller(request, response) {
         })
 
     } catch (error) {
+        console.log("fetch escort details error ", error);
         return response.status(500).json({
             message: error.message || error,
             error: true,
