@@ -527,7 +527,6 @@ export async function registerEscortcontroller(request, response) {
         const hashPassword = await bcryptjs.hash(password, salt);
 
         const payload = {
-            escortId,
             name,
             email: normalizedEmail,
             password: hashPassword,
