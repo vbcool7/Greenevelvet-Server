@@ -28,15 +28,17 @@ export async function loginUsercontroller(request, response) {
             })
         }
 
-        if (!user) {
-            user = await PendingEscortModel.findOne({ email }).select("+password");
-            role = "Escort";
-        }
 
         // 🔍 First check Escort
-        let user = await EscortModel.findOne({ email }).select("+password");
+
+
+        let user = await PendingEscortModel.findOne({ email }).select("+password");
         let role = "Escort";
 
+        if (!user) {
+            user = await EscortModel.findOne({ email }).select("+password");
+            role = "Escort";
+        }       
 
         // 🔍 If not Escort → check Client
         if (!user) {
