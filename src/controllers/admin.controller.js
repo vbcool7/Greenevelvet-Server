@@ -994,36 +994,68 @@ export async function updateEscortcontroller(request, response) {
 </body>
 </html>
 `;
+        if (isVerified) {
 
-        if (action === "Active") {
-            updateData = {
-                isVerified: true,
-                status: "Active",
-                docsuploadStatus: "approved"
-            };
+            if (action === "Active") {
+                updateData = {
+                    isVerified: true,
+                    status: "Active",
+                };
 
-            emailSubject = "Your account has been verified ✅ - GreeneVelvet";
-            emailHtml = verifyHtml;
-        }
+                emailSubject = "Your account has been Activated ✅ - GreeneVelvet";
+                emailHtml = verifyHtml;
+            }
 
-        else if (action === "Suspended") {
-            updateData = {
-                isVerified: false,
-                status: "Suspended",
-                docsuploadStatus: "failed",
-                reason
-            };
+            else if (action === "Suspended") {
+                updateData = {
+                    isVerified: true,
+                    status: "Suspended",
+                    reason
+                };
 
-            emailSubject = "Your verification was rejected - GreeneVelvet";
-            emailHtml = rejectedHtml;
-        }
+                emailSubject = "Your account has been Deactivated - GreeneVelvet";
+                emailHtml = rejectedHtml;
+            }
 
-        else {
-            return response.status(400).json({
-                message: "action is undefined!",
-                success: false,
-                error: true
-            });
+            else {
+                return response.status(400).json({
+                    message: "action is undefined!",
+                    success: false,
+                    error: true
+                });
+            }
+        } else {
+
+            if (action === "Active") {
+                updateData = {
+                    isVerified: true,
+                    status: "Active",
+                    docsuploadStatus: "approved"
+                };
+
+                emailSubject = "Your account has been verified ✅ - GreeneVelvet";
+                emailHtml = verifyHtml;
+            }
+
+            else if (action === "Suspended") {
+                updateData = {
+                    isVerified: false,
+                    status: "Suspended",
+                    docsuploadStatus: "failed",
+                    reason
+                };
+
+                emailSubject = "Your verification was rejected - GreeneVelvet";
+                emailHtml = rejectedHtml;
+            }
+
+            else {
+                return response.status(400).json({
+                    message: "action is undefined!",
+                    success: false,
+                    error: true
+                });
+            }
         }
 
         console.log("updateData", updateData);
