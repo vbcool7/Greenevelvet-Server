@@ -33,6 +33,7 @@ import { sendMail } from "../utils/sendMail.js";
 import { deleteFromCloudinary } from "../utils/deleteFromCloudinary.js";
 import { createAndSendNotification } from "../utils/notificationHelper.js";
 import AdminModel from "../models/adminModel.js";
+import NotificationModel from "../models/notificationModel.js";
 
 // change password
 export const escortChangePassword = async (request, response) => {
@@ -5913,16 +5914,17 @@ export async function deleteEscortProfile(request, response) {
             });
         }
 
-        // ✅ delete escort
-        const deletedEscort = await EscortModel.findByIdAndDelete(_id);
+        const escort = await EscortModel.findById(_id);
 
-        if (!deletedEscort) {
-            return response.status(404).json({
-                message: "Escort not found",
+        if (!escort) {
+            return response.status(400).json({
+                message: "User not found",
                 success: false,
                 error: true
             });
         }
+
+        // ✅ delete escort
 
         await BlogModel.deleteMany({ userId: _id });
         await ServiceModel.deleteMany({ userId: _id });
@@ -5930,6 +5932,21 @@ export async function deleteEscortProfile(request, response) {
         await NewsAndTourModel.deleteMany({ userId: _id });
         await TourModel.deleteMany({ userId: _id });
         await BookingModel.deleteMany({ userId: _id });
+
+        await NotificationModel.deleteMany({
+            $or: [
+                {
+                    recipient: escort._id,
+                    recipientModel: "Escort"
+                },
+                {
+                    sender: escort._id,
+                    senderModel: "Escort"
+                }
+            ]
+        });
+
+        const deletedEscort = await EscortModel.findByIdAndDelete(_id);
 
         return response.status(200).json({
             message: "Escort profile and related data deleted",

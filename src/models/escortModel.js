@@ -78,31 +78,13 @@ const EscortSchema = new mongoose.Schema({
         default: ""
     },
 
-    /* ================= DOCUMENT VERIFICATION ================= */
     address_details: [
         {
             type: mongoose.Schema.ObjectId,
             ref: 'Address'
         }
     ],
-    escortdetail: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: 'escortdetail'
-        }
-    ],
-    escortessential: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: 'escortessential'
-        }
-    ],
-    escortprefer: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: 'escortprefer'
-        }
-    ],
+    
 
     /* ================= STATUS & VERIFICATION ================= */
     isEmailVerified: {

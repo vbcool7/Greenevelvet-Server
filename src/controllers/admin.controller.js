@@ -14,6 +14,10 @@ import NewstourCommentsModel from '../models/newstourCommentsModel.js';
 import NewstourLikesModel from '../models/newstourLikesModel.js';
 import { decrypt } from '../utils/crypto.js';
 import { error } from 'console';
+import ServiceModel from '../models/escortserviceModel.js';
+import BookingModel from '../models/bookingModel.js';
+import RatesModel from '../models/escortratesModel.js';
+import NotificationModel from '../models/notificationModel.js';
 
 // Admin login
 export async function adminlogincontroller(request, response) {
@@ -667,7 +671,7 @@ export const resetPassword = async (request, response) => {
 
 //============================================================< Escorts >======================================================================
 
-// fetch escorts
+// fetch awaiting verification escorts
 export async function fetchEscortcontroller(request, response) {
     try {
         const { role } = request.query;
@@ -1071,9 +1075,10 @@ export async function deleteEscortcontroller(request, response) {
             })
         }
 
-        const deletedEscort = await EscortModel.findOneAndDelete({ escortId })
 
-        if (!deletedEscort) {
+        const escort = await EscortModel.findOne({ escortId });
+
+        if (!escort) {
             return response.status(404).json({
                 message: "Escort not found",
                 success: false,
@@ -1081,8 +1086,39 @@ export async function deleteEscortcontroller(request, response) {
             })
         }
 
+        await Promise.all([
+            TourModel.deleteMany({ userId: escort._id }),
+            ServiceModel.deleteMany({ userId: escort._id }),
+            RatesModel.deleteMany({ userId: escort._id }),
+            BlogModel.deleteMany({ userId: escort._id }),
+            NewsAndTourModel.deleteMany({ userId: escort._id }),
+            BookingModel.deleteMany({ userId: escort._id }),
+            await NotificationModel.deleteMany({
+                $or: [
+                    {
+                        recipient: escort._id,
+                        recipientModel: "Escort"
+                    },
+                    {
+                        sender: escort._id,
+                        senderModel: "Escort"
+                    }
+                ]
+            })
+        ]);
+
+        const escortDeleted = await EscortModel.deleteOne({ _id: escort._id });
+
+        if (!escortDeleted) {
+            return response.status(404).json({
+                message: "Escort delete failed",
+                success: false,
+                error: true
+            })
+        }
+
         return response.status(200).json({
-            message: "Escort delete successfull",
+            message: "Escort account and its related details deleted successfull",
             success: true,
             error: false,
             data: deletedEscort
@@ -1100,9 +1136,13 @@ export async function deleteEscortcontroller(request, response) {
 // fecth verified escorts 
 export async function verifiedEscortcontroller(request, response) {
     try {
-        const { role, isVerified } = request.query;
+        const { role, isVerified, } = request.query;
 
-        let filter = {};
+        let filter = {
+            status: {
+                $in: ["Active", "Suspended"]
+            }
+        };
 
         if (role) filter.role = role;
 
@@ -1112,19 +1152,11 @@ export async function verifiedEscortcontroller(request, response) {
         const escorts = await EscortModel.find(filter)
             .sort({ createdAt: -1 });
 
-        if (escorts.length === 0) {
-            return response.status(400).json({
-                message: "escorts not found",
-                error: true,
-                success: false
-            })
-        }
-
         return response.status(200).json({
             message: "Escort list fetched",
             error: false,
             success: true,
-            data: escorts
+            data: escorts || [],
         })
 
     } catch (error) {
