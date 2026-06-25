@@ -73,7 +73,8 @@ export const protect = (roles = []) => async (req, res, next) => {
     next();
 
   } catch (error) {
-    console.log("AUTH ERROR:", error.message);
+    console.log("AUTH ERROR MESSAGE:", error.message);
+    console.log("AUTH ERROR:", error);
 
     return res.status(401).json({
       message:
