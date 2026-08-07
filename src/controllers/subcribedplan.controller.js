@@ -1,3 +1,4 @@
+
 import axios from "axios";
 import subcribedModel from "../models/subcribedplanModel.js";
 import EscortModel from "../models/escortModel.js";
@@ -62,21 +63,21 @@ export const createTransaction = async (request, response) => {
         }
 
 
-        const existingPending = await subcribedModel.findOne({
-            userId,
-            planId,
-            status: "pending"
-        });
+        // const existingPending = await subcribedModel.findOne({
+        //     userId,
+        //     planId,
+        //     status: "pending"
+        // });
 
-        if (existingPending) {
-            return response.status(200).json({
-                success: true,
-                error: false,
-                message: "Pending payment already exists",
-                paymentUrl: existingPending.invoiceUrl,
-                transaction: existingPending
-            });
-        }
+        // if (existingPending) {
+        //     return response.status(200).json({
+        //         success: true,
+        //         error: false,
+        //         message: "Pending payment already exists",
+        //         paymentUrl: existingPending.invoiceUrl,
+        //         transaction: existingPending
+        //     });
+        // }
 
 
         const orderId = `SUB_${userId}_${plan._id}_${Date.now()}`;
@@ -164,48 +165,83 @@ export const createTransaction = async (request, response) => {
     }
 };
 
-// web hook response and update 
-export const escrowWebhook = async (request, response) => {
+// NOWPayments Webhook
+export const nowPaymentsWebhook = async (request, response) => {
     try {
-    
+
+
+        // const rawBody = request.body;
+
+        // const signature = request.headers["x-nowpayments-sig"];
+        // console.log("Signature =", signature);
+
+        // const expectedSignature = crypto
+        //     .createHmac("sha512", process.env.NOWPAYMENTS_IPN_SECRET)
+        //     .update(rawBody)
+        //     .digest("hex");
+
+        // if (signature !== expectedSignature) {
+        //     return response.sendStatus(401);
+        // }
+
+        // const event = JSON.parse(rawBody.toString());
+
 
         const event = request.body;
+
+
+        console.log("NOWPAYMENTS WEBHOOK:", event);
 
         const invoiceId = event.invoice_id;
         const paymentStatus = event.payment_status;
 
-        if (!txnId || !status) {
+        if (!invoiceId || !paymentStatus) {
             return response.sendStatus(400);
         }
 
+        // Find Transaction 
         const payment = await subcribedModel.findOne({
-            escrowTransactionId: txnId
+            nowPaymentInvoiceId: invoiceId
         });
 
-        if (!payment) return response.sendStatus(404);
+        if (!payment) {
+            console.log("Payment not found");
+            return response.sendStatus(404);
+        }
 
-        // 🔁 Idempotency (duplicate webhook protection)
-        if (payment.status === status) {
+        // Duplicate webhook protection
+        if (payment.status === paymentStatus) {
             return response.sendStatus(200);
         }
 
+        // Save latest payment details
+        payment.status = paymentStatus;
+        payment.payCurrency = event.pay_currency;
+        payment.payAmount = event.pay_amount;
+        payment.paymentId = event.payment_id;
+        payment.purchaseId = event.purchase_id;
+
         let updateEscortData = {};
 
-        // 💰 FUNDS SECURED → ACTIVATE SUBSCRIPTION
-        if (status === "funds_secured") {
+        // Payment Success
+        if (paymentStatus === "finished") {
 
             const start = new Date();
 
-            // ✅ duration dynamic (example: "30 days")
             let days = 30;
+
             if (payment.duration) {
                 const match = payment.duration.match(/\d+/);
-                if (match) days = parseInt(match[0]);
+
+                if (match) {
+                    days = Number(match[0]);
+                }
             }
 
-            const expiry = new Date(start.getTime() + days * 24 * 60 * 60 * 1000);
+            const expiry = new Date(
+                start.getTime() + (days * 24 * 60 * 60 * 1000)
+            );
 
-            payment.status = "funds_secured";
             payment.subscriptionStart = start;
             payment.subscriptionExpiry = expiry;
 
@@ -213,36 +249,53 @@ export const escrowWebhook = async (request, response) => {
                 subscriptionActive: true,
                 subscriptionStatus: "active",
                 subscriptionplanexpiry: expiry,
-                $addToSet: { subscribedplans: payment._id }
+                $addToSet: {
+                    subscribedplans: payment._id
+                }
             };
         }
 
-        // ❌ FAILED
-        if (status === "failed") {
-            payment.status = "failed";
+        // Failed Payment
+        if (
+            paymentStatus === "failed" ||
+            paymentStatus === "expired"
+        ) {
+
+            payment.status = paymentStatus;
         }
 
-        // ✅ COMPLETED (funds released)
-        if (status === "completed") {
-            payment.status = "completed";
+        // Waiting / Confirming
+        if (
+            paymentStatus === "waiting" ||
+            paymentStatus === "confirming" ||
+            paymentStatus === "confirmed" ||
+            paymentStatus === "sending"
+        ) {
+
+            payment.status = paymentStatus;
         }
 
-        // 🔄 SAVE PAYMENT
         await payment.save();
 
-        // 🔄 UPDATE ESCORT ONLY IF NEEDED
         if (Object.keys(updateEscortData).length > 0) {
+
             await EscortModel.findByIdAndUpdate(
                 payment.userId,
                 updateEscortData
             );
+
         }
 
         return response.sendStatus(200);
 
     } catch (error) {
-        console.error("ESCROW WEBHOOK ERROR:", error?.response?.data || error.message);
+
+        console.log("NOWPAYMENTS WEBHOOK ERROR");
+
+        console.log(error.response?.data || error.message);
+
         return response.sendStatus(500);
+
     }
 };
 
