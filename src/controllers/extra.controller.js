@@ -260,9 +260,6 @@ export const getSelectExtraPlan = async (request, response) => {
 // create transaction 
 export const createTransaction = async (request, response) => {
     try {
-        console.log("Create exgtra transaction api call ", request?.body);
-
-        console.log("userId", request?.user?._id);
 
 
         const userId = request?.user?._id;
@@ -279,7 +276,6 @@ export const createTransaction = async (request, response) => {
 
         const escort = await EscortModel.findById(userId);
 
-        console.log("Escort =>", escort);
 
         if (!escort) {
             return response.status(404).json({
@@ -301,7 +297,6 @@ export const createTransaction = async (request, response) => {
 
         // ✅ fetch from DB (IMPORTANT)
         const plan = await ExtraPlanModel.findById(planId);
-        console.log("plan =>", plan);
 
         if (!plan) {
             return response.status(404).json({
@@ -321,21 +316,21 @@ export const createTransaction = async (request, response) => {
         }
 
 
-        const existingPending = await subcribedModel.findOne({
-            userId,
-            planId,
-            status: "pending"
-        });
+        // const existingPending = await subcribedModel.findOne({
+        //     userId,
+        //     planId,
+        //     status: "pending"
+        // });
 
-        if (existingPending) {
-            return response.status(200).json({
-                success: true,
-                error: false,
-                message: "Pending payment already exists",
-                paymentUrl: existingPending.invoiceUrl,
-                transaction: existingPending
-            });
-        }
+        // if (existingPending) {
+        //     return response.status(200).json({
+        //         success: true,
+        //         error: false,
+        //         message: "Pending payment already exists",
+        //         paymentUrl: existingPending.invoiceUrl,
+        //         transaction: existingPending
+        //     });
+        // }
 
 
         const orderId = `SUB_${userId}_${plan._id}_${Date.now()}`;
@@ -343,7 +338,7 @@ export const createTransaction = async (request, response) => {
 
         // ✅ nowPayments payload
         const paymentData = {
-            price_amount: Number(plan.discountedPrice),
+            price_amount: Number(plan.price),
             price_currency: "AUD",
             order_id: orderId,
             order_description: `Subscription - ${plan.title}`,
@@ -385,9 +380,9 @@ export const createTransaction = async (request, response) => {
             planName: plan.title,
             title: plan.title,
             duration: plan.duration,
-            originalPrice: plan.originalPrice,
-            discountedPrice: plan.discountedPrice,
-            amount: plan.discountedPrice,
+            originalPrice: plan.price,
+            discountedPrice: plan.price,
+            amount: plan.price,
             features: plan.features,
             currency: "AUD",
             nowPaymentInvoiceId: nowPaymentRes.data.id,
