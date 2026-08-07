@@ -260,7 +260,7 @@ export const getSelectExtraPlan = async (request, response) => {
 // create transaction 
 export const createTransaction = async (request, response) => {
     try {
-        console.log("Create transaction api call");
+        console.log("Create exgtra transaction api call ", request?.body);
 
         const userId = request?.user?._id;
         const { planId } = request?.body;
