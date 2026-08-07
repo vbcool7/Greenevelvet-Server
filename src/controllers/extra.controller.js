@@ -430,25 +430,24 @@ export const nowPaymentsWebhook = async (request, response) => {
     try {
 
 
-        const rawBody = request.body;
+        // const rawBody = request.body;
 
-        const signature = request.headers["x-nowpayments-sig"];
-        console.log("Signature =", signature);
+        // const signature = request.headers["x-nowpayments-sig"];
+        // console.log("Signature =", signature);
 
-        const expectedSignature = crypto
-            .createHmac("sha512", process.env.NOWPAYMENTS_IPN_SECRET)
-            .update(rawBody)
-            .digest("hex");
+        // const expectedSignature = crypto
+        //     .createHmac("sha512", process.env.NOWPAYMENTS_IPN_SECRET)
+        //     .update(rawBody)
+        //     .digest("hex");
 
-        if (signature !== expectedSignature) {
-            return response.sendStatus(401);
-        }
+        // if (signature !== expectedSignature) {
+        //     return response.sendStatus(401);
+        // }
 
-        const event = JSON.parse(rawBody.toString());
+        // const event = JSON.parse(rawBody.toString());
+    
 
-
-        console.log("webhook req body event : ", event);
-
+        const event = request.body;
 
 
         console.log("NOWPAYMENTS WEBHOOK:", event);
