@@ -264,7 +264,7 @@ export const createTransaction = async (request, response) => {
 
         console.log("userId", request?.user?._id);
 
-        
+
         const userId = request?.user?._id;
         const { planId } = request?.body;
 
@@ -300,7 +300,7 @@ export const createTransaction = async (request, response) => {
         }
 
         // ✅ fetch from DB (IMPORTANT)
-        const plan = await SubscriptionModel.findById(planId);
+        const plan = await ExtraPlanModel.findById(planId);
         console.log("plan =>", plan);
 
         if (!plan) {
