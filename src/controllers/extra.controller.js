@@ -262,7 +262,7 @@ export const createTransaction = async (request, response) => {
     try {
         console.log("Create exgtra transaction api call ", request?.body);
 
-        console.log("userId", request?.user);
+        console.log("userId", request?.user?._id);
 
         
         const userId = request?.user?._id;
@@ -278,6 +278,8 @@ export const createTransaction = async (request, response) => {
         }
 
         const escort = await EscortModel.findById(userId);
+
+        console.log("Escort =>", escort);
 
         if (!escort) {
             return response.status(404).json({
@@ -299,6 +301,7 @@ export const createTransaction = async (request, response) => {
 
         // ✅ fetch from DB (IMPORTANT)
         const plan = await SubscriptionModel.findById(planId);
+        console.log("plan =>", plan);
 
         if (!plan) {
             return response.status(404).json({
