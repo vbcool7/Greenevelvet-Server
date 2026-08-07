@@ -312,7 +312,7 @@ export const createTransaction = async (request, response) => {
         }
 
 
-        if (!plan.discountedPrice || Number(plan.discountedPrice) <= 0) {
+        if (!plan.price || Number(plan.price) <= 0) {
             return response.status(400).json({
                 message: "Invalid plan amount",
                 success: false,
