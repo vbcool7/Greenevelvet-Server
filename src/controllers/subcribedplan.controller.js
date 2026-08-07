@@ -143,7 +143,7 @@ export const createTransaction = async (request, response) => {
 
 
         return response.status(200).json({
-            message: "Transaction created successfully",
+            message: "For Plan Subscription Transaction created successfully and Now Go through payment page",
             success: true,
             error: false,
             nowPaymentsInvoiceId: nowPaymentRes.data.id,
