@@ -63,7 +63,7 @@ app.use('/cms', cmsRouter);
 app.use('/subscription', subscriptionRouter);
 app.use('/contact', contactRouter);
 app.use('/settings', settingsRouter);
-app.use('/escrow', subcribedRouter);
+app.use('/nowpayments', subcribedRouter);
 app.use('/uglymugs', uglymugsRouter);
 app.use('/extra', extraRouter);
 app.use('/notification', notificationRouter);

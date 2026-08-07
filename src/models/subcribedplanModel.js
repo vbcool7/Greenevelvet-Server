@@ -71,7 +71,13 @@ const subcribedplanSchema = new mongoose.Schema({
         default: null
     },
 
-    escrowTransactionId: {
+    nowPaymentInvoiceId: {
+        type: String,
+    },
+    invoiceUrl: {
+        type: String,
+    },
+    orderId: {
         type: String,
     },
 
