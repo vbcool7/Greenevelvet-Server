@@ -262,6 +262,9 @@ export const createTransaction = async (request, response) => {
     try {
         console.log("Create exgtra transaction api call ", request?.body);
 
+        console.log("userId", request?.user);
+
+        
         const userId = request?.user?._id;
         const { planId } = request?.body;
 
