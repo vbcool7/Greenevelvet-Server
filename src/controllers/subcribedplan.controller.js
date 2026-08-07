@@ -7,6 +7,7 @@ import SubscriptionModel from "../models/subscriptionModel.js";
 // create transaction 
 export const createTransaction = async (request, response) => {
     try {
+        console.log("Create transaction api call");
 
         const userId = request?.user?._id;
         const { planId } = request?.body;

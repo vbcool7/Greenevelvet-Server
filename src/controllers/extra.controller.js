@@ -259,6 +259,7 @@ export const getSelectExtraPlan = async (request, response) => {
 // create transaction 
 export const createTransaction = async (request, response) => {
     try {
+        console.log("Create transaction api call");
 
         const userId = request?.user?._id;
         const { planId } = request?.body;
@@ -274,8 +275,14 @@ export const createTransaction = async (request, response) => {
 
         const escort = await EscortModel.findById(userId);
 
+        if (!escort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
 
-        let email = escort?.email;
 
         // ✅ validation
         if (!planId) {
@@ -287,7 +294,7 @@ export const createTransaction = async (request, response) => {
         }
 
         // ✅ fetch from DB (IMPORTANT)
-        const plan = await ExtraPlanModel.findById(planId);
+        const plan = await SubscriptionModel.findById(planId);
 
         if (!plan) {
             return response.status(404).json({
@@ -298,52 +305,71 @@ export const createTransaction = async (request, response) => {
         }
 
 
-        // ✅ Escrow payload
-        const txnData = {
-            description: `Subscription - ${plan.title}`,
-            currency: "aud",
-            action: "create",
-            return_url: "https://greenevelvets.com/payment-success",
-            parties: [
-                {
-                    role: "buyer",
-                    customer: escort.email,
-                },
-                {
-                    role: "seller",
-                    customer: process.env.ESCROW_EMAIL,
-                }
-            ],
-            items: [
-                {
-                    title: plan.title,
-                    description: plan.duration,
-                    type: "milestone",
-                    inspection_period: 86400, // fast release
-                    quantity: 1,
-                    schedule: [
-                        {
-                            amount: Number(plan.price).toFixed(2),
-                            payer_customer: escort.email,
-                            beneficiary_customer: process.env.ESCROW_EMAIL,
-                        }
-                    ]
-                }
-            ]
+        if (!plan.discountedPrice || Number(plan.discountedPrice) <= 0) {
+            return response.status(400).json({
+                message: "Invalid plan amount",
+                success: false,
+                error: true
+            });
+        }
+
+
+        const existingPending = await subcribedModel.findOne({
+            userId,
+            planId,
+            status: "pending"
+        });
+
+        if (existingPending) {
+            return response.status(200).json({
+                success: true,
+                error: false,
+                message: "Pending payment already exists",
+                paymentUrl: existingPending.invoiceUrl,
+                transaction: existingPending
+            });
+        }
+
+
+        const orderId = `SUB_${userId}_${plan._id}_${Date.now()}`;
+
+
+        // ✅ nowPayments payload
+        const paymentData = {
+            price_amount: Number(plan.discountedPrice),
+            price_currency: "AUD",
+            order_id: orderId,
+            order_description: `Subscription - ${plan.title}`,
+            ipn_callback_url: process.env.NOWPAYMENTS_IPN_URL,
+            success_url: process.env.PAYMENT_SUCCESS_URL,
+            cancel_url: process.env.PAYMENT_CANCEL_URL,
         };
 
-        const escrowRes = await axios.post(
-            process.env.ESCROW_API_URL,
-            txnData,
+        const nowPaymentRes = await axios.post(
+            `${process.env.NOWPAYMENTS_API_URL}/invoice`,
+            paymentData,
             {
-                auth: {
-                    username: process.env.ESCROW_EMAIL,
-                    password: process.env.ESCROW_API_KEY
-                }
+                headers: {
+                    "x-api-key": process.env.NOWPAYMENTS_API_KEY,
+                    "Content-Type": "application/json"
+                },
+                timeout: 30000,
             }
         );
 
-        console.log("ESCROW FULL RESPONSE:", escrowRes.data);
+        console.log("NOWPAYMENTS FULL RESPONSE:", nowPaymentRes.data);
+
+
+        const paymentUrl = nowPaymentRes.data.invoice_url;
+
+        if (!paymentUrl) {
+            return response.status(400).json({
+                message: "Invoice URL not found in NOWPayments response",
+                success: false,
+                error: true
+            });
+        }
+
 
         // ✅  create record in DB
         const newSub = await subcribedModel.create({
@@ -352,11 +378,14 @@ export const createTransaction = async (request, response) => {
             planName: plan.title,
             title: plan.title,
             duration: plan.duration,
-            amount: plan.price,
-            originalPrice: plan.price,
-            discountedPrice: plan.price,
+            originalPrice: plan.originalPrice,
+            discountedPrice: plan.discountedPrice,
+            amount: plan.discountedPrice,
+            features: plan.features,
             currency: "AUD",
-            escrowTransactionId: escrowRes.data.id,
+            nowPaymentInvoiceId: nowPaymentRes.data.id,
+            invoiceUrl: nowPaymentRes.data.invoice_url,
+            orderId: orderId,
             status: "pending"
         });
 
@@ -365,33 +394,24 @@ export const createTransaction = async (request, response) => {
             $push: { subscribedplans: newSub._id }
         });
 
-        const buyerParty = escrowRes.data.parties.find(p => p.role === 'buyer');
-        const paymentUrl = buyerParty ? buyerParty.next_step : null;
 
-        if (!paymentUrl) {
-            return response.status(400).json({
-                message: "Payment link (next_step) not found in Escrow response",
-                success: false,
-                error: true
-            });
-        }
         return response.status(200).json({
-            message: "Transaction created successfully",
+            message: "For Plan Subscription Transaction created successfully and Now Go through payment page",
             success: true,
             error: false,
-            escrowTransactionId: escrowRes.data.id,
+            nowPaymentsInvoiceId: nowPaymentRes.data.id,
             transaction: newSub,
             paymentUrl: paymentUrl,
         });
 
     } catch (error) {
-        console.log("CATCH ERROR:", error?.response?.data?.message || error.message);
+        console.log("CATCH ERROR:", error?.response?.data?.message || error?.message);
         console.log("DETAILED ERROR:", JSON.stringify(error?.response?.data, null, 2));
         return response.status(500).json({
             message: "Failed to create transaction",
             success: false,
             error: true,
-            details: error?.response?.data || error.message
+            details: error?.response?.data || error?.message
         });
     }
 };
