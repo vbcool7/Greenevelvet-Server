@@ -86,7 +86,18 @@ const subcribedplanSchema = new mongoose.Schema({
 
     status: {
         type: String,
-        enum: ["pending", "funds_secured", "success", "completed", "failed"],
+        enum: [
+            "pending",
+            "waiting",
+            "confirming",
+            "confirmed",
+            "sending",
+            "partially_paid",
+            "finished",
+            "failed",
+            "expired",
+            "refunded"
+        ],
         default: "pending",
     },
 
