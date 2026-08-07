@@ -167,10 +167,12 @@ export const createTransaction = async (request, response) => {
 // web hook response and update 
 export const escrowWebhook = async (request, response) => {
     try {
+    
+
         const event = request.body;
 
-        const txnId = event.id;
-        const status = event.status;
+        const invoiceId = event.invoice_id;
+        const paymentStatus = event.payment_status;
 
         if (!txnId || !status) {
             return response.sendStatus(400);

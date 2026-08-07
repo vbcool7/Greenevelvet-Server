@@ -29,6 +29,7 @@ app.use(cors({
         "https://www.greenevelvet.com",
     ]
 }))
+
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
 

@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import mongoose from "mongoose";
 import ExtraPlanModel from "../models/extraplanModel.js";
 import EscortModel from "../models/escortModel.js";
@@ -333,6 +334,10 @@ export const createTransaction = async (request, response) => {
         // }
 
 
+        console.log("NOWPAYMENTS_API_URL =", process.env.NOWPAYMENTS_API_URL);
+        console.log("FINAL URL =", `${process.env.NOWPAYMENTS_API_URL}/invoice`);
+
+
         const orderId = `SUB_${userId}_${plan._id}_${Date.now()}`;
 
 
@@ -415,5 +420,142 @@ export const createTransaction = async (request, response) => {
             error: true,
             details: error?.response?.data || error?.message
         });
+    }
+};
+
+
+
+// NOWPayments Webhook
+export const nowPaymentsWebhook = async (request, response) => {
+    try {
+
+
+        const rawBody = request.body;
+
+        const signature = request.headers["x-nowpayments-sig"];
+        console.log("Signature =", signature);
+
+        const expectedSignature = crypto
+            .createHmac("sha512", process.env.NOWPAYMENTS_IPN_SECRET)
+            .update(rawBody)
+            .digest("hex");
+
+        if (signature !== expectedSignature) {
+            return response.sendStatus(401);
+        }
+
+        const event = JSON.parse(rawBody.toString());
+
+
+        console.log("webhook req body event : ", event);
+
+
+
+        console.log("NOWPAYMENTS WEBHOOK:", event);
+
+        const invoiceId = event.invoice_id;
+        const paymentStatus = event.payment_status;
+
+        if (!invoiceId || !paymentStatus) {
+            return response.sendStatus(400);
+        }
+
+        // Find Transaction 
+        const payment = await subcribedModel.findOne({
+            nowPaymentInvoiceId: invoiceId
+        });
+
+        if (!payment) {
+            console.log("Payment not found");
+            return response.sendStatus(404);
+        }
+
+        // Duplicate webhook protection
+        if (payment.status === paymentStatus) {
+            return response.sendStatus(200);
+        }
+
+        // Save latest payment details
+        payment.status = paymentStatus;
+        payment.payCurrency = event.pay_currency;
+        payment.payAmount = event.pay_amount;
+        payment.paymentId = event.payment_id;
+        payment.purchaseId = event.purchase_id;
+
+        let updateEscortData = {};
+
+        // Payment Success
+        if (paymentStatus === "finished") {
+
+            const start = new Date();
+
+            let days = 30;
+
+            if (payment.duration) {
+                const match = payment.duration.match(/\d+/);
+
+                if (match) {
+                    days = Number(match[0]);
+                }
+            }
+
+            const expiry = new Date(
+                start.getTime() + (days * 24 * 60 * 60 * 1000)
+            );
+
+            payment.subscriptionStart = start;
+            payment.subscriptionExpiry = expiry;
+
+            updateEscortData = {
+                subscriptionActive: true,
+                subscriptionStatus: "active",
+                subscriptionplanexpiry: expiry,
+                $addToSet: {
+                    subscribedplans: payment._id
+                }
+            };
+        }
+
+        // Failed Payment
+        if (
+            paymentStatus === "failed" ||
+            paymentStatus === "expired"
+        ) {
+
+            payment.status = paymentStatus;
+        }
+
+        // Waiting / Confirming
+        if (
+            paymentStatus === "waiting" ||
+            paymentStatus === "confirming" ||
+            paymentStatus === "confirmed" ||
+            paymentStatus === "sending"
+        ) {
+
+            payment.status = paymentStatus;
+        }
+
+        await payment.save();
+
+        if (Object.keys(updateEscortData).length > 0) {
+
+            await EscortModel.findByIdAndUpdate(
+                payment.userId,
+                updateEscortData
+            );
+
+        }
+
+        return response.sendStatus(200);
+
+    } catch (error) {
+
+        console.log("NOWPAYMENTS WEBHOOK ERROR");
+
+        console.log(error.response?.data || error.message);
+
+        return response.sendStatus(500);
+
     }
 };

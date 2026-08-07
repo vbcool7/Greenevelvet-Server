@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { createExtraPlan, createTransaction, getAllActiveExtraPlans, getAllExtraPlans, getSelectExtraPlan, updateExtraPlan } from "../controllers/extra.controller.js";
+import express from "express";
+import { createExtraPlan, createTransaction, getAllActiveExtraPlans, getAllExtraPlans, getSelectExtraPlan, nowPaymentsWebhook, updateExtraPlan } from "../controllers/extra.controller.js";
 import { protect } from "../middleware/auth.js";
 
 const extraRouter = Router();
@@ -12,5 +13,8 @@ extraRouter.get("/fetch-select-extra-plan/:id", getSelectExtraPlan);
 
 extraRouter.post("/create-extra-plan-transaction", protect(["Escort"]), createTransaction);
 
+// extraRouter.post("/nowpayments-webhook", nowPaymentsWebhook);
+
+extraRouter.post("/nowpayments-webhook", express.raw({ type: "application/json" }), nowPaymentsWebhook);
 
 export default extraRouter;

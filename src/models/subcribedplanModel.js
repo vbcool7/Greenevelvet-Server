@@ -80,6 +80,9 @@ const subcribedplanSchema = new mongoose.Schema({
     orderId: {
         type: String,
     },
+    paymentId: { type: String, },
+    payAmount: { type: String, },
+    payCurrency: { type: String, },
 
     status: {
         type: String,
