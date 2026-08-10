@@ -259,7 +259,6 @@ export const nowPaymentsWebhook = async (request, response) => {
 
         const {
             invoice_id,
-            invoice_url,
             payment_id,
             payment_status,
             pay_amount,
@@ -307,7 +306,6 @@ export const nowPaymentsWebhook = async (request, response) => {
 
         console.log("Webhook User ID:", userId);
         console.log("Webhook Plan ID:", planId);
-        console.log("Webhook invoice_url:", invoice_url);
         console.log("Webhook Status:", payment_status);
 
 
@@ -412,6 +410,9 @@ export const nowPaymentsWebhook = async (request, response) => {
         // 8. CREATE TRANSACTION IF NOT EXISTS
         // ============================================
 
+        const invoiceUrl =
+            `https://nowpayments.io/payment?iid=${invoice_id}`;
+
         if (!payment) {
 
             payment = new subcribedModel({
@@ -430,7 +431,7 @@ export const nowPaymentsWebhook = async (request, response) => {
                 currency: "AUD",
 
                 nowPaymentInvoiceId: invoice_id,
-                invoiceUrl: event.invoice_url,
+                invoiceUrl: invoiceUrl,
 
                 orderId: order_id,
 
