@@ -259,6 +259,7 @@ export const nowPaymentsWebhook = async (request, response) => {
 
         const {
             invoice_id,
+            invoice_url,
             payment_id,
             payment_status,
             pay_amount,
@@ -306,6 +307,7 @@ export const nowPaymentsWebhook = async (request, response) => {
 
         console.log("Webhook User ID:", userId);
         console.log("Webhook Plan ID:", planId);
+        console.log("Webhook invoice_url:", invoice_url);
         console.log("Webhook Status:", payment_status);
 
 
