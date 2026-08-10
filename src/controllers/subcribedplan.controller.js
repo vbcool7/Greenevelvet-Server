@@ -91,6 +91,33 @@ export const createTransaction = async (request, response) => {
             });
         }
 
+        const existingPayment = await subcribedModel.findOne({
+            userId,
+            planId,
+            status: {
+                $in: activePaymentStatuses
+            }
+        });
+
+        if (existingPayment) {
+
+            if (!existingPayment.invoiceUrl) {
+                return response.status(400).json({
+                    success: false,
+                    error: true,
+                    message: "Existing payment link is not available. Please try again."
+                });
+            }
+            return response.status(200).json({
+                success: true,
+                error: false,
+                type: "paid",
+                message: "You already have a payment in progress. Continue with your existing payment.",
+                paymentUrl: existingPayment.invoiceUrl,
+                transaction: existingPayment
+            });
+        }
+
 
         const orderId = `SUB_${userId}_${plan._id}_${Date.now()}`;
 
@@ -154,33 +181,6 @@ export const createTransaction = async (request, response) => {
         }
 
 
-
-        const existingPayment = await subcribedModel.findOne({
-            userId,
-            planId,
-            status: {
-                $in: activePaymentStatuses
-            }
-        });
-
-        if (existingPayment) {
-
-            if (!existingPayment.invoiceUrl) {
-                return response.status(400).json({
-                    success: false,
-                    error: true,
-                    message: "Existing payment link is not available. Please try again."
-                });
-            }
-            return response.status(200).json({
-                success: true,
-                error: false,
-                type: "paid",
-                message: "You already have a payment in progress. Continue with your existing payment.",
-                paymentUrl: existingPayment.invoiceUrl,
-                transaction: existingPayment
-            });
-        }
 
 
         // ✅ nowPayments payload
