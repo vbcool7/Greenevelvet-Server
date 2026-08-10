@@ -106,6 +106,7 @@ export const createTransaction = async (request, response) => {
                 error: false,
                 type: "payment_in_progress",
                 message: "You already have a payment in progress. Please complete your existing payment before subscribing to another plan.",
+                paymentUrl: existingPayment.invoiceUrl,
                 transaction: existingPayment
             });
         }
@@ -427,7 +428,7 @@ export const nowPaymentsWebhook = async (request, response) => {
                 currency: "AUD",
 
                 nowPaymentInvoiceId: invoice_id,
-                invoiceUrl: null,
+                invoiceUrl: event.invoice_url,
 
                 orderId: order_id,
 
