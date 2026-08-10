@@ -13,6 +13,7 @@ const activePaymentStatuses = [
     "partially_paid"
 ];
 
+
 // create transaction 
 export const createTransaction = async (request, response) => {
     try {
@@ -93,7 +94,6 @@ export const createTransaction = async (request, response) => {
 
         const existingPayment = await subcribedModel.findOne({
             userId,
-            planId,
             status: {
                 $in: activePaymentStatuses
             }
@@ -101,19 +101,11 @@ export const createTransaction = async (request, response) => {
 
         if (existingPayment) {
 
-            if (!existingPayment.invoiceUrl) {
-                return response.status(400).json({
-                    success: false,
-                    error: true,
-                    message: "Existing payment link is not available. Please try again."
-                });
-            }
             return response.status(200).json({
                 success: true,
                 error: false,
-                type: "paid",
-                message: "You already have a payment in progress. Continue with your existing payment.",
-                paymentUrl: existingPayment.invoiceUrl,
+                type: "payment_in_progress",
+                message: "You already have a payment in progress. Please complete your existing payment before subscribing to another plan.",
                 transaction: existingPayment
             });
         }
@@ -181,8 +173,6 @@ export const createTransaction = async (request, response) => {
         }
 
 
-
-
         // ✅ nowPayments payload
         const paymentData = {
             price_amount: Number(plan.discountedPrice),
@@ -218,40 +208,11 @@ export const createTransaction = async (request, response) => {
             });
         }
 
-
-        // ✅  create record in DB
-        const newSub = await subcribedModel.create({
-            userId,
-            planId: plan._id,
-            planName: plan.title,
-            title: plan.title,
-            duration: plan.duration,
-            originalPrice: plan.originalPrice,
-            discountedPrice: plan.discountedPrice,
-            amount: plan.discountedPrice,
-            features: plan.features,
-            currency: "AUD",
-            nowPaymentInvoiceId: nowPaymentRes.data.id,
-            invoiceUrl: nowPaymentRes.data.invoice_url,
-            orderId: orderId,
-            status: "pending"
-        });
-
-        // ✅ (optional) Escort model me pending attach kar sakte ho
-        await EscortModel.findByIdAndUpdate(userId, {
-            $addToSet: {
-                subscribedplans: newSub._id
-            }
-        });
-
-
         return response.status(200).json({
-            message: "Your subscription has been created successfully. Please proceed to the payment page to complete your payment.",
+            message: "Payment invoice created successfully. Please proceed to the payment page to complete your payment.",
             success: true,
             error: false,
             type: "paid",
-            nowPaymentsInvoiceId: nowPaymentRes.data.id,
-            transaction: newSub,
             paymentUrl: paymentUrl,
         });
 
@@ -268,10 +229,12 @@ export const createTransaction = async (request, response) => {
     }
 };
 
+
+
+
 // NOWPayments Webhook
 export const nowPaymentsWebhook = async (request, response) => {
     try {
-
 
         // const rawBody = request.body;
 
@@ -289,118 +252,375 @@ export const nowPaymentsWebhook = async (request, response) => {
 
         // const event = JSON.parse(rawBody.toString());
 
-
         const event = request.body;
-
 
         console.log("NOWPAYMENTS WEBHOOK:", event);
 
-        const invoiceId = event.invoice_id;
-        const paymentStatus = event.payment_status;
+        const {
+            invoice_id,
+            payment_id,
+            payment_status,
+            pay_amount,
+            pay_currency,
+            order_id
+        } = event;
 
-        if (!invoiceId || !paymentStatus) {
-            return response.sendStatus(400);
+
+        // ============================================
+        // 1. BASIC VALIDATION
+        // ============================================
+
+        if (!order_id || !payment_status) {
+            console.log("Missing order_id or payment_status");
+
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "order_id and payment_status are required"
+            });
         }
 
-        // Find Transaction 
-        const payment = await subcribedModel.findOne({
-            nowPaymentInvoiceId: invoiceId
+
+        // ============================================
+        // 2. GET USER ID + PLAN ID FROM ORDER ID
+        // ============================================
+
+        const orderParts = order_id.split("_");
+
+        if (orderParts.length < 4 || orderParts[0] !== "SUB") {
+
+            console.log("Invalid order_id:", order_id);
+
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "Invalid order_id"
+            });
+        }
+
+
+        const userId = orderParts[1];
+        const planId = orderParts[2];
+
+
+        console.log("Webhook User ID:", userId);
+        console.log("Webhook Plan ID:", planId);
+        console.log("Webhook Status:", payment_status);
+
+
+        // ============================================
+        // 3. VALIDATE USER
+        // ============================================
+
+        const escort = await EscortModel.findById(userId);
+
+        if (!escort) {
+
+            console.log("Escort not found:", userId);
+
+            return response.status(404).json({
+                success: false,
+                error: true,
+                message: "Escort not found"
+            });
+        }
+
+
+        // ============================================
+        // 4. GET PLAN FROM DATABASE
+        // ============================================
+
+        const plan = await SubscriptionModel.findById(planId);
+
+        if (!plan) {
+
+            console.log("Subscription plan not found:", planId);
+
+            return response.status(404).json({
+                success: false,
+                error: true,
+                message: "Subscription plan not found"
+            });
+        }
+
+
+        // ============================================
+        // 5. VALID PAYMENT STATUSES
+        // ============================================
+
+        const validStatuses = [
+            "pending",
+            "waiting",
+            "confirming",
+            "confirmed",
+            "sending",
+            "partially_paid",
+            "finished",
+            "failed",
+            "expired",
+            "refunded"
+        ];
+
+
+        if (!validStatuses.includes(payment_status)) {
+
+            console.log(
+                "Unknown NOWPayments status:",
+                payment_status
+            );
+
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: `Unsupported payment status: ${payment_status}`
+            });
+        }
+
+
+        // ============================================
+        // 6. FIND EXISTING TRANSACTION
+        // ============================================
+
+        let payment = await subcribedModel.findOne({
+            orderId: order_id
         });
 
-        if (!payment) {
-            console.log("Payment not found");
-            return response.sendStatus(404);
-        }
 
-        // Duplicate webhook protection
-        if (payment.status === paymentStatus) {
+        // ============================================
+        // 7. DUPLICATE WEBHOOK PROTECTION
+        // ============================================
+
+        if (
+            payment &&
+            payment.status === payment_status
+        ) {
+
+            console.log(
+                "Duplicate webhook received:",
+                order_id,
+                payment_status
+            );
+
             return response.sendStatus(200);
         }
 
-        // Save latest payment details
-        payment.status = paymentStatus;
-        payment.payCurrency = event.pay_currency;
-        payment.payAmount = event.pay_amount;
-        payment.paymentId = event.payment_id;
-        payment.purchaseId = event.purchase_id;
 
-        let updateEscortData = {};
+        // ============================================
+        // 8. CREATE TRANSACTION IF NOT EXISTS
+        // ============================================
 
-        // Payment Success
-        if (paymentStatus === "finished") {
+        if (!payment) {
 
-            const start = new Date();
+            payment = new subcribedModel({
+                userId: userId,
+                planId: plan._id,
+                planName: plan.title,
+                title: plan.title,
+                duration: plan.duration,
+
+                originalPrice: plan.originalPrice,
+                discountedPrice: plan.discountedPrice,
+                amount: plan.discountedPrice,
+
+                features: plan.features,
+
+                currency: "AUD",
+
+                nowPaymentInvoiceId: invoice_id,
+                invoiceUrl: null,
+
+                orderId: order_id,
+
+                paymentId: payment_id,
+                payAmount: pay_amount,
+                payCurrency: pay_currency,
+
+                status: payment_status,
+
+                subscriptionStart: null,
+                subscriptionExpiry: null,
+
+                isActive: false
+            });
+
+            console.log(
+                "New payment transaction created:",
+                order_id
+            );
+
+        } else {
+
+            // ========================================
+            // 9. UPDATE EXISTING TRANSACTION
+            // ========================================
+
+            payment.status = payment_status;
+
+            if (invoice_id) {
+                payment.nowPaymentInvoiceId = invoice_id;
+            }
+
+            if (payment_id) {
+                payment.paymentId = payment_id;
+            }
+
+            if (pay_amount !== undefined) {
+                payment.payAmount = String(pay_amount);
+            }
+
+            if (pay_currency) {
+                payment.payCurrency = pay_currency;
+            }
+
+            console.log(
+                "Existing payment updated:",
+                order_id
+            );
+        }
+
+
+        // ============================================
+        // 10. PAYMENT FINISHED
+        // ============================================
+
+        if (payment_status === "finished") {
+
+            console.log(
+                "PAYMENT FINISHED:",
+                order_id
+            );
+
+
+            const subscriptionStart = new Date();
 
             let days = 30;
 
-            if (payment.duration) {
-                const match = payment.duration.match(/\d+/);
+            if (plan.duration) {
+
+                const match = plan.duration.match(/\d+/);
 
                 if (match) {
-                    days = Number(match[0]);
+                    days = parseInt(match[0], 10);
                 }
             }
 
-            const expiry = new Date(
-                start.getTime() + (days * 24 * 60 * 60 * 1000)
+
+            const subscriptionExpiry = new Date(
+                subscriptionStart.getTime() +
+                days * 24 * 60 * 60 * 1000
             );
 
-            payment.subscriptionStart = start;
-            payment.subscriptionExpiry = expiry;
 
-            updateEscortData = {
-                subscriptionActive: true,
-                subscriptionStatus: "active",
-                subscriptionplanexpiry: expiry,
-                $addToSet: {
-                    subscribedplans: payment._id
+            payment.subscriptionStart = subscriptionStart;
+            payment.subscriptionExpiry = subscriptionExpiry;
+            payment.isActive = true;
+            payment.status = "finished";
+
+
+            // ========================================
+            // ACTIVATE ESCORT SUBSCRIPTION
+            // ========================================
+
+            await EscortModel.findByIdAndUpdate(
+                userId, {
+                    subscriptionActive: true,
+                    subscriptionStatus: "active",
+                    subscriptionplanexpiry: subscriptionExpiry,
+
+                    $addToSet: {
+                        subscribedplans: payment._id
+                    }
                 }
-            };
+            );
+
+            console.log(
+                "Subscription activated:",
+                userId
+            );
         }
 
-        // Failed Payment
+
+        // ============================================
+        // 11. PAYMENT STILL PROCESSING
+        // ============================================
+
         if (
-            paymentStatus === "failed" ||
-            paymentStatus === "expired"
+            payment_status === "pending" ||
+            payment_status === "waiting" ||
+            payment_status === "confirming" ||
+            payment_status === "confirmed" ||
+            payment_status === "sending" ||
+            payment_status === "partially_paid"
         ) {
 
-            payment.status = paymentStatus;
+            payment.isActive = false;
+
+            payment.subscriptionStart = null;
+            payment.subscriptionExpiry = null;
+
+            console.log(
+                "Payment still processing:",
+                payment_status
+            );
         }
 
-        // Waiting / Confirming
+
+        // ============================================
+        // 12. PAYMENT FAILED / EXPIRED / REFUNDED
+        // ============================================
+
         if (
-            paymentStatus === "waiting" ||
-            paymentStatus === "confirming" ||
-            paymentStatus === "confirmed" ||
-            paymentStatus === "sending"
+            payment_status === "failed" ||
+            payment_status === "expired" ||
+            payment_status === "refunded"
         ) {
 
-            payment.status = paymentStatus;
+            payment.isActive = false;
+
+            payment.subscriptionStart = null;
+            payment.subscriptionExpiry = null;
+
+            console.log(
+                "Payment unsuccessful:",
+                payment_status
+            );
         }
+
+
+        // ============================================
+        // 13. SAVE PAYMENT
+        // ============================================
 
         await payment.save();
 
-        if (Object.keys(updateEscortData).length > 0) {
 
-            await EscortModel.findByIdAndUpdate(
-                payment.userId,
-                updateEscortData
-            );
+        // ============================================
+        // 14. RESPONSE
+        // ============================================
 
-        }
+        return response.status(200).json({
+            success: true,
+            error: false,
+            message: "NOWPayments webhook processed successfully"
+        });
 
-        return response.sendStatus(200);
 
     } catch (error) {
 
-        console.log("NOWPAYMENTS WEBHOOK ERROR");
+        console.error(
+            "NOWPAYMENTS WEBHOOK ERROR:",
+            error?.response?.data || error?.message
+        );
 
-        console.log(error.response?.data || error.message);
-
-        return response.sendStatus(500);
-
+        return response.status(500).json({
+            success: false,
+            error: true,
+            message: "Webhook processing failed"
+        });
     }
 };
+
+
 
 // check active subscription
 export const checkSubscription = async (request, response, next) => {
