@@ -1,4 +1,3 @@
-
 import axios from "axios";
 import subcribedModel from "../models/subcribedplanModel.js";
 import EscortModel from "../models/escortModel.js";
@@ -8,10 +7,16 @@ import SubscriptionModel from "../models/subscriptionModel.js";
 // create transaction 
 export const createTransaction = async (request, response) => {
     try {
-        console.log("Create transaction api call");
+        console.log("Create transaction api call", request.body);
 
         const userId = request?.user?._id;
-        const { planId } = request?.body;
+        const {
+            planId
+        } = request?.body;
+
+        console.log("userId", userId);
+        console.log("planId", planId);
+
 
         // ✅ Basic validation
         if (!userId) {
@@ -23,6 +28,8 @@ export const createTransaction = async (request, response) => {
         }
 
         const escort = await EscortModel.findById(userId);
+
+        console.log("escort", escort);
 
         if (!escort) {
             return response.status(404).json({
@@ -45,6 +52,8 @@ export const createTransaction = async (request, response) => {
         // ✅ fetch from DB (IMPORTANT)
         const plan = await SubscriptionModel.findById(planId);
 
+        console.log("plan", plan);
+
         if (!plan) {
             return response.status(404).json({
                 message: "Plan not found",
@@ -54,7 +63,7 @@ export const createTransaction = async (request, response) => {
         }
 
 
-        if (!plan.discountedPrice || Number(plan.discountedPrice) <= 0) {
+        if (!plan.discountedPrice || Number(plan.discountedPrice) < 0) {
             return response.status(400).json({
                 message: "Invalid plan amount",
                 success: false,
@@ -96,8 +105,7 @@ export const createTransaction = async (request, response) => {
 
         const nowPaymentRes = await axios.post(
             `${process.env.NOWPAYMENTS_API_URL}/invoice`,
-            paymentData,
-            {
+            paymentData, {
                 headers: {
                     "x-api-key": process.env.NOWPAYMENTS_API_KEY,
                     "Content-Type": "application/json"
@@ -140,7 +148,9 @@ export const createTransaction = async (request, response) => {
 
         // ✅ (optional) Escort model me pending attach kar sakte ho
         await EscortModel.findByIdAndUpdate(userId, {
-            $push: { subscribedplans: newSub._id }
+            $push: {
+                subscribedplans: newSub._id
+            }
         });
 
 

@@ -41,7 +41,9 @@ export const createExtraPlan = async (request, response) => {
         }
 
         // ✅ Check duplicate slug
-        const existing = await ExtraPlanModel.findOne({ slug });
+        const existing = await ExtraPlanModel.findOne({
+            slug
+        });
         if (existing) {
             return response.status(400).json({
                 message: "Plan with this slug already exists",
@@ -85,7 +87,9 @@ export const createExtraPlan = async (request, response) => {
 // update plan
 export const updateExtraPlan = async (request, response) => {
     try {
-        const { id } = request.params;
+        const {
+            id
+        } = request.params;
 
         // ✅ Validate ObjectId
         if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -123,7 +127,9 @@ export const updateExtraPlan = async (request, response) => {
         if (slug) {
             const duplicate = await ExtraPlanModel.findOne({
                 slug,
-                _id: { $ne: id }
+                _id: {
+                    $ne: id
+                }
             });
 
             if (duplicate) {
@@ -137,21 +143,40 @@ export const updateExtraPlan = async (request, response) => {
 
         // ✅ Update object (only passed fields)
         const updateData = {
-            ...(iconName && { iconName }),
-            ...(title && { title }),
-            ...(slug && { slug }),
-            ...(duration && { duration }),
-            ...(price !== undefined && { price }),
-            ...(discription !== undefined && { discription }),
-            ...(currency && { currency }),
-            ...(totalSlots !== undefined && { totalSlots }),
-            ...(isActive !== undefined && { isActive })
+            ...(iconName && {
+                iconName
+            }),
+            ...(title && {
+                title
+            }),
+            ...(slug && {
+                slug
+            }),
+            ...(duration && {
+                duration
+            }),
+            ...(price !== undefined && {
+                price
+            }),
+            ...(discription !== undefined && {
+                discription
+            }),
+            ...(currency && {
+                currency
+            }),
+            ...(totalSlots !== undefined && {
+                totalSlots
+            }),
+            ...(isActive !== undefined && {
+                isActive
+            })
         };
 
         const updatedPlan = await ExtraPlanModel.findByIdAndUpdate(
             id,
-            updateData,
-            { new: true }
+            updateData, {
+                new: true
+            }
         );
 
         return response.status(200).json({
@@ -173,8 +198,12 @@ export const updateExtraPlan = async (request, response) => {
 // get all plan for model
 export const getAllActiveExtraPlans = async (request, response) => {
     try {
-        const plans = await ExtraPlanModel.find({ isActive: true })
-            .sort({ createdAt: 1 })
+        const plans = await ExtraPlanModel.find({
+                isActive: true
+            })
+            .sort({
+                createdAt: 1
+            })
             .lean();
 
         return response.status(200).json({
@@ -197,7 +226,9 @@ export const getAllActiveExtraPlans = async (request, response) => {
 export const getAllExtraPlans = async (request, response) => {
     try {
         const plans = await ExtraPlanModel.find()
-            .sort({ createdAt: 1 });
+            .sort({
+                createdAt: 1
+            });
 
         return response.status(200).json({
             message: "Plan fetch successfull",
@@ -218,7 +249,9 @@ export const getAllExtraPlans = async (request, response) => {
 // get selected plan
 export const getSelectExtraPlan = async (request, response) => {
     try {
-        const { id } = request.params;
+        const {
+            id
+        } = request.params;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return response.status(400).json({
@@ -261,10 +294,10 @@ export const getSelectExtraPlan = async (request, response) => {
 // create transaction 
 export const createTransaction = async (request, response) => {
     try {
-
-
         const userId = request?.user?._id;
-        const { planId } = request?.body;
+        const {
+            planId
+        } = request?.body;
 
         // ✅ Basic validation
         if (!userId) {
@@ -354,8 +387,7 @@ export const createTransaction = async (request, response) => {
 
         const nowPaymentRes = await axios.post(
             `${process.env.NOWPAYMENTS_API_URL}/invoice`,
-            paymentData,
-            {
+            paymentData, {
                 headers: {
                     "x-api-key": process.env.NOWPAYMENTS_API_KEY,
                     "Content-Type": "application/json"
@@ -398,7 +430,9 @@ export const createTransaction = async (request, response) => {
 
         // ✅ (optional) Escort model me pending attach kar sakte ho
         await EscortModel.findByIdAndUpdate(userId, {
-            $push: { subscribedplans: newSub._id }
+            $push: {
+                subscribedplans: newSub._id
+            }
         });
 
 
@@ -445,7 +479,7 @@ export const nowPaymentsWebhook = async (request, response) => {
         // }
 
         // const event = JSON.parse(rawBody.toString());
-    
+
 
         const event = request.body;
 
