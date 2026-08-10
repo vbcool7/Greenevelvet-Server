@@ -4,6 +4,15 @@ import EscortModel from "../models/escortModel.js";
 import SubscriptionModel from "../models/subscriptionModel.js";
 
 
+const activePaymentStatuses = [
+    "pending",
+    "waiting",
+    "confirming",
+    "confirmed",
+    "sending",
+    "partially_paid"
+];
+
 // create transaction 
 export const createTransaction = async (request, response) => {
     try {
