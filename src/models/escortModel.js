@@ -78,12 +78,10 @@ const EscortSchema = new mongoose.Schema({
         default: ""
     },
 
-    address_details: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: 'Address'
-        }
-    ],
+    address_details: [{
+        type: mongoose.Schema.ObjectId,
+        ref: 'Address'
+    }],
 
 
     /* ================= STATUS & VERIFICATION ================= */
@@ -179,12 +177,10 @@ const EscortSchema = new mongoose.Schema({
         default: false,
     },
 
-    availability_plan: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "Availability"
-        }
-    ],
+    availability_plan: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "Availability"
+    }],
     availability_start: {
         type: Date,
         default: null,
@@ -211,22 +207,18 @@ const EscortSchema = new mongoose.Schema({
         default: "inactive"
     },
 
-    subscribedplans: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "subcribedplans"
-        }
-    ],
+    subscribedplans: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "subcribedplans"
+    }],
     subscriptionplanexpiry: {
         type: Date,
         default: null
     },
-    paymenthistory: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "Payment"
-        }
-    ],
+    paymenthistory: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "Payment"
+    }],
 
     totalAmountPaid: {
         type: String,
@@ -268,80 +260,58 @@ const EscortSchema = new mongoose.Schema({
     },
 
     /* ================= RELATIONS (REFERENCES) ================= */
-    bookings: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "Bookings"
-        }
-    ],
-    messages: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "Messages"
-        }
-    ],
-    reviews: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "Reviews"
-        }
-    ],
-    clients: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "client"
-        }
-    ],
-    blog: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "blog"
-        }
-    ],
-    newsTour: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "newsandtour"
-        }
-    ],
-    notifications: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "Notifications"
-        }
-    ],
+    bookings: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "Bookings"
+    }],
+    messages: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "Messages"
+    }],
+    reviews: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "Reviews"
+    }],
+    clients: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "client"
+    }],
+    blog: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "blog"
+    }],
+    newsTour: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "newsandtour"
+    }],
+    notifications: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "Notifications"
+    }],
     muteNotifications: {
         type: Boolean,
         default: false
     },
-    rating: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "Rating"
-        }
-    ],
+    rating: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "Rating"
+    }],
 
     /* ================= SERVICES & RATES ================= */
 
-    services: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "Services"
-        }
-    ],
+    services: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "Services"
+    }],
 
-    rates: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "Rates"
-        }
-    ],
-    tours: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "tours"
-        }
-    ],
+    rates: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "Rates"
+    }],
+    tours: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "tours"
+    }],
 
 
     /* ================= GALLERY ================= */
@@ -377,28 +347,32 @@ const EscortSchema = new mongoose.Schema({
         default: false
     },
     gallery: {
-        photos: [
-            {
-                public_id: { type: String },
-                url: { type: String },
-                status: {
-                    type: String,
-                    enum: ['Pending', 'Approved', 'Rejected'],
-                    default: 'Pending'
-                }
+        photos: [{
+            public_id: {
+                type: String
+            },
+            url: {
+                type: String
+            },
+            status: {
+                type: String,
+                enum: ['Pending', 'Approved', 'Rejected'],
+                default: 'Pending'
             }
-        ],
-        videos: [
-            {
-                public_id: { type: String },
-                url: { type: String },
-                status: {
-                    type: String,
-                    enum: ['Pending', 'Approved', 'Rejected'],
-                    default: 'Pending'
-                }
+        }],
+        videos: [{
+            public_id: {
+                type: String
+            },
+            url: {
+                type: String
+            },
+            status: {
+                type: String,
+                enum: ['Pending', 'Approved', 'Rejected'],
+                default: 'Pending'
             }
-        ]
+        }]
     },
     hasAcceptedImageOwnership: {
         type: Boolean,
@@ -422,24 +396,18 @@ const EscortSchema = new mongoose.Schema({
     },
 
     /* ================= FINANCIAL ================= */
-    tips: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "Tips"
-        }
-    ],
-    earnings: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "Earnings"
-        }
-    ],
-    payout: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "Payouts"
-        }
-    ],
+    tips: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "Tips"
+    }],
+    earnings: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "Earnings"
+    }],
+    payout: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "Payouts"
+    }],
 
 
     // =======================< details >=======================
@@ -472,8 +440,14 @@ const EscortSchema = new mongoose.Schema({
     social: String,
 
     preferredContact: {
-        phoneCall: { type: Boolean, default: false },
-        sms: { type: Boolean, default: false }
+        phoneCall: {
+            type: Boolean,
+            default: false
+        },
+        sms: {
+            type: Boolean,
+            default: false
+        }
     },
 
     // =======================< essentials >======================

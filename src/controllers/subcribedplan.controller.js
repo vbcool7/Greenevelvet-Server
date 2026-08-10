@@ -7,15 +7,11 @@ import SubscriptionModel from "../models/subscriptionModel.js";
 // create transaction 
 export const createTransaction = async (request, response) => {
     try {
-        console.log("Create transaction api call", request.body);
 
         const userId = request?.user?._id;
         const {
             planId
         } = request?.body;
-
-        console.log("userId", userId);
-        console.log("planId", planId);
 
 
         // ✅ Basic validation
@@ -29,11 +25,23 @@ export const createTransaction = async (request, response) => {
 
         const escort = await EscortModel.findById(userId);
 
-        console.log("escort", escort);
 
         if (!escort) {
             return response.status(404).json({
                 message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+        if (
+            escort.subscriptionActive &&
+            escort.subscriptionStatus === "active" &&
+            escort.subscriptionplanexpiry &&
+            new Date(escort.subscriptionplanexpiry) > new Date()
+        ) {
+            return response.status(400).json({
+                message: "You already have an active subscription.",
                 success: false,
                 error: true
             });
@@ -52,7 +60,6 @@ export const createTransaction = async (request, response) => {
         // ✅ fetch from DB (IMPORTANT)
         const plan = await SubscriptionModel.findById(planId);
 
-        console.log("plan", plan);
 
         if (!plan) {
             return response.status(404).json({
@@ -63,7 +70,11 @@ export const createTransaction = async (request, response) => {
         }
 
 
-        if (!plan.discountedPrice || Number(plan.discountedPrice) < 0) {
+        if (
+            plan.discountedPrice === null ||
+            plan.discountedPrice === undefined ||
+            Number(plan.discountedPrice) < 0
+        ) {
             return response.status(400).json({
                 message: "Invalid plan amount",
                 success: false,
@@ -72,24 +83,83 @@ export const createTransaction = async (request, response) => {
         }
 
 
-        // const existingPending = await subcribedModel.findOne({
-        //     userId,
-        //     planId,
-        //     status: "pending"
-        // });
-
-        // if (existingPending) {
-        //     return response.status(200).json({
-        //         success: true,
-        //         error: false,
-        //         message: "Pending payment already exists",
-        //         paymentUrl: existingPending.invoiceUrl,
-        //         transaction: existingPending
-        //     });
-        // }
-
-
         const orderId = `SUB_${userId}_${plan._id}_${Date.now()}`;
+
+
+        //Free plan direct subscription activation
+
+        if (Number(plan.discountedPrice) === 0) {
+
+            let days = 30;
+
+            if (plan.duration) {
+                const match = plan.duration.match(/\d+/);
+
+                if (match) {
+                    days = parseInt(match[0]);
+                }
+            }
+
+            const subscriptionStart = new Date();
+
+            const subscriptionExpiry = new Date(
+                subscriptionStart.getTime() +
+                days * 24 * 60 * 60 * 1000
+            );
+
+            const freeSubscription = await subcribedModel.create({
+                userId,
+                planId: plan._id,
+                planName: plan.title,
+                title: plan.title,
+                duration: plan.duration,
+                originalPrice: plan.originalPrice,
+                discountedPrice: 0,
+                amount: 0,
+                features: plan.features,
+                currency: "AUD",
+                orderId,
+                isActive: true,
+                status: "finished",
+                subscriptionStart,
+                subscriptionExpiry
+            });
+
+            await EscortModel.findByIdAndUpdate(userId, {
+                subscriptionActive: true,
+                subscriptionStatus: "active",
+                subscriptionplanexpiry: subscriptionExpiry,
+                $addToSet: {
+                    subscribedplans: freeSubscription._id
+                }
+            });
+
+            return response.status(200).json({
+                message: `${plan.title} plan subscribed successfully`,
+                success: true,
+                error: false,
+                transaction: freeSubscription,
+                paymentUrl: null
+            });
+        }
+
+
+
+        const existingPending = await subcribedModel.findOne({
+            userId,
+            planId,
+            status: "pending"
+        });
+
+        if (existingPending) {
+            return response.status(200).json({
+                success: true,
+                error: false,
+                message: "Pending payment already exists",
+                paymentUrl: existingPending.invoiceUrl,
+                transaction: existingPending
+            });
+        }
 
 
         // ✅ nowPayments payload

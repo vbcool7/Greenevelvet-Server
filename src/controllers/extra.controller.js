@@ -350,21 +350,21 @@ export const createTransaction = async (request, response) => {
         }
 
 
-        // const existingPending = await subcribedModel.findOne({
-        //     userId,
-        //     planId,
-        //     status: "pending"
-        // });
+        const existingPending = await subcribedModel.findOne({
+            userId,
+            planId,
+            status: "pending"
+        });
 
-        // if (existingPending) {
-        //     return response.status(200).json({
-        //         success: true,
-        //         error: false,
-        //         message: "Pending payment already exists",
-        //         paymentUrl: existingPending.invoiceUrl,
-        //         transaction: existingPending
-        //     });
-        // }
+        if (existingPending) {
+            return response.status(200).json({
+                success: true,
+                error: false,
+                message: "Pending payment already exists",
+                paymentUrl: existingPending.invoiceUrl,
+                transaction: existingPending
+            });
+        }
 
 
         console.log("NOWPAYMENTS_API_URL =", process.env.NOWPAYMENTS_API_URL);

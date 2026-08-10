@@ -80,9 +80,15 @@ const subcribedplanSchema = new mongoose.Schema({
     orderId: {
         type: String,
     },
-    paymentId: { type: String, },
-    payAmount: { type: String, },
-    payCurrency: { type: String, },
+    paymentId: {
+        type: String,
+    },
+    payAmount: {
+        type: String,
+    },
+    payCurrency: {
+        type: String,
+    },
 
     status: {
         type: String,
@@ -101,7 +107,8 @@ const subcribedplanSchema = new mongoose.Schema({
         default: "pending",
     },
 
-}, { timestamps: true }
-);
+}, {
+    timestamps: true
+});
 const subcribedModel = mongoose.model("subcribedplans", subcribedplanSchema);
 export default subcribedModel;
