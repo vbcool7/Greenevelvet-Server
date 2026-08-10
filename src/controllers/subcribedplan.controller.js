@@ -138,6 +138,7 @@ export const createTransaction = async (request, response) => {
                 message: `${plan.title} plan subscribed successfully`,
                 success: true,
                 error: false,
+                type: "free",
                 transaction: freeSubscription,
                 paymentUrl: null
             });
@@ -218,20 +219,22 @@ export const createTransaction = async (request, response) => {
 
         // ✅ (optional) Escort model me pending attach kar sakte ho
         await EscortModel.findByIdAndUpdate(userId, {
-            $push: {
+            $addToSet: {
                 subscribedplans: newSub._id
             }
         });
 
 
         return response.status(200).json({
-            message: "For Plan Subscription Transaction created successfully and Now Go through payment page",
+            message: "Your subscription has been created successfully. Please proceed to the payment page to complete your payment.",
             success: true,
             error: false,
+            type: "paid",
             nowPaymentsInvoiceId: nowPaymentRes.data.id,
             transaction: newSub,
             paymentUrl: paymentUrl,
         });
+
 
     } catch (error) {
         console.log("CATCH ERROR:", error?.response?.data?.message || error?.message);
