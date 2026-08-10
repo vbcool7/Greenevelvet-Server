@@ -146,19 +146,30 @@ export const createTransaction = async (request, response) => {
 
 
 
-        const existingPending = await subcribedModel.findOne({
+        const existingPayment = await subcribedModel.findOne({
             userId,
             planId,
-            status: "pending"
+            status: {
+                $in: activePaymentStatuses
+            }
         });
 
-        if (existingPending) {
+        if (existingPayment) {
+
+            if (!existingPayment.invoiceUrl) {
+                return response.status(400).json({
+                    success: false,
+                    error: true,
+                    message: "Existing payment link is not available. Please try again."
+                });
+            }
             return response.status(200).json({
                 success: true,
                 error: false,
-                message: "Pending payment already exists",
-                paymentUrl: existingPending.invoiceUrl,
-                transaction: existingPending
+                type: "paid",
+                message: "You already have a payment in progress. Continue with your existing payment.",
+                paymentUrl: existingPayment.invoiceUrl,
+                transaction: existingPayment
             });
         }
 

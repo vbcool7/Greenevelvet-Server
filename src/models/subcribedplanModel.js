@@ -105,6 +105,7 @@ const subcribedplanSchema = new mongoose.Schema({
             "refunded"
         ],
         default: "pending",
+        
     },
 
 }, {
