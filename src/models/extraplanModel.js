@@ -1,57 +1,71 @@
 import mongoose from "mongoose";
 
-const extraplanSchema = new mongoose.Schema(
-    {
-        iconName: {
-            type: String,
-        },
+const extraplanSchema = new mongoose.Schema({
+    iconName: {
+        type: String,
+    },
 
-        title: {
-            type: String,
-            required: true,
-            index: true
-        },
+    title: {
+        type: String,
+        required: true,
+        index: true
+    },
 
-        discription: {
-            type: String,
-            required: true,
-            trim: true,
-        },
+    planType: {
+        type: String,
+        enum: [
+            "availability",
+            "boost-profile",
+            "weekly-elite",
+            "monthly-elite"
+        ],
+        required: true,
+        unique: true,
+        index: true
+    },
 
-        price: {
-            type: Number,
-            required: true
-        },
+    discription: {
+        type: String,
+        required: true,
+        trim: true,
+    },
 
-        slug: {
-            type: String,
-            required: true,
-            unique: true,
-            index: true
-        },
+    price: {
+        type: Number,
+        required: true
+    },
 
-        duration: {
-            type: String,
-            required: true
-        },
+    slug: {
+        type: String,
+        required: true,
+        unique: true,
+        index: true
+    },
 
-        currency: {
-            type: String,
-            default: "AUD"
-        },
 
-        totalSlots: {
-            type: Number,
-            default: 1
-        },
+    duration: {
+        type: String,
+        required: true
+    },
 
-        isActive: {
-            type: Boolean,
-            default: true
-        }
+    currency: {
+        type: String,
+        default: "AUD"
+    },
 
-    }, { timestamps: true },
-);
+    totalSlots: {
+        type: Number,
+        default: 1
+    },
+
+    isActive: {
+        type: Boolean,
+        default: true
+    }
+
+}, {
+    timestamps: true
+}, );
 
 const ExtraPlanModel = mongoose.model("ExtraPlan", extraplanSchema);
 

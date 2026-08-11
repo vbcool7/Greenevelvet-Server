@@ -225,6 +225,12 @@ const EscortSchema = new mongoose.Schema({
         default: null
     },
 
+    /*=================== EXTRA PLAN ====================*/
+    extraPlanSubscriptionModel: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "ExtraPlanSubscription"
+    }],
+
     /* ================= PASSWORD & OTP ================= */
     forgot_password: {
         type: String,
