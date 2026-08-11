@@ -641,70 +641,35 @@ const activateExtraPlan = async ({
 export const extranowPaymentsWebhook = async (request, response) => {
     try {
 
-        console.log("EXTRA NOWPAYMENTS WEBHOOK REQUEST BODY :", request.body);
 
         // ==================================================
         // 1. VERIFY WEBHOOK SIGNATURE
         // ==================================================
 
-        const signature = request.headers["x-nowpayments-sig"];
+        // const rawBody = request.body;
 
-        /*
-         IMPORTANT:
+        // const signature = request.headers["x-nowpayments-sig"];
+        // console.log("Signature =", signature);
 
-         For proper signature verification, your Express route
-         should receive the raw body.
+        // const expectedSignature = crypto
+        //     .createHmac("sha512", process.env.NOWPAYMENTS_IPN_SECRET)
+        //     .update(rawBody)
+        //     .digest("hex");
 
-         Example:
+        // if (signature !== expectedSignature) {
+        //     return response.sendStatus(401);
+        // }
 
-         app.post(
-             "/nowpayments/webhook",
-             express.raw({ type: "application/json" }),
-             nowPaymentsWebhook
-         );
-
-         Then use request.body as Buffer here.
-        */
-
-        if (signature && process.env.NOWPAYMENTS_IPN_SECRET) {
-
-            const rawBody = request.body;
-
-            const expectedSignature = crypto
-                .createHmac(
-                    "sha512",
-                    process.env.NOWPAYMENTS_IPN_SECRET
-                )
-                .update(rawBody)
-                .digest("hex");
-
-            if (signature !== expectedSignature) {
-
-                console.log(
-                    "NOWPAYMENTS WEBHOOK: Invalid signature"
-                );
-
-                return response.sendStatus(401);
-            }
-        }
+        // const event = JSON.parse(rawBody.toString());
 
 
         // ==================================================
         // 2. GET EVENT DATA
         // ==================================================
 
-        let event;
+        const event = request.body;
 
-        if (Buffer.isBuffer(request.body)) {
-            event = JSON.parse(request.body.toString());
-        } else {
-            event = request.body;
-        }
-
-        console.log(
-            "NOWPAYMENTS WEBHOOK EVENT:",
-            JSON.stringify(event, null, 2)
-        );
+        console.log("EXTRA NOWPAYMENTS WEBHOOK REQUEST BODY:", event);
 
 
         const {
