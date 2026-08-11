@@ -297,6 +297,7 @@ export const getSelectExtraPlan = async (request, response) => {
 
 
 // create Extra Plan Transaction
+
 export const createExtraPlanTransaction = async (request, response) => {
     try {
 
@@ -468,7 +469,7 @@ export const createExtraPlanTransaction = async (request, response) => {
             price_currency: plan.currency || "AUD",
             order_id: orderId,
             order_description: `Extra Plan - ${plan.title}`,
-            ipn_callback_url: process.env.NOWPAYMENTS_IPN_URL,
+            ipn_callback_url: process.env.NOWPAYMENTS_EXTRA_IPN_URL,
             success_url: process.env.PAYMENT_SUCCESS_URL,
             cancel_url: process.env.PAYMENT_CANCEL_URL
         };
@@ -637,7 +638,7 @@ const activateExtraPlan = async ({
 };
 
 // NOWPAYMENTS WEBHOOK
-export const nowPaymentsWebhook = async (request, response) => {
+export const extranowPaymentsWebhook = async (request, response) => {
     try {
 
         // ==================================================
