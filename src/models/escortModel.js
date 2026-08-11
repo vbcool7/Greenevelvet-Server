@@ -226,8 +226,9 @@ const EscortSchema = new mongoose.Schema({
     },
 
     /*=================== EXTRA PLAN ====================*/
-    extraPlanSubscriptionModel: [{
-        type: mongoose.Schema.ObjectId,
+
+    extraPlanSubscriptions: [{
+        type: mongoose.Schema.Types.ObjectId,
         ref: "ExtraPlanSubscription"
     }],
 

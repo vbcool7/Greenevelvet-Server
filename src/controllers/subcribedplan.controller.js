@@ -174,6 +174,13 @@ export const createTransaction = async (request, response) => {
         }
 
 
+        const successUrl =
+            `${process.env.PAYMENT_SUCCESS_URL}?orderId=${encodeURIComponent(orderId)}`;
+
+        const cancelUrl =
+            `${process.env.PAYMENT_CANCEL_URL}?orderId=${encodeURIComponent(orderId)}`;
+
+
         // ✅ nowPayments payload
         const paymentData = {
             price_amount: Number(plan.discountedPrice),
@@ -181,8 +188,8 @@ export const createTransaction = async (request, response) => {
             order_id: orderId,
             order_description: `Subscription - ${plan.title}`,
             ipn_callback_url: process.env.NOWPAYMENTS_IPN_URL,
-            success_url: process.env.PAYMENT_SUCCESS_URL,
-            cancel_url: process.env.PAYMENT_CANCEL_URL,
+            success_url: successUrl,
+            cancel_url: cancelUrl
         };
 
         const nowPaymentRes = await axios.post(

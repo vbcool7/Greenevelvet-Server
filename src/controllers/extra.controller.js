@@ -294,10 +294,7 @@ export const getSelectExtraPlan = async (request, response) => {
 };
 
 
-
-
 // create Extra Plan Transaction
-
 export const createExtraPlanTransaction = async (request, response) => {
     try {
 
@@ -465,14 +462,20 @@ export const createExtraPlanTransaction = async (request, response) => {
         // NOWPayments payload
         // -----------------------------------------
 
+        const successUrl =
+            `${process.env.PAYMENT_SUCCESS_URL}?orderId=${encodeURIComponent(orderId)}`;
+
+        const cancelUrl =
+            `${process.env.PAYMENT_CANCEL_URL}?orderId=${encodeURIComponent(orderId)}`;
+
         const paymentData = {
             price_amount: Number(plan.price),
             price_currency: plan.currency || "AUD",
             order_id: orderId,
             order_description: `Extra Plan - ${plan.title}`,
             ipn_callback_url: process.env.NOWPAYMENTS_EXTRA_IPN_URL,
-            success_url: process.env.PAYMENT_SUCCESS_URL,
-            cancel_url: process.env.PAYMENT_CANCEL_URL
+            success_url: successUrl,
+            cancel_url: cancelUrl
         };
 
         // -----------------------------------------
@@ -553,125 +556,109 @@ export const createExtraPlanTransaction = async (request, response) => {
     }
 };
 
-
-// ACTIVATE EXTRA PLAN
-const activateExtraPlan = async ({
+// activate Extra Plan 
+export const activateExtraPlan = async ({
     extraPayment,
-    plan,
-    escort
+    plan
 }) => {
 
-    const start = new Date();
-
-
-    // ==================================================
-    // AVAILABILITY
-    // ==================================================
+    //------------- AVAILABILITY -----------//
 
     if (plan.planType === "availability") {
 
-        const credits =
-            Number(plan.totalSlots || 0);
+        extraPayment.totalCredits = plan.totalSlots;
 
+        extraPayment.remainingCredits = plan.totalSlots;
 
-        extraPayment.totalCredits =
-            credits;
+        extraPayment.isActive = true;
 
-        extraPayment.remainingCredits =
-            credits;
+        await extraPayment.save();
 
-        extraPayment.availabilityActive =
-            false;
-
-        extraPayment.availabilityStart =
-            null;
-
-        extraPayment.availabilityEnd =
-            null;
-
-        extraPayment.isActive =
-            true;
-
-
-        /*
-            Availability is credit based.
-
-            There is NO subscriptionStart
-            and NO subscriptionExpiry.
-        */
-
-
+        await EscortModel.findByIdAndUpdate(
+            extraPayment.userId, {
+                $addToSet: {
+                    extraPlanSubscriptions: extraPayment._id
+                }
+            }
+        );
         return;
     }
 
+    //--------------- BOOST PROFILE -------------//
 
-    // ==================================================
-    // NORMAL EXTRA PLAN
-    // ==================================================
+    if (plan.planType === "boost-profile") {
 
-    let days = 30;
+        const start = new Date();
 
-    if (plan.duration) {
+        const expiry = new Date(start);
 
-        const match =
-            plan.duration.match(/\d+/);
+        expiry.setDate(expiry.getDate() + 30);
 
-        if (match) {
-            days = Number(match[0]);
-        }
+        extraPayment.subscriptionStart = start;
+
+        extraPayment.subscriptionExpiry = expiry;
+
+        extraPayment.isActive = true;
     }
 
 
-    const expiry = new Date(
-        start.getTime() +
-        days * 24 * 60 * 60 * 1000
+    //------------- WEEKLY ELITE -------------//
+    else if (
+        plan.planType === "weekly-elite"
+    ) {
+
+        const start = new Date();
+
+        const expiry = new Date(start);
+
+        expiry.setDate(expiry.getDate() + 7);
+
+        extraPayment.subscriptionStart = start;
+
+        extraPayment.subscriptionExpiry = expiry;
+
+        extraPayment.isActive = true;
+    }
+
+    //------------- MONTHLY ELITE -------------//
+    else if (
+        plan.planType === "monthly-elite"
+    ) {
+
+        const start = new Date();
+
+        const expiry = new Date(start);
+
+        expiry.setDate(expiry.getDate() + 30);
+
+        extraPayment.subscriptionStart = start;
+
+        extraPayment.subscriptionExpiry = expiry;
+
+        extraPayment.isActive = true;
+    }
+
+    //------------- ATTACH TO ESCORT -------------//
+
+    await extraPayment.save();
+
+    await EscortModel.findByIdAndUpdate(
+        extraPayment.userId, {
+            $addToSet: {
+                extraPlanSubscriptions: extraPayment._id
+            }
+        }
     );
-
-
-    extraPayment.subscriptionStart =
-        start;
-
-    extraPayment.subscriptionExpiry =
-        expiry;
-
-    extraPayment.isActive =
-        true;
 };
 
-// NOWPAYMENTS WEBHOOK
+// extra nowPayment webHook call
 export const extranowPaymentsWebhook = async (request, response) => {
+
     try {
-
-
-        // ==================================================
-        // 1. VERIFY WEBHOOK SIGNATURE
-        // ==================================================
-
-        // const rawBody = request.body;
-
-        // const signature = request.headers["x-nowpayments-sig"];
-        // console.log("Signature =", signature);
-
-        // const expectedSignature = crypto
-        //     .createHmac("sha512", process.env.NOWPAYMENTS_IPN_SECRET)
-        //     .update(rawBody)
-        //     .digest("hex");
-
-        // if (signature !== expectedSignature) {
-        //     return response.sendStatus(401);
-        // }
-
-        // const event = JSON.parse(rawBody.toString());
-
-
-        // ==================================================
-        // 2. GET EVENT DATA
-        // ==================================================
-
+        //------------- 1. GET WEBHOOK EVENT -------------//
         const event = request.body;
 
         console.log("EXTRA NOWPAYMENTS WEBHOOK REQUEST BODY:", event);
-
 
         const {
             invoice_id,
@@ -683,55 +670,69 @@ export const extranowPaymentsWebhook = async (request, response) => {
             purchase_id
         } = event;
 
-
-        // ==================================================
-        // 3. BASIC VALIDATION
-        // ==================================================
+        //------------- 2. BASIC VALIDATION -------------//
 
         if (!order_id || !payment_status) {
 
-            console.log(
-                "NOWPAYMENTS WEBHOOK: order_id or payment_status missing"
-            );
+            console.log("EXTRA WEBHOOK: order_id or payment_status missing");
 
             return response.sendStatus(400);
         }
 
+        //------------- 3. ONLY EXTRA PLAN ORDER -------------//
 
-        // ==================================================
-        // 4. IDENTIFY ORDER TYPE
-        // ==================================================
+        if (!order_id.startsWith("EXTRA_")) {
 
-        const isSubscriptionOrder =
-            order_id.startsWith("SUB_");
-
-        const isExtraPlanOrder =
-            order_id.startsWith("EXTRA_");
-
-
-        if (!isSubscriptionOrder && !isExtraPlanOrder) {
-
-            console.log(
-                "NOWPAYMENTS WEBHOOK: Unknown order type",
-                order_id
-            );
+            console.log("EXTRA WEBHOOK: Invalid order type", order_id);
 
             return response.sendStatus(400);
         }
 
+        //------------- 4. EXTRACT USER ID & PLAN ID -------------//
 
-        // ==================================================
-        // 5. COMMON PAYMENT STATUSES
-        // ==================================================
+        const orderParts = order_id.split("_");
+        const userId = orderParts[1];
+        const planId = orderParts[2];
 
-        const intermediateStatuses = [
-            "pending",
-            "waiting",
-            "confirming",
-            "confirmed",
-            "sending",
-            "partially_paid"
-        ];
+        if (!userId || !planId) {
+
+            console.log("Invalid extra plan order ID:", order_id);
+
+            return response.sendStatus(400);
+        }
+
+        //------------- 5. FIND ESCORT -------------//
+
+        const escort =
+            await EscortModel.findById(userId);
+
+        if (!escort) {
+
+            console.log("Escort not found:", userId);
+
+            return response.sendStatus(404);
+        }
+
+        //------------- 6. FIND EXTRA PLAN -------------//
+
+        const plan =
+            await ExtraPlanModel.findById(planId);
+
+        if (!plan) {
+
+            console.log("Extra plan not found:", planId);
+
+            return response.sendStatus(404);
+        }
+
+        //------------- 7. INVOICE URL -------------//
+
+        const invoiceUrl = invoice_id ?
+            `https://nowpayments.io/payment?iid=${invoice_id}` :
+            null;
+
+
+        //------------- 8. PAYMENT STATUS -------------//
 
         const successfulStatus = "finished";
 
@@ -741,626 +742,166 @@ export const extranowPaymentsWebhook = async (request, response) => {
             "refunded"
         ];
 
+        //------------- 9. FIND EXISTING PAYMENT -------------//
 
-        // ==================================================
-        // 6. SUBSCRIPTION PLAN
-        // ==================================================
+        let payment =
+            await ExtraPlanSubscriptionModel.findOne({
+                orderId: order_id
+            });
 
-        if (isSubscriptionOrder) {
+        //------------- 10. EXISTING PAYMENT -------------//
 
-            /*
-                Format:
+        if (payment) {
 
-                SUB_USERID_PLANID_TIMESTAMP
-            */
+            //------------- Duplicate webhook -------------//
 
-            const orderParts = order_id.split("_");
+            if (
+                payment.status === payment_status &&
+                payment.paymentId ===
+                String(payment_id || "")
+            ) {
 
-            const userId = orderParts[1];
-            const planId = orderParts[2];
-
-
-            if (!userId || !planId) {
-
-                console.log(
-                    "Invalid subscription order ID:",
-                    order_id
-                );
-
-                return response.sendStatus(400);
-            }
-
-
-            // ----------------------------------------------
-            // Find Escort
-            // ----------------------------------------------
-
-            const escort =
-                await EscortModel.findById(userId);
-
-            if (!escort) {
-
-                console.log(
-                    "Escort not found:",
-                    userId
-                );
-
-                return response.sendStatus(404);
-            }
-
-
-            // ----------------------------------------------
-            // Find Subscription Plan
-            // ----------------------------------------------
-
-            const plan =
-                await SubscriptionModel.findById(planId);
-
-            if (!plan) {
-
-                console.log(
-                    "Subscription plan not found:",
-                    planId
-                );
-
-                return response.sendStatus(404);
-            }
-
-
-            // ----------------------------------------------
-            // Invoice URL
-            // ----------------------------------------------
-
-            const invoiceUrl = invoice_id ?
-                `https://nowpayments.io/payment?iid=${invoice_id}` :
-                null;
-
-
-            // ----------------------------------------------
-            // Find Existing Transaction
-            // ----------------------------------------------
-
-            let payment =
-                await subcribedModel.findOne({
-                    orderId: order_id
-                });
-
-
-            // ==================================================
-            // EXISTING PAYMENT
-            // ==================================================
-
-            if (payment) {
-
-                // ------------------------------------------
-                // Duplicate webhook protection
-                // ------------------------------------------
-
-                if (
-                    payment.status === payment_status &&
-                    payment.paymentId === String(payment_id || "")
-                ) {
-
-                    console.log(
-                        "Duplicate subscription webhook:",
-                        order_id,
-                        payment_status
-                    );
-
-                    return response.sendStatus(200);
-                }
-
-
-                // ------------------------------------------
-                // Update Payment Data
-                // ------------------------------------------
-
-                payment.status = payment_status;
-
-                payment.nowPaymentInvoiceId =
-                    invoice_id ?
-                    String(invoice_id) :
-                    payment.nowPaymentInvoiceId;
-
-                payment.invoiceUrl =
-                    invoiceUrl || payment.invoiceUrl;
-
-                payment.paymentId =
-                    payment_id ?
-                    String(payment_id) :
-                    payment.paymentId;
-
-                payment.payAmount =
-                    pay_amount !== undefined ?
-                    String(pay_amount) :
-                    payment.payAmount;
-
-                payment.payCurrency =
-                    pay_currency || payment.payCurrency;
-
-                if (purchase_id) {
-                    payment.purchaseId = String(purchase_id);
-                }
-
-
-                // ------------------------------------------
-                // FINAL PAYMENT SUCCESS
-                // ------------------------------------------
-
-                if (payment_status === successfulStatus) {
-
-                    const start = new Date();
-
-                    let days = 30;
-
-                    if (payment.duration) {
-
-                        const match =
-                            payment.duration.match(/\d+/);
-
-                        if (match) {
-                            days = Number(match[0]);
-                        }
-                    }
-
-
-                    const expiry = new Date(
-                        start.getTime() +
-                        days * 24 * 60 * 60 * 1000
-                    );
-
-
-                    payment.subscriptionStart = start;
-                    payment.subscriptionExpiry = expiry;
-                    payment.isActive = true;
-
-
-                    await EscortModel.findByIdAndUpdate(
-                        userId, {
-                            subscriptionActive: true,
-                            subscriptionStatus: "active",
-                            subscriptionplanexpiry: expiry,
-
-                            $addToSet: {
-                                subscribedplans: payment._id
-                            }
-                        }
-                    );
-                }
-
-
-                // ------------------------------------------
-                // Failed / Expired / Refunded
-                // ------------------------------------------
-
-                if (failedStatuses.includes(payment_status)) {
-
-                    payment.isActive = false;
-                }
-
-
-                await payment.save();
-
-
-                console.log(
-                    "Subscription payment updated:",
-                    order_id,
-                    payment_status
-                );
-
+                console.log("Duplicate extra plan webhook:", order_id, payment_status);
 
                 return response.sendStatus(200);
             }
 
+            //------------- UPDATE PAYMENT DATA -------------//
 
-            // ==================================================
-            // CREATE PAYMENT RECORD
-            // ==================================================
+            payment.status = payment_status;
 
-            /*
-                IMPORTANT:
+            if (invoice_id) {
+                payment.nowPaymentInvoiceId = String(invoice_id);
+            }
 
-                Record is created ONLY when NOWPayments
-                actually sends a webhook.
+            if (invoiceUrl) {
+                payment.invoiceUrl = invoiceUrl;
+            }
 
-                Therefore:
+            if (payment_id) {
+                payment.paymentId = String(payment_id);
+            }
 
-                User opens payment page
-                ↓
-                closes payment page before payment starts
-                ↓
-                NO DB RECORD
+            if (pay_amount !== undefined) {
+                payment.payAmount = String(pay_amount);
+            }
 
-                waiting / partially_paid / confirming
-                ↓
-                DB RECORD CREATED
-            */
+            if (pay_currency) {
+                payment.payCurrency = pay_currency;
+            }
 
+            if (purchase_id) {
+                payment.purchaseId = String(purchase_id);
+            }
 
-            payment =
-                await subcribedModel.create({
-
-                    userId,
-
-                    planId: plan._id,
-
-                    planName: plan.title,
-
-                    title: plan.title,
-
-                    duration: plan.duration,
-
-                    originalPrice: plan.originalPrice,
-
-                    discountedPrice: plan.discountedPrice,
-
-                    amount: plan.discountedPrice,
-
-                    features: plan.features,
-
-                    currency: plan.currency || "AUD",
-
-                    nowPaymentInvoiceId: invoice_id ?
-                        String(invoice_id) : undefined,
-
-                    invoiceUrl,
-
-                    orderId: order_id,
-
-                    paymentId: payment_id ?
-                        String(payment_id) : undefined,
-
-                    payAmount: pay_amount !== undefined ?
-                        String(pay_amount) : undefined,
-
-                    payCurrency: pay_currency || undefined,
-
-                    status: payment_status,
-
-                    isActive: payment_status === successfulStatus
-                });
-
-
-            // ----------------------------------------------
-            // Final successful payment
-            // ----------------------------------------------
+            //------------- FINAL PAYMENT SUCCESS -------------//
 
             if (payment_status === successfulStatus) {
 
-                const start = new Date();
-
-                let days = 30;
-
-                if (plan.duration) {
-
-                    const match =
-                        plan.duration.match(/\d+/);
-
-                    if (match) {
-                        days = Number(match[0]);
-                    }
-                }
-
-
-                const expiry = new Date(
-                    start.getTime() +
-                    days * 24 * 60 * 60 * 1000
-                );
-
-
-                payment.subscriptionStart = start;
-                payment.subscriptionExpiry = expiry;
-
-                await payment.save();
-
-
-                await EscortModel.findByIdAndUpdate(
-                    userId, {
-                        subscriptionActive: true,
-                        subscriptionStatus: "active",
-                        subscriptionplanexpiry: expiry,
-
-                        $addToSet: {
-                            subscribedplans: payment._id
-                        }
-                    }
-                );
-            }
-
-
-            console.log(
-                "Subscription payment created:",
-                order_id,
-                payment_status
-            );
-
-
-            return response.sendStatus(200);
-        }
-
-
-        // ==================================================
-        // EXTRA PLAN
-        // ==================================================
-
-        if (isExtraPlanOrder) {
-
-            /*
-                Format:
-
-                EXTRA_USERID_PLANID_TIMESTAMP
-            */
-
-            const orderParts = order_id.split("_");
-
-            const userId = orderParts[1];
-            const planId = orderParts[2];
-
-
-            if (!userId || !planId) {
-
-                console.log(
-                    "Invalid extra plan order ID:",
-                    order_id
-                );
-
-                return response.sendStatus(400);
-            }
-
-
-            // ----------------------------------------------
-            // Find Escort
-            // ----------------------------------------------
-
-            const escort =
-                await EscortModel.findById(userId);
-
-            if (!escort) {
-
-                console.log(
-                    "Escort not found:",
-                    userId
-                );
-
-                return response.sendStatus(404);
-            }
-
-
-            // ----------------------------------------------
-            // Find Extra Plan
-            // ----------------------------------------------
-
-            const plan =
-                await ExtraPlanModel.findById(planId);
-
-            if (!plan) {
-
-                console.log(
-                    "Extra plan not found:",
-                    planId
-                );
-
-                return response.sendStatus(404);
-            }
-
-
-            // ----------------------------------------------
-            // Invoice URL
-            // ----------------------------------------------
-
-            const invoiceUrl = invoice_id ?
-                `https://nowpayments.io/payment?iid=${invoice_id}` :
-                null;
-
-
-            // ----------------------------------------------
-            // Find existing transaction
-            // ----------------------------------------------
-
-            let extraPayment =
-                await ExtraPlanSubscriptionModel.findOne({
-                    orderId: order_id
-                });
-
-
-            // ==================================================
-            // EXISTING EXTRA PAYMENT
-            // ==================================================
-
-            if (extraPayment) {
-
-                // ------------------------------------------
-                // Duplicate webhook
-                // ------------------------------------------
-
-                if (
-                    extraPayment.status === payment_status &&
-                    extraPayment.paymentId === String(payment_id || "")
-                ) {
-
-                    console.log(
-                        "Duplicate extra plan webhook:",
-                        order_id,
-                        payment_status
-                    );
-
-                    return response.sendStatus(200);
-                }
-
-
-                // ------------------------------------------
-                // Update payment information
-                // ------------------------------------------
-
-                extraPayment.status =
-                    payment_status;
-
-                extraPayment.nowPaymentInvoiceId =
-                    invoice_id ?
-                    String(invoice_id) :
-                    extraPayment.nowPaymentInvoiceId;
-
-                extraPayment.invoiceUrl =
-                    invoiceUrl ||
-                    extraPayment.invoiceUrl;
-
-                extraPayment.paymentId =
-                    payment_id ?
-                    String(payment_id) :
-                    extraPayment.paymentId;
-
-                extraPayment.payAmount =
-                    pay_amount !== undefined ?
-                    String(pay_amount) :
-                    extraPayment.payAmount;
-
-                extraPayment.payCurrency =
-                    pay_currency ||
-                    extraPayment.payCurrency;
-
-                if (purchase_id) {
-                    extraPayment.purchaseId =
-                        String(purchase_id);
-                }
-
-
-                // ------------------------------------------
-                // FINAL PAYMENT SUCCESS
-                // ------------------------------------------
-
-                if (
-                    payment_status ===
-                    successfulStatus
-                ) {
-
-                    await activateExtraPlan({
-                        extraPayment,
-                        plan,
-                        escort
-                    });
-                }
-
-
-                // ------------------------------------------
-                // Failed
-                // ------------------------------------------
-
-                if (
-                    failedStatuses.includes(
-                        payment_status
-                    )
-                ) {
-
-                    extraPayment.isActive = false;
-                }
-
-
-                await extraPayment.save();
-
-
-                console.log(
-                    "Extra plan payment updated:",
-                    order_id,
-                    payment_status
-                );
-
-
-                return response.sendStatus(200);
-            }
-
-
-            // ==================================================
-            // CREATE EXTRA PLAN PAYMENT RECORD
-            // ==================================================
-
-            extraPayment =
-                await ExtraPlanSubscriptionModel.create({
-
-                    userId,
-
-                    planId: plan._id,
-
-                    planType: plan.planType,
-
-                    planName: plan.title,
-
-                    title: plan.title,
-
-                    price: plan.price,
-
-                    amount: plan.price,
-
-                    currency: plan.currency || "AUD",
-
-                    duration: plan.duration,
-
-                    totalSlots: plan.totalSlots,
-
-                    nowPaymentInvoiceId: invoice_id ?
-                        String(invoice_id) : undefined,
-
-                    invoiceUrl,
-
-                    orderId: order_id,
-
-                    paymentId: payment_id ?
-                        String(payment_id) : undefined,
-
-                    payAmount: pay_amount !== undefined ?
-                        String(pay_amount) : undefined,
-
-                    payCurrency: pay_currency ||
-                        undefined,
-
-                    status: payment_status,
-
-                    isActive: false
-                });
-
-
-            // ==================================================
-            // FINAL SUCCESS
-            // ==================================================
-
-            if (
-                payment_status ===
-                successfulStatus
-            ) {
+                // activateExtraPlan handles:
+                //
+                // availability
+                // OR
+                // boost-profile
+                // weekly-elite
+                // monthly-elite
 
                 await activateExtraPlan({
-                    extraPayment,
-                    plan,
-                    escort
+                    extraPayment: payment,
+                    plan
                 });
 
-                await extraPayment.save();
             }
 
+            //------------- FAILED PAYMENT -------------//
 
-            console.log(
-                "Extra plan payment created:",
-                order_id,
-                payment_status
-            );
+            if (failedStatuses.includes(payment_status)) {
 
+                payment.isActive = false;
+
+                await payment.save();
+            }
+
+            //------------- SAVE PROCESSING STATUS -------------//
+
+            if (payment_status !== successfulStatus && !failedStatuses.includes(payment_status)) {
+
+                await payment.save();
+            }
+
+            console.log("Extra plan payment updated:", order_id, payment_status);
 
             return response.sendStatus(200);
         }
 
+        //------------- 11. CREATE NEW PAYMENT RECORD -------------//
+
+        payment =
+            await ExtraPlanSubscriptionModel.create({
+
+                userId,
+                planId: plan._id,
+                planType: plan.planType,
+                planName: plan.title,
+                title: plan.title,
+                price: plan.price,
+                amount: plan.price,
+                currency: plan.currency || "AUD",
+                duration: plan.duration,
+                totalSlots: plan.totalSlots,
+                nowPaymentInvoiceId: invoice_id ? String(invoice_id) : undefined,
+                invoiceUrl,
+                orderId: order_id,
+                paymentId: payment_id ? String(payment_id) : undefined,
+                payAmount: pay_amount !== undefined ? String(pay_amount) : undefined,
+                payCurrency: pay_currency || undefined,
+                purchaseId: purchase_id ? String(purchase_id) : undefined,
+                status: payment_status,
+                isActive: false
+            });
+
+        //------------- 12. NEW PAYMENT - SUCCESS -------------//
+
+        if (payment_status === successfulStatus) {
+
+            await activateExtraPlan({
+                extraPayment: payment,
+                plan
+            });
+        }
+
+        //------------- 13. NEW PAYMENT - FAILED -------------//
+        else if (failedStatuses.includes(payment_status)) {
+
+            payment.isActive = false;
+
+            await payment.save();
+        }
+
+        //------------- 14. PROCESSING PAYMENT -------------//
+
+        /*
+            pending
+            waiting
+            confirming
+            confirmed
+            sending
+            partially_paid
+
+            Record already created above.
+
+            isActive remains false.
+        */
+
+        console.log("Extra plan payment created:", order_id, payment_status);
 
         return response.sendStatus(200);
 
-
     } catch (error) {
 
-        console.log(
-            "NOWPAYMENTS WEBHOOK ERROR:"
-        );
+        console.log("EXTRA NOWPAYMENTS WEBHOOK ERROR:");
 
-        console.log(
-            error?.response?.data ||
-            error?.message
-        );
+        console.log(error?.response?.data || error?.message);
 
         return response.sendStatus(500);
     }
