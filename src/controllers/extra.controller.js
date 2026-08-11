@@ -378,39 +378,6 @@ export const createExtraPlanTransaction = async (request, response) => {
             });
         }
 
-        //------------------------------------------
-        // Check active Payment Statuses
-        //------------------------------------------
-
-        const activePaymentStatuses = [
-            "pending",
-            "waiting",
-            "confirming",
-            "confirmed",
-            "sending",
-            "partially_paid"
-        ];
-
-        const existingPayment =
-            await ExtraPlanSubscriptionModel.findOne({
-                userId,
-                planType: plan.planType,
-                status: {
-                    $in: activePaymentStatuses
-                }
-            });
-
-        if (existingPayment) {
-            return response.status(400).json({
-                message: `You already have a payment in progress for ${existingPayment.planName}. Please complete it before purchasing this plan again.`,
-                success: false,
-                error: true,
-                type: "payment_in_progress",
-                transaction: existingPayment,
-                paymentUrl: existingPayment.invoiceUrl,
-            });
-        }
-
         // -----------------------------------------
         // Check same plan already active
         // Availability is EXCLUDED
@@ -438,6 +405,39 @@ export const createExtraPlanTransaction = async (request, response) => {
                     subscription: existingSubscription
                 });
             }
+        }
+
+        //------------------------------------------
+        // Check active Payment Statuses
+        //------------------------------------------
+
+        const activePaymentStatuses = [
+            "pending",
+            "waiting",
+            "confirming",
+            "confirmed",
+            "sending",
+            "partially_paid"
+        ];
+
+        const existingPayment =
+            await ExtraPlanSubscriptionModel.findOne({
+                userId,
+                planType: plan.planType,
+                status: {
+                    $in: activePaymentStatuses
+                }
+            });
+
+        if (existingPayment) {
+            return response.status(200).json({
+                message: `You already have a payment in progress for ${existingPayment.planName}. Please complete it before purchasing this plan again.`,
+                success: false,
+                error: true,
+                type: "payment_in_progress",
+                transaction: existingPayment,
+                paymentUrl: existingPayment.invoiceUrl,
+            });
         }
 
         // -----------------------------------------
@@ -516,7 +516,7 @@ export const createExtraPlanTransaction = async (request, response) => {
         // -----------------------------------------
 
         return response.status(200).json({
-            message: `Your ${plan.title} plan payment has been created successfully. Please proceed to the payment page to complete your payment.`,
+            message: `Your ${plan.title} plan payment invoice has been created successfully. Please proceed to the payment page to complete your payment.`,
             success: true,
             error: false,
             type: "paid",
