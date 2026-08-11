@@ -432,13 +432,14 @@ export const createExtraPlanTransaction = async (request, response) => {
         if (existingPayment) {
             return response.status(200).json({
                 message: `You already have a payment in progress for ${existingPayment.planName}. Please complete it before purchasing this plan again.`,
-                success: false,
-                error: true,
+                success: true,
+                error: false,
                 type: "payment_in_progress",
                 transaction: existingPayment,
                 paymentUrl: existingPayment.invoiceUrl,
             });
         }
+
 
         // -----------------------------------------
         // Create Order ID
