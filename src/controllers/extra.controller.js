@@ -641,6 +641,8 @@ const activateExtraPlan = async ({
 export const extranowPaymentsWebhook = async (request, response) => {
     try {
 
+        console.log("EXTRA NOWPAYMENTS WEBHOOK:", request.body);
+
         // ==================================================
         // 1. VERIFY WEBHOOK SIGNATURE
         // ==================================================
