@@ -29,6 +29,8 @@ extraRouter.post("/create-extra-plan-transaction", protect(["Escort"]), createEx
 
 // extraRouter.post("/nowpayments-webhook", nowPaymentsWebhook);
 
-extraRouter.post("/extra-nowpayments-webhook", extranowPaymentsWebhook);
+extraRouter.post("/extra-nowpayments-webhook", express.raw({
+    type: "application/json"
+}), extranowPaymentsWebhook);
 
 export default extraRouter;
