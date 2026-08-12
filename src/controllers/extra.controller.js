@@ -470,7 +470,8 @@ export const createExtraPlanTransaction = async (request, response) => {
 
         const paymentData = {
             price_amount: Number(plan.price),
-            price_currency: plan.currency || "USD",
+            // price_currency: plan.currency || "AUD",
+            price_currency: "USD",
             order_id: orderId,
             order_description: `Extra Plan - ${plan.title}`,
             ipn_callback_url: process.env.NOWPAYMENTS_EXTRA_IPN_URL,
