@@ -238,8 +238,6 @@ export const createTransaction = async (request, response) => {
 };
 
 
-
-
 // NOWPayments Webhook
 export const nowPaymentsWebhook = async (request, response) => {
     try {
@@ -630,7 +628,6 @@ export const nowPaymentsWebhook = async (request, response) => {
         });
     }
 };
-
 
 
 // check active subscription

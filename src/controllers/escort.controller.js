@@ -3,12 +3,16 @@ import jwt from 'jsonwebtoken';
 import axios from "axios";
 import EscortModel from '../models/escortModel.js'
 import crypto from "crypto";
-import { generatedescortId } from '../utils/generatedId.js'
+import {
+    generatedescortId
+} from '../utils/generatedId.js'
 import EscortdetailsModel from "../models/escortdetailsModel.js";
 import EscortessentialModel from "../models/escortessentialModel.js";
 import EscortpreferModel from "../models/escortpreferModel.js";
 import uploadImageCloudinary from "../utils/uploadImageCloudinary.js";
-import { sendVerificationEmail } from "../utils/emailService.js";
+import {
+    sendVerificationEmail
+} from "../utils/emailService.js";
 import otpModel from "../models/otpModel.js";
 import uploadVideoCloudinary from "../utils/uploadVideoCloudinary.js";
 import deleteImageCloudinary from "../utils/deleteImageCloudinary.js";
@@ -16,7 +20,9 @@ import deleteVideoCloudinary from "../utils/deleteVideoCloudinary.js";
 import ServiceModel from "../models/escortserviceModel.js";
 import RatesModel from "../models/escortratesModel.js";
 import ClientModel from "../models/clientModel.js";
-import { uploadMediaCloudinary } from "../utils/uploadMediaCloudinary.js";
+import {
+    uploadMediaCloudinary
+} from "../utils/uploadMediaCloudinary.js";
 import NewsAndTourModel from "../models/newsandtourModel.js";
 import NewstourLikesModel from "../models/newstourLikesModel.js";
 import NewstourCommentsModel from "../models/newstourCommentsModel.js";
@@ -25,13 +31,24 @@ import BlogCommentsModel from "../models/blogCommentsModel.js";
 import BlogLikesModel from "../models/blogLikesModel.js";
 import BookingModel from "../models/bookingModel.js";
 import TourModel from "../models/tourModel.js";
-import { decrypt, encrypt } from "../utils/crypto.js";
+import {
+    decrypt,
+    encrypt
+} from "../utils/crypto.js";
 import sharp from "sharp";
-import { sendRegistrationNotification } from "../utils/sendRegistrationNotification.js";
+import {
+    sendRegistrationNotification
+} from "../utils/sendRegistrationNotification.js";
 import cloudinary from "../config/cloudinary.js";
-import { sendMail } from "../utils/sendMail.js";
-import { deleteFromCloudinary } from "../utils/deleteFromCloudinary.js";
-import { createAndSendNotification } from "../utils/notificationHelper.js";
+import {
+    sendMail
+} from "../utils/sendMail.js";
+import {
+    deleteFromCloudinary
+} from "../utils/deleteFromCloudinary.js";
+import {
+    createAndSendNotification
+} from "../utils/notificationHelper.js";
 import AdminModel from "../models/adminModel.js";
 import NotificationModel from "../models/notificationModel.js";
 import PendingEscortModel from "../models/PendingEscortModel.js";
@@ -41,7 +58,11 @@ export const escortChangePassword = async (request, response) => {
     try {
         const userId = request.user?._id;
 
-        const { currentPassword, newPassword, confirmPassword } = request.body;
+        const {
+            currentPassword,
+            newPassword,
+            confirmPassword
+        } = request.body;
 
         // 1. Required check
         if (!currentPassword || !newPassword || !confirmPassword) {
@@ -128,9 +149,12 @@ export const escortChangePassword = async (request, response) => {
 };
 
 // forgot password send otp
+
 export const escortForgotPassword = async (request, response) => {
     try {
-        const { email } = request.body;
+        const {
+            email
+        } = request.body;
 
         if (!email) {
             return response.status(400).json({
@@ -140,7 +164,9 @@ export const escortForgotPassword = async (request, response) => {
             });
         }
 
-        const escort = await EscortModel.findOne({ email });
+        const escort = await EscortModel.findOne({
+            email
+        });
 
         if (!escort) {
             return response.status(200).json({
@@ -166,18 +192,16 @@ export const escortForgotPassword = async (request, response) => {
 
         console.log("otp", otp);
 
-        const updated = await EscortModel.findOneAndUpdate(
-            {
-                email,
-            },
-            {
-                resetOtp: hashedOtp,
-                otpExpiry: expiry,
-                otpResendTime: resendCooldown,
-                otpAttempts: 0
-            },
-            { new: true }
-        );
+        const updated = await EscortModel.findOneAndUpdate({
+            email,
+        }, {
+            resetOtp: hashedOtp,
+            otpExpiry: expiry,
+            otpResendTime: resendCooldown,
+            otpAttempts: 0
+        }, {
+            new: true
+        });
 
         if (!updated) {
             return response.status(429).json({
@@ -291,7 +315,10 @@ export const escortForgotPassword = async (request, response) => {
 export const escortVerifyOtp = async (request, response) => {
     try {
 
-        const { email, otp } = request.body;
+        const {
+            email,
+            otp
+        } = request.body;
 
         if (email == '' || otp == '') {
             return response.status(400).json({
@@ -310,7 +337,9 @@ export const escortVerifyOtp = async (request, response) => {
         }
 
         // 2. find admin
-        const escort = await EscortModel.findOne({ email });
+        const escort = await EscortModel.findOne({
+            email
+        });
 
 
         if (!escort || !escort.resetOtp) {
@@ -344,10 +373,13 @@ export const escortVerifyOtp = async (request, response) => {
 
         // ❌ WRONG OTP
         if (!isMatch) {
-            await EscortModel.updateOne(
-                { email },
-                { $inc: { otpAttempts: 1 } }
-            );
+            await EscortModel.updateOne({
+                email
+            }, {
+                $inc: {
+                    otpAttempts: 1
+                }
+            });
 
             return response.status(400).json({
                 success: false,
@@ -357,18 +389,17 @@ export const escortVerifyOtp = async (request, response) => {
         }
 
         // 6. SUCCESS → clear OTP (NO save used)
-        await EscortModel.updateOne(
-            { email },
-            {
-                $unset: {
-                    resetOtp: "",
-                    otpExpiry: ""
-                },
-                $set: {
-                    otpAttempts: 0
-                }
+        await EscortModel.updateOne({
+            email
+        }, {
+            $unset: {
+                resetOtp: "",
+                otpExpiry: ""
+            },
+            $set: {
+                otpAttempts: 0
             }
-        );
+        });
 
         return response.status(200).json({
             success: true,
@@ -390,7 +421,11 @@ export const escortVerifyOtp = async (request, response) => {
 // reset password
 export const escortResetPassword = async (request, response) => {
     try {
-        const { email, newPassword, confirmPassword } = request.body;
+        const {
+            email,
+            newPassword,
+            confirmPassword
+        } = request.body;
 
         // 1. validation
         if (!email || !newPassword || !confirmPassword) {
@@ -421,7 +456,9 @@ export const escortResetPassword = async (request, response) => {
 
 
         // 4. find admin
-        const escort = await EscortModel.findOne({ email });
+        const escort = await EscortModel.findOne({
+            email
+        });
 
         if (!escort) {
             return response.status(400).json({
@@ -444,21 +481,20 @@ export const escortResetPassword = async (request, response) => {
         const hashedPassword = await bcryptjs.hash(newPassword, 10);
 
         // 7. update password + clear any leftover fields (NO save)
-        await EscortModel.updateOne(
-            { email },
-            {
-                $set: {
-                    password: hashedPassword
-                },
-                $unset: {
-                    resetOtp: "",
-                    otpExpiry: ""
-                },
-                $setOnInsert: {
-                    otpAttempts: 0
-                }
+        await EscortModel.updateOne({
+            email
+        }, {
+            $set: {
+                password: hashedPassword
+            },
+            $unset: {
+                resetOtp: "",
+                otpExpiry: ""
+            },
+            $setOnInsert: {
+                otpAttempts: 0
             }
-        );
+        });
 
         return response.status(200).json({
             success: true,
@@ -485,7 +521,18 @@ export const escortResetPassword = async (request, response) => {
 export async function registerEscortcontroller(request, response) {
     try {
 
-        const { name, email, password, mobile, country, countryCode, city, account_classification, account_type, adverties_category } = request.body
+        const {
+            name,
+            email,
+            password,
+            mobile,
+            country,
+            countryCode,
+            city,
+            account_classification,
+            account_type,
+            adverties_category
+        } = request.body
 
         console.log(request.body);
 
@@ -499,7 +546,9 @@ export async function registerEscortcontroller(request, response) {
 
         const normalizedEmail = email.trim().toLowerCase();
 
-        const exstingEmail = await ClientModel.findOne({ email: normalizedEmail })
+        const exstingEmail = await ClientModel.findOne({
+            email: normalizedEmail
+        })
 
         if (exstingEmail) {
             return response.status(409).json({
@@ -509,7 +558,9 @@ export async function registerEscortcontroller(request, response) {
             })
         }
 
-        const escort = await EscortModel.findOne({ email: normalizedEmail })
+        const escort = await EscortModel.findOne({
+            email: normalizedEmail
+        })
 
         if (escort) {
             return response.status(409).json({
@@ -578,11 +629,15 @@ export async function registerEscortcontroller(request, response) {
 // Escort verify email controll step-2
 export async function verifyEmailcontroller(request, response) {
     try {
-        const { token } = request.query;
+        const {
+            token
+        } = request.query;
 
         const pendingEscort = await PendingEscortModel.findOne({
             emailVerifyToken: token,
-            emailVerifyExpiry: { $gt: Date.now() }
+            emailVerifyExpiry: {
+                $gt: Date.now()
+            }
         }).select("+password");
 
 
@@ -687,7 +742,9 @@ export async function verifyEmailcontroller(request, response) {
 // Resend email verification
 export async function resendEmailVerification(request, response) {
     try {
-        const { id } = request.body;
+        const {
+            id
+        } = request.body;
 
         if (!id) {
             return response.status(400).json({
@@ -752,7 +809,11 @@ export async function resendEmailVerification(request, response) {
 // Escort change mobile number controll
 export async function changeMobilenumber(request, response) {
     try {
-        const { escortId, mobile, countryCode } = request.body;
+        const {
+            escortId,
+            mobile,
+            countryCode
+        } = request.body;
 
         const mobileEncrypted = encrypt(request.body.mobile);
 
@@ -765,14 +826,13 @@ export async function changeMobilenumber(request, response) {
             })
         }
 
-        const updateMobile = await EscortModel.findOneAndUpdate(
-            { escortId },
-            {
-                mobile: mobileEncrypted,
-                isMobileVerified: false,
-                countryCode: countryCode,
-            }
-        )
+        const updateMobile = await EscortModel.findOneAndUpdate({
+            escortId
+        }, {
+            mobile: mobileEncrypted,
+            isMobileVerified: false,
+            countryCode: countryCode,
+        })
 
         if (!updateMobile) {
             return response.status(404).json({
@@ -815,11 +875,17 @@ export async function changeMobilenumber(request, response) {
 export async function sendOtpcontroller(request, response) {
     try {
 
-        const { escortId, mobile, countryCode } = request.body;
+        const {
+            escortId,
+            mobile,
+            countryCode
+        } = request.body;
 
         console.log("req.body", request.body);
 
-        const escort = await EscortModel.findOne({ escortId });
+        const escort = await EscortModel.findOne({
+            escortId
+        });
 
         if (!escort) {
             return response.status(400).json({
@@ -845,10 +911,14 @@ export async function sendOtpcontroller(request, response) {
         // If mobile changed, check duplicate in Escorts
         if (escortMobile !== mobile) {
 
-            const escorts = await EscortModel.find(
-                { escortId: { $ne: escortId } },
-                { mobile: 1, escortId: 1 }
-            );
+            const escorts = await EscortModel.find({
+                escortId: {
+                    $ne: escortId
+                }
+            }, {
+                mobile: 1,
+                escortId: 1
+            });
 
             for (const item of escorts) {
 
@@ -874,7 +944,9 @@ export async function sendOtpcontroller(request, response) {
             }
 
             // Check duplicate in Clients
-            const clients = await ClientModel.find({}, { mobile: 1 });
+            const clients = await ClientModel.find({}, {
+                mobile: 1
+            });
 
             for (const client of clients) {
 
@@ -921,8 +993,7 @@ export async function sendOtpcontroller(request, response) {
         // Send SMS using Cellcast API
         const cellcastResponse = await axios.post(
             "https://cellcast.com.au/api/v3/send-sms",
-            smsPayload,
-            {
+            smsPayload, {
                 headers: {
                     "APPKEY": process.env.CELLCAST_APPKEY,
                     "Content-Type": "application/json",
@@ -975,7 +1046,12 @@ export async function sendOtpcontroller(request, response) {
 export async function verifyMobileotp(request, response) {
     try {
 
-        let { escortId, mobile, otp, countryCode } = request.body; // 👈 let use karo
+        let {
+            escortId,
+            mobile,
+            otp,
+            countryCode
+        } = request.body; // 👈 let use karo
 
         console.log("verify otp , escortId ,mobile , contyrcode and otp ", escortId, mobile, countryCode, otp);
 
@@ -987,7 +1063,9 @@ export async function verifyMobileotp(request, response) {
             });
         }
 
-        const escort = await EscortModel.findOne({ escortId });
+        const escort = await EscortModel.findOne({
+            escortId
+        });
 
         if (!escort) {
             return response.status(404).json({
@@ -1001,7 +1079,9 @@ export async function verifyMobileotp(request, response) {
             mobile,
             otp: otp,
             isUsed: false,
-            expiresAt: { $gt: new Date() }
+            expiresAt: {
+                $gt: new Date()
+            }
         });
 
         console.log("record", record);
@@ -1015,9 +1095,16 @@ export async function verifyMobileotp(request, response) {
         }
         const mobileEncrypted = "enc:" + encrypt(mobile);
 
-        await EscortModel.updateOne(
-            { escortId },
-            { $set: { isMobileVerified: true, mobile: mobileEncrypted, countryCode: countryCode, lastCompletedStep: 3 } } // ✅ correct field
+        await EscortModel.updateOne({
+                escortId
+            }, {
+                $set: {
+                    isMobileVerified: true,
+                    mobile: mobileEncrypted,
+                    countryCode: countryCode,
+                    lastCompletedStep: 3
+                }
+            } // ✅ correct field
         );
 
         record.isUsed = true;
@@ -1042,7 +1129,10 @@ export async function verifyMobileotp(request, response) {
 // Escort add details controll step-4
 export async function escortdetailscontroller(request, response) {
     try {
-        const { escortId, ...restData } = request.body;
+        const {
+            escortId,
+            ...restData
+        } = request.body;
 
         if (!escortId) {
             return response.status(400).json({
@@ -1054,10 +1144,18 @@ export async function escortdetailscontroller(request, response) {
 
 
         // ✅ Link to main Escort table
-        await EscortModel.findOneAndUpdate(
-            { escortId },
-            { $set: { ...restData, lastCompletedStep: 4 } },   // 👈 direct fields save
-            { new: true, upsert: true }
+        await EscortModel.findOneAndUpdate({
+                escortId
+            }, {
+                $set: {
+                    ...restData,
+                    lastCompletedStep: 4
+                }
+            }, // 👈 direct fields save
+            {
+                new: true,
+                upsert: true
+            }
         );
 
 
@@ -1079,7 +1177,9 @@ export async function escortdetailscontroller(request, response) {
 // Escort upload verification doc controll step-5
 export async function escortUploadverification(request, response) {
     try {
-        const { escortId } = request.body;
+        const {
+            escortId
+        } = request.body;
 
         if (!escortId) {
             return response.status(400).json({
@@ -1097,7 +1197,9 @@ export async function escortUploadverification(request, response) {
             })
         }
 
-        const escort = await EscortModel.findOne({ escortId });
+        const escort = await EscortModel.findOne({
+            escortId
+        });
 
         if (!escort) {
             return response.status(404).json({
@@ -1110,19 +1212,19 @@ export async function escortUploadverification(request, response) {
         const selfieUpload = await uploadImageCloudinary(request.files.verificationselfie[0], "verification/verificationselfie");
         const govtIdUpload = await uploadImageCloudinary(request.files.verificationgovtId[0], "verification/verificationgovtId");
 
-        const uploadEscort = await EscortModel.findOneAndUpdate(
-            { escortId },
-            {
-                verificationselfie: selfieUpload.secure_url,
-                verificationgovtId: govtIdUpload.secure_url,
-                docsuploadStatus: "pending",
-                hasAcceptedDocsOwnership: true,
-                docsOwnershipAcceptedAt: new Date(),
-                lastCompletedStep: 5,
+        const uploadEscort = await EscortModel.findOneAndUpdate({
+            escortId
+        }, {
+            verificationselfie: selfieUpload.secure_url,
+            verificationgovtId: govtIdUpload.secure_url,
+            docsuploadStatus: "pending",
+            hasAcceptedDocsOwnership: true,
+            docsOwnershipAcceptedAt: new Date(),
+            lastCompletedStep: 5,
 
-            },
-            { new: true }
-        );
+        }, {
+            new: true
+        });
 
         return response.json({
             message: "Verification documents uploaded successfully",
@@ -1150,7 +1252,9 @@ export async function escortUploadverification(request, response) {
 export async function registerGalleryController(request, response) {
     try {
 
-        const { escortId } = request.body;
+        const {
+            escortId
+        } = request.body;
 
         if (!escortId) {
             return response.status(400).json({
@@ -1176,7 +1280,9 @@ export async function registerGalleryController(request, response) {
             });
         }
 
-        const escort = await EscortModel.findOne({ escortId });
+        const escort = await EscortModel.findOne({
+            escortId
+        });
 
         if (!escort) {
             return response.status(404).json({
@@ -1198,24 +1304,28 @@ export async function registerGalleryController(request, response) {
             });
         }
 
-        await EscortModel.updateOne(
-            { escortId },
-            {
-                $set: {
-                    "gallery.photos": uploadedImages,
-                    hasAcceptedImageOwnership: true,
-                    imageOwnershipAcceptedAt: new Date(),
-                    lastCompletedStep: 7,
-                }
+        await EscortModel.updateOne({
+            escortId
+        }, {
+            $set: {
+                "gallery.photos": uploadedImages,
+                hasAcceptedImageOwnership: true,
+                imageOwnershipAcceptedAt: new Date(),
+                lastCompletedStep: 7,
             }
-        );
+        });
 
         const updatedEscort = await EscortModel
-            .findOne({ escortId })
+            .findOne({
+                escortId
+            })
             .lean();
 
 
-        await sendRegistrationNotification({ email: process.env.ADMIN_RECEIVER_EMAIL, modelName: updatedEscort.name })
+        await sendRegistrationNotification({
+            email: process.env.ADMIN_RECEIVER_EMAIL,
+            modelName: updatedEscort.name
+        })
 
 
         const admin = await AdminModel.findOne();
@@ -1256,7 +1366,10 @@ export async function registerGalleryController(request, response) {
 // Subcribe plan controll
 export async function subcribePlans(request, response) {
     try {
-        const { title, plan } = request.body;
+        const {
+            title,
+            plan
+        } = request.body;
         return response.status(400).json({
             message: "",
             success: false,
@@ -1274,7 +1387,10 @@ export async function subcribePlans(request, response) {
 // Escort Login controll
 export async function escortLogincontroller(request, response) {
     try {
-        const { email, password } = request.body;
+        const {
+            email,
+            password
+        } = request.body;
 
         if (!email || !password) {
             return response.status(400).json({
@@ -1284,7 +1400,9 @@ export async function escortLogincontroller(request, response) {
             })
         }
 
-        const escort = await EscortModel.findOne({ email }).select("+password");
+        const escort = await EscortModel.findOne({
+            email
+        }).select("+password");
 
         if (!escort) {
             return response.status(400).json({
@@ -1314,14 +1432,14 @@ export async function escortLogincontroller(request, response) {
             })
         }
 
-        const token = jwt.sign(
-            {
+        const token = jwt.sign({
                 _id: escort._id,
                 escortId: escort.escortId,
                 role: escort.role || "Escort"
             },
-            process.env.JWT_SECRET,
-            { expiresIn: "7d" }
+            process.env.JWT_SECRET, {
+                expiresIn: "7d"
+            }
         );
 
         return response.json({
@@ -1350,7 +1468,9 @@ export async function escortLogincontroller(request, response) {
 // Fetch Escort details 
 export async function fetchEscortdetailscontroller(request, response) {
     try {
-        const { escortId } = request.query;
+        const {
+            escortId
+        } = request.query;
 
         if (!escortId) {
             return response.status(400).json({
@@ -1360,7 +1480,9 @@ export async function fetchEscortdetailscontroller(request, response) {
             })
         }
 
-        const escortDetails = await EscortModel.findOne({ escortId })
+        const escortDetails = await EscortModel.findOne({
+                escortId
+            })
             .populate("services")
             .populate("rates")
             .populate("bookings")
@@ -1406,7 +1528,10 @@ export async function fetchEscortdetailscontroller(request, response) {
 // logout controll
 export async function logoutEscortcontroller(request, response) {
     try {
-        const { escortId, role } = request.body;
+        const {
+            escortId,
+            role
+        } = request.body;
 
         if (!escortId || !role) {
             return response.status(400).json({
@@ -1417,7 +1542,9 @@ export async function logoutEscortcontroller(request, response) {
         }
 
 
-        const escort = await EscortModel.findOne({ escortId: escortId });
+        const escort = await EscortModel.findOne({
+            escortId: escortId
+        });
 
         if (!escort) {
             return response.status(404).json({
@@ -1449,7 +1576,9 @@ export async function logoutEscortcontroller(request, response) {
 // upload Avatar step-6
 export async function uploadAvatarcontroller(request, response) {
     try {
-        const { escortId } = request.body;
+        const {
+            escortId
+        } = request.body;
 
         if (!escortId) {
             return response.status(400).json({
@@ -1467,7 +1596,9 @@ export async function uploadAvatarcontroller(request, response) {
             })
         }
 
-        const existingEscort = await EscortModel.findOne({ escortId });
+        const existingEscort = await EscortModel.findOne({
+            escortId
+        });
 
         if (!existingEscort) {
             return response.status(404).json({
@@ -1485,20 +1616,20 @@ export async function uploadAvatarcontroller(request, response) {
 
         const avatarUpload = await uploadImageCloudinary(request.files.avatar[0], "profileImg/avatar");
 
-        const uploadEscort = await EscortModel.findOneAndUpdate(
-            { escortId },
-            {
-                avatar: {
-                    url: avatarUpload.secure_url,
-                    public_id: avatarUpload.public_id,
-                    status: "Pending"
-                },
-                hasAcceptedAvatarOwnership: true,
-                avatarOwnershipAcceptedAt: new Date(),
-                lastCompletedStep: 6,
+        const uploadEscort = await EscortModel.findOneAndUpdate({
+            escortId
+        }, {
+            avatar: {
+                url: avatarUpload.secure_url,
+                public_id: avatarUpload.public_id,
+                status: "Pending"
             },
-            { new: true }
-        );
+            hasAcceptedAvatarOwnership: true,
+            avatarOwnershipAcceptedAt: new Date(),
+            lastCompletedStep: 6,
+        }, {
+            new: true
+        });
 
         if (!uploadEscort) {
             return response.status(404).json({
@@ -1593,7 +1724,10 @@ export async function toggleFaceBlur(request, response) {
 // upload gallery images
 export async function uploadImagescontroller(request, response) {
     try {
-        const { escortId, deletedImages } = request.body;
+        const {
+            escortId,
+            deletedImages
+        } = request.body;
 
         if (!escortId) {
             return response.status(400).json({
@@ -1607,7 +1741,9 @@ export async function uploadImagescontroller(request, response) {
 
         // 1️⃣ Delete images from Cloudinary & DB
         if (deletedArr.length > 0) {
-            const escort = await EscortModel.findOne({ escortId });
+            const escort = await EscortModel.findOne({
+                escortId
+            });
             if (escort) {
                 // Cloudinary delete
                 for (let item of deletedArr) {
@@ -1619,10 +1755,17 @@ export async function uploadImagescontroller(request, response) {
                 // DB delete by URL
                 const urlsToDelete = deletedArr.map(item => item.url).filter(Boolean);
                 if (urlsToDelete.length > 0) {
-                    await EscortModel.updateOne(
-                        { escortId },
-                        { $pull: { "gallery.photos": { url: { $in: urlsToDelete } } } }
-                    );
+                    await EscortModel.updateOne({
+                        escortId
+                    }, {
+                        $pull: {
+                            "gallery.photos": {
+                                url: {
+                                    $in: urlsToDelete
+                                }
+                            }
+                        }
+                    });
                 }
             }
         }
@@ -1639,29 +1782,35 @@ export async function uploadImagescontroller(request, response) {
             }
 
             // Push new images to DB
-            await EscortModel.updateOne(
-                { escortId },
-                {
-                    $push: {
-                        "gallery.photos": { $each: uploadedImages },
+            await EscortModel.updateOne({
+                escortId
+            }, {
+                $push: {
+                    "gallery.photos": {
+                        $each: uploadedImages
                     },
-                    $set: {
-                        hasAcceptedImageOwnership: true,
-                        imageOwnershipAcceptedAt: new Date()
-                    },
-                }
-            );
+                },
+                $set: {
+                    hasAcceptedImageOwnership: true,
+                    imageOwnershipAcceptedAt: new Date()
+                },
+            });
         }
 
         // 3️⃣ Fetch updated escort
-        const updatedEscort = await EscortModel.findOne({ escortId }).lean();
+        const updatedEscort = await EscortModel.findOne({
+            escortId
+        }).lean();
 
         // 4️⃣ Keep only last 6 images in DB
         const last6Images = updatedEscort.gallery.photos.slice(-6);
-        await EscortModel.updateOne(
-            { escortId },
-            { $set: { "gallery.photos": last6Images } }
-        );
+        await EscortModel.updateOne({
+            escortId
+        }, {
+            $set: {
+                "gallery.photos": last6Images
+            }
+        });
 
         const admin = await AdminModel.findOne();
         if (!admin) {
@@ -1705,7 +1854,10 @@ export async function uploadImagescontroller(request, response) {
 // upload gallery videos
 export async function uploadVideoscontroller(request, response) {
     try {
-        const { escortId, deletedVideos } = request.body;
+        const {
+            escortId,
+            deletedVideos
+        } = request.body;
 
         if (!escortId) {
             return response.status(400).json({
@@ -1719,7 +1871,9 @@ export async function uploadVideoscontroller(request, response) {
 
         // 1️⃣ Delete videos from Cloudinary & DB
         if (deletedArr.length > 0) {
-            const escort = await EscortModel.findOne({ escortId });
+            const escort = await EscortModel.findOne({
+                escortId
+            });
             if (escort && escort.gallery?.videos?.length) {
 
                 // Cloudinary delete
@@ -1733,10 +1887,17 @@ export async function uploadVideoscontroller(request, response) {
                 // DB delete using URL
                 const urlsToDelete = deletedArr.map(item => (typeof item === "object" ? item.url : item)).filter(Boolean);
                 if (urlsToDelete.length > 0) {
-                    await EscortModel.updateOne(
-                        { escortId },
-                        { $pull: { "gallery.videos": { url: { $in: urlsToDelete } } } }
-                    );
+                    await EscortModel.updateOne({
+                        escortId
+                    }, {
+                        $pull: {
+                            "gallery.videos": {
+                                url: {
+                                    $in: urlsToDelete
+                                }
+                            }
+                        }
+                    });
                 }
             }
         }
@@ -1753,29 +1914,35 @@ export async function uploadVideoscontroller(request, response) {
             }
 
             // Push new videos to DB
-            await EscortModel.updateOne(
-                { escortId },
-                {
-                    $push: {
-                        "gallery.videos": { $each: uploadedVideos },
+            await EscortModel.updateOne({
+                escortId
+            }, {
+                $push: {
+                    "gallery.videos": {
+                        $each: uploadedVideos
                     },
-                    $set: {
-                        hasAcceptedVideoOwnership: true,
-                        videoOwnershipAcceptedAt: new Date()
-                    }
+                },
+                $set: {
+                    hasAcceptedVideoOwnership: true,
+                    videoOwnershipAcceptedAt: new Date()
                 }
-            );
+            });
         }
 
         // 3️⃣ Fetch updated escort
-        const updatedEscort = await EscortModel.findOne({ escortId }).lean();
+        const updatedEscort = await EscortModel.findOne({
+            escortId
+        }).lean();
 
         // 4️⃣ Keep only last 6 videos
         const last6Videos = updatedEscort.gallery.videos.slice(-6);
-        await EscortModel.updateOne(
-            { escortId },
-            { $set: { "gallery.videos": last6Videos } }
-        );
+        await EscortModel.updateOne({
+            escortId
+        }, {
+            $set: {
+                "gallery.videos": last6Videos
+            }
+        });
 
         const admin = await AdminModel.findOne();
         if (!admin) {
@@ -1821,7 +1988,11 @@ export async function uploadVideoscontroller(request, response) {
 // fetch all verified escorts
 export async function verifiedEscortcontroller(request, response) {
     try {
-        const { role, isVerified, isVisible } = request.query;
+        const {
+            role,
+            isVerified,
+            isVisible
+        } = request.query;
 
         let filter = {};
 
@@ -1876,7 +2047,14 @@ export async function updateEscortcontroller(request, response) {
 // update highlights 
 export async function updateHighlightscontroller(request, response) {
     try {
-        const { escortId, incall, outcall, rateFrom, highlights, about } = request.body;
+        const {
+            escortId,
+            incall,
+            outcall,
+            rateFrom,
+            highlights,
+            about
+        } = request.body;
 
         if (!escortId) {
             return response.status(400).json({
@@ -1895,10 +2073,13 @@ export async function updateHighlightscontroller(request, response) {
         if (rateFrom) updateData.rateFrom = rateFrom;
 
 
-        const details = await EscortModel.findOneAndUpdate(
-            { escortId: escortId },
-            { $set: updateData },
-            { new: true }   // upsert mat lagao unless naya doc banana ho
+        const details = await EscortModel.findOneAndUpdate({
+                escortId: escortId
+            }, {
+                $set: updateData
+            }, {
+                new: true
+            } // upsert mat lagao unless naya doc banana ho
         );
 
         if (!details) {
@@ -1928,7 +2109,14 @@ export async function updateHighlightscontroller(request, response) {
 // escort services
 export async function escortServicescontroller(request, response) {
     try {
-        const { escortId, title, label, price, description, isActive } = request.body;
+        const {
+            escortId,
+            title,
+            label,
+            price,
+            description,
+            isActive
+        } = request.body;
 
         // ✅ correct validation
         if (!escortId) {
@@ -1950,10 +2138,13 @@ export async function escortServicescontroller(request, response) {
         });
 
         // ✅ push service _id into Escort model
-        await EscortModel.findOneAndUpdate(
-            { escortId: escortId },
-            { $push: { services: newService._id } }
-        );
+        await EscortModel.findOneAndUpdate({
+            escortId: escortId
+        }, {
+            $push: {
+                services: newService._id
+            }
+        });
 
         return response.status(200).json({
             message: "Service added successfully",
@@ -2012,16 +2203,14 @@ export async function UpdateService(request, response) {
 
         // update
         const updatedService = await ServiceModel.findByIdAndUpdate(
-            _id,
-            {
+            _id, {
                 escortId,
                 title,
                 label,
                 price,
                 description,
                 isActive
-            },
-            {
+            }, {
                 new: true
             }
         );
@@ -2051,7 +2240,9 @@ export async function DeleteService(request, response) {
 
     try {
 
-        const { _id } = request.body;
+        const {
+            _id
+        } = request.body;
 
         // validation
         if (!_id) {
@@ -2080,14 +2271,13 @@ export async function DeleteService(request, response) {
         // delete
         await ServiceModel.findByIdAndDelete(_id);
 
-        await EscortModel.findOneAndUpdate(
-            { escortId: service.escortId },
-            {
-                $pull: {
-                    services: _id
-                }
+        await EscortModel.findOneAndUpdate({
+            escortId: service.escortId
+        }, {
+            $pull: {
+                services: _id
             }
-        );
+        });
 
 
         return response.status(200).json({
@@ -2113,7 +2303,13 @@ export async function DeleteService(request, response) {
 // escort rates
 export async function escortRatescontroller(request, response) {
     try {
-        const { escortId, label, price, duration, isActive } = request.body;
+        const {
+            escortId,
+            label,
+            price,
+            duration,
+            isActive
+        } = request.body;
 
         if (!escortId) {
             return response.status(400).json({
@@ -2141,10 +2337,13 @@ export async function escortRatescontroller(request, response) {
         }
 
         // ✅ push rates _id into Escort model
-        await EscortModel.findOneAndUpdate(
-            { escortId: escortId },
-            { $push: { rates: newRates._id } }
-        );
+        await EscortModel.findOneAndUpdate({
+            escortId: escortId
+        }, {
+            $push: {
+                rates: newRates._id
+            }
+        });
 
         return response.status(200).json({
             message: "rates added successfully",
@@ -2201,15 +2400,13 @@ export async function updateRate(request, response) {
 
         // update rate
         const updatedRate = await RatesModel.findByIdAndUpdate(
-            _id,
-            {
+            _id, {
                 escortId,
                 label,
                 price,
                 duration,
                 isActive
-            },
-            {
+            }, {
                 new: true
             }
         );
@@ -2239,7 +2436,9 @@ export async function deleteRate(request, response) {
 
     try {
 
-        const { _id } = request.body;
+        const {
+            _id
+        } = request.body;
 
         if (!_id) {
 
@@ -2268,14 +2467,13 @@ export async function deleteRate(request, response) {
         await RatesModel.findByIdAndDelete(_id);
 
         // remove rate id from escort model
-        await EscortModel.findOneAndUpdate(
-            { escortId: rate.escortId },
-            {
-                $pull: {
-                    rates: _id
-                }
+        await EscortModel.findOneAndUpdate({
+            escortId: rate.escortId
+        }, {
+            $pull: {
+                rates: _id
             }
-        );
+        });
 
         return response.status(200).json({
             message: "Rate deleted successfully",
@@ -2300,7 +2498,9 @@ export async function deleteRate(request, response) {
 // fetch escorts added services  => not in use bcoz -> use populate and fetch rates and services
 export async function fetchescortServicescontroller(request, response) {
     try {
-        const { escortId } = request.query;
+        const {
+            escortId
+        } = request.query;
 
         if (!escortId) {
             return response.status(400).json({
@@ -2330,7 +2530,9 @@ export async function fetchescortServicescontroller(request, response) {
 // filter city escorts
 export async function fetchFiltercityescortscontroller(request, response) {
     try {
-        let filters = { ...request.query };
+        let filters = {
+            ...request.query
+        };
 
         // ✅ Boolean conversion
         for (const key in filters) {
@@ -2360,7 +2562,10 @@ export async function fetchFiltercityescortscontroller(request, response) {
         if (filters.country) query.country = filters.country;
 
         if (filters.name) {
-            query.name = { $regex: filters.name, $options: "i" };
+            query.name = {
+                $regex: filters.name,
+                $options: "i"
+            };
         }
         if (filters.isVerified === true) query.isVerified = true;
         if (filters.isVisible === true) query.isVisible = true;
@@ -2384,7 +2589,9 @@ export async function fetchFiltercityescortscontroller(request, response) {
         // Gender fix
         const genderKey = filters.gender || filters["gender[]"];
         if (genderKey && genderKey.length > 0 && !genderKey.includes("All")) {
-            query.gender = { $in: genderKey };
+            query.gender = {
+                $in: genderKey
+            };
         }
 
         // ✅ OTHER FIELDS (same model)
@@ -2404,17 +2611,24 @@ export async function fetchFiltercityescortscontroller(request, response) {
         if (filters.age) {
             if (filters.age.includes("-")) {
                 const [min, max] = filters.age.split("-").map(Number);
-                query.age = { $gte: min, $lte: max };
+                query.age = {
+                    $gte: min,
+                    $lte: max
+                };
             } else if (filters.age.includes("+")) {
                 const min = Number(filters.age.replace("+", ""));
-                query.age = { $gte: min };
+                query.age = {
+                    $gte: min
+                };
             }
         }
 
         // ---------- RATE RANGE ----------
         if (filters.rateFrom) {
             const minRate = Number(filters.rateFrom.replace("+", ""));
-            query.rateFrom = { $gte: minRate };
+            query.rateFrom = {
+                $gte: minRate
+            };
         }
 
         query["avatar.url"] = {
@@ -2486,16 +2700,34 @@ export async function fetchFilterHomescortscontroller(request, response) {
         if (adverties_category && adverties_category !== "Any") query.adverties_category = adverties_category;
         // keyword search on name or highlights
         if (keyword) {
-            query.$or = [
-                { name: { $regex: keyword, $options: "i" } },
-                { city: { $regex: keyword, $options: "i" } },
-                { highlights: { $regex: keyword, $options: "i" } },
+            query.$or = [{
+                    name: {
+                        $regex: keyword,
+                        $options: "i"
+                    }
+                },
+                {
+                    city: {
+                        $regex: keyword,
+                        $options: "i"
+                    }
+                },
+                {
+                    highlights: {
+                        $regex: keyword,
+                        $options: "i"
+                    }
+                },
             ];
         }
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
         // Only escorts with avatar
-        query.avatar = { $exists: true, $ne: null, $ne: "" };
+        query.avatar = {
+            $exists: true,
+            $ne: null,
+            $ne: ""
+        };
 
         const escortList = await EscortModel.find(query)
             .skip(skip)
@@ -2598,7 +2830,12 @@ export const advanceSearchController = async (request, response) => {
                     as: "serviceData",
                 },
             },
-            { $unwind: { path: "$serviceData", preserveNullAndEmptyArrays: true } },
+            {
+                $unwind: {
+                    path: "$serviceData",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
 
             // join rates
             {
@@ -2609,23 +2846,34 @@ export const advanceSearchController = async (request, response) => {
                     as: "rateData",
                 },
             },
-            { $unwind: { path: "$rateData", preserveNullAndEmptyArrays: true } },
+            {
+                $unwind: {
+                    path: "$rateData",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
 
             // base filters
-            { $match: query },
+            {
+                $match: query
+            },
         ];
 
         // ---------- service filter (UI: service=massage) ----------
         if (filters.service) {
             pipeline.push({
-                $match: { "serviceData.title": filters.service },
+                $match: {
+                    "serviceData.title": filters.service
+                },
             });
         }
 
         // ---------- duration filter (UI: duration=30 min) ----------
         if (filters.duration) {
             pipeline.push({
-                $match: { "rateData.duration": filters.duration },
+                $match: {
+                    "rateData.duration": filters.duration
+                },
             });
         }
 
@@ -2636,7 +2884,9 @@ export const advanceSearchController = async (request, response) => {
             if (filters.rateMax) rateQuery.$lte = Number(filters.rateMax);
 
             pipeline.push({
-                $match: { "rateData.price": rateQuery },
+                $match: {
+                    "rateData.price": rateQuery
+                },
             });
         }
 
@@ -2644,12 +2894,16 @@ export const advanceSearchController = async (request, response) => {
         pipeline.push({
             $group: {
                 _id: "$_id",
-                doc: { $first: "$$ROOT" },
+                doc: {
+                    $first: "$$ROOT"
+                },
             },
         });
 
         pipeline.push({
-            $replaceRoot: { newRoot: "$doc" },
+            $replaceRoot: {
+                newRoot: "$doc"
+            },
         });
 
         const escorts = await EscortModel.aggregate(pipeline);
@@ -2677,7 +2931,15 @@ export const advanceSearchController = async (request, response) => {
 export const createNewsTourcontroller = async (request, response) => {
     try {
 
-        const { escortId, userId, name, city, country, title, description } = request.body;
+        const {
+            escortId,
+            userId,
+            name,
+            city,
+            country,
+            title,
+            description
+        } = request.body;
 
 
         if (!escortId || !title || !description) {
@@ -2706,7 +2968,9 @@ export const createNewsTourcontroller = async (request, response) => {
         }
 
         // ✅ check escort exist
-        const escort = await EscortModel.findOne({ escortId });
+        const escort = await EscortModel.findOne({
+            escortId
+        });
 
         if (!escort) {
             return response.status(404).json({
@@ -2747,10 +3011,13 @@ export const createNewsTourcontroller = async (request, response) => {
         });
 
         // ✅ push post id into escort model
-        const updatedEscort = await EscortModel.findOneAndUpdate(
-            { escortId },
-            { $push: { newsTour: post._id } }
-        );
+        const updatedEscort = await EscortModel.findOneAndUpdate({
+            escortId
+        }, {
+            $push: {
+                newsTour: post._id
+            }
+        });
 
 
         const admin = await AdminModel.findOne();
@@ -2790,7 +3057,9 @@ export const createNewsTourcontroller = async (request, response) => {
 // individual escorts newsandtour post fetch 
 export const fetchEscortNewsTourcontroller = async (request, response) => {
     try {
-        const { escortId } = request.query;
+        const {
+            escortId
+        } = request.query;
 
         if (!escortId) {
             return response.status(400).json({
@@ -2801,9 +3070,14 @@ export const fetchEscortNewsTourcontroller = async (request, response) => {
         }
 
         const posts = await NewsAndTourModel
-            .find({ escortId: escortId, status: "active" })
+            .find({
+                escortId: escortId,
+                status: "active"
+            })
             .populate("userId", "name")
-            .sort({ createdAt: -1 })
+            .sort({
+                createdAt: -1
+            })
             .limit(20)
             .populate("newstourComments")
             .populate("newstourLikes");
@@ -2829,7 +3103,11 @@ export const fetchEscortNewsTourcontroller = async (request, response) => {
 export const updateNewsTourController = async (request, response) => {
     try {
 
-        const { _id, title, description } = request.body;
+        const {
+            _id,
+            title,
+            description
+        } = request.body;
 
         console.log("request.body: ", request.body);
 
@@ -2871,8 +3149,7 @@ export const updateNewsTourController = async (request, response) => {
 
                     if (m.public_id) {
                         await cloudinary.uploader.destroy(
-                            m.public_id,
-                            {
+                            m.public_id, {
                                 resource_type: m.type === "video" ? "video" : "image"
                             }
                         );
@@ -2893,9 +3170,9 @@ export const updateNewsTourController = async (request, response) => {
                         url: result.secure_url,
                         public_id: result.public_id,
                         type: result.resource_type || (
-                            file.mimetype.startsWith("video")
-                                ? "video"
-                                : "image"
+                            file.mimetype.startsWith("video") ?
+                            "video" :
+                            "image"
                         )
                     };
                 })
@@ -2904,13 +3181,13 @@ export const updateNewsTourController = async (request, response) => {
 
         // update post
         const updatedPost = await NewsAndTourModel.findByIdAndUpdate(
-            _id,
-            {
+            _id, {
                 title: title || post.title,
                 description: description || post.description,
                 media: mediaUploads
-            },
-            { new: true }
+            }, {
+                new: true
+            }
         );
 
         return response.status(200).json({
@@ -2937,7 +3214,9 @@ export const updateNewsTourController = async (request, response) => {
 export const deleteNewsTourController = async (request, response) => {
     try {
 
-        const { _id } = request.body;
+        const {
+            _id
+        } = request.body;
 
         if (!_id) {
             return response.status(400).json({
@@ -2964,8 +3243,7 @@ export const deleteNewsTourController = async (request, response) => {
 
                 if (m.public_id) {
                     await cloudinary.uploader.destroy(
-                        m.public_id,
-                        {
+                        m.public_id, {
                             resource_type: m.type === "video" ? "video" : "image"
                         }
                     );
@@ -2973,18 +3251,25 @@ export const deleteNewsTourController = async (request, response) => {
             }
         }
 
-        await NewstourCommentsModel.deleteMany({ postId: _id });
-        await NewstourLikesModel.deleteMany({ postId: _id })
+        await NewstourCommentsModel.deleteMany({
+            postId: _id
+        });
+        await NewstourLikesModel.deleteMany({
+            postId: _id
+        })
 
         // ✅ delete post from DB
         await NewsAndTourModel.findByIdAndDelete(_id);
 
 
         // ✅ remove reference from EscortModel
-        await EscortModel.updateOne(
-            { escortId: post.escortId },
-            { $pull: { newsTour: _id } }
-        );
+        await EscortModel.updateOne({
+            escortId: post.escortId
+        }, {
+            $pull: {
+                newsTour: _id
+            }
+        });
 
         return response.status(200).json({
             message: "Post deleted successfully",
@@ -3009,7 +3294,10 @@ export const deleteNewsTourController = async (request, response) => {
 export const fetchAllNewsTourController = async (request, response) => {
     try {
 
-        const { country, city } = request.query;
+        const {
+            country,
+            city
+        } = request.query;
 
         if (!country) {
             return response.status(400).json({
@@ -3032,7 +3320,9 @@ export const fetchAllNewsTourController = async (request, response) => {
         const newsandtours = await NewsAndTourModel
             .find(query)
             .populate("userId", "name")
-            .sort({ createdAt: -1 })
+            .sort({
+                createdAt: -1
+            })
             .limit(24)
             .populate("newstourComments")
             .populate("newstourLikes");
@@ -3065,7 +3355,9 @@ export const fetchAllNewsTourController = async (request, response) => {
 export const fetchSelectNewsTourController = async (request, response) => {
     try {
 
-        const { _id } = request.query;
+        const {
+            _id
+        } = request.query;
 
         console.log("request.query: ", request.query);
 
@@ -3110,7 +3402,10 @@ export const fetchSelectNewsTourController = async (request, response) => {
 export const toggleNewstourLikeController = async (request, response) => {
     try {
 
-        const { postId, userId } = request.body;
+        const {
+            postId,
+            userId
+        } = request.body;
 
 
         if (!userId) {
@@ -3133,10 +3428,13 @@ export const toggleNewstourLikeController = async (request, response) => {
                 _id: existingLike._id
             });
 
-            await NewsAndTourModel.updateOne(
-                { _id: postId },
-                { $pull: { newstourLikes: existingLike._id } }
-            );
+            await NewsAndTourModel.updateOne({
+                _id: postId
+            }, {
+                $pull: {
+                    newstourLikes: existingLike._id
+                }
+            });
 
             return response.status(200).json({
                 message: "Like removed",
@@ -3152,13 +3450,20 @@ export const toggleNewstourLikeController = async (request, response) => {
         });
 
 
-        await NewsAndTourModel.updateOne(
-            { _id: postId },
-            { $push: { newstourLikes: like._id } }
-        );
+        await NewsAndTourModel.updateOne({
+            _id: postId
+        }, {
+            $push: {
+                newstourLikes: like._id
+            }
+        });
 
-        const postUpdated = await NewsAndTourModel.findOne({ _id: postId });
-        const Client = await ClientModel.findOne({ clientId: userId });
+        const postUpdated = await NewsAndTourModel.findOne({
+            _id: postId
+        });
+        const Client = await ClientModel.findOne({
+            clientId: userId
+        });
 
         if (!postUpdated.userId) {
             console.error("❌ Notification skipped: No Escort found in database.");
@@ -3197,7 +3502,12 @@ export const toggleNewstourLikeController = async (request, response) => {
 export const addNewstourCommentController = async (request, response) => {
     try {
 
-        const { postId, userId, userType, comment } = request.body;
+        const {
+            postId,
+            userId,
+            userType,
+            comment
+        } = request.body;
 
         if (!userId) {
             return response.status(401).json({
@@ -3241,14 +3551,19 @@ export const addNewstourCommentController = async (request, response) => {
         });
 
         // ================= UPDATE POST =================
-        await NewsAndTourModel.updateOne(
-            { _id: postId },
-            { $push: { newstourComments: newComment._id } }
-        );
+        await NewsAndTourModel.updateOne({
+            _id: postId
+        }, {
+            $push: {
+                newstourComments: newComment._id
+            }
+        });
 
         const post = await NewsAndTourModel.findById(postId);
 
-        const Client = await ClientModel.findOne({ userId });
+        const Client = await ClientModel.findOne({
+            userId
+        });
 
         if (!post.userId) {
             console.error("❌ Notification skipped: No Escort found in database.");
@@ -3286,7 +3601,9 @@ export const addNewstourCommentController = async (request, response) => {
 // fetch selected news and tour comments
 export const fetchSelectedNewsTourComments = async (request, response) => {
     try {
-        const { postId } = request.query;
+        const {
+            postId
+        } = request.query;
 
         if (!postId) {
             return response.status(400).json({
@@ -3297,8 +3614,12 @@ export const fetchSelectedNewsTourComments = async (request, response) => {
         }
 
         const postComments = await NewstourCommentsModel
-            .find({ postId: postId })
-            .sort({ createdAt: -1 })
+            .find({
+                postId: postId
+            })
+            .sort({
+                createdAt: -1
+            })
             .populate({
                 path: "userId",
                 select: "name avatar"
@@ -3329,7 +3650,16 @@ export const createBlog = async (request, response) => {
 
     try {
 
-        const { escortId, userId, userType, name, city, country, title, description } = request.body;
+        const {
+            escortId,
+            userId,
+            userType,
+            name,
+            city,
+            country,
+            title,
+            description
+        } = request.body;
 
         if (!escortId || !title || !description) {
             return response.status(400).json({
@@ -3356,7 +3686,9 @@ export const createBlog = async (request, response) => {
             });
         }
 
-        const escort = await EscortModel.findOne({ escortId });
+        const escort = await EscortModel.findOne({
+            escortId
+        });
 
         if (!escort) {
             return response.status(404).json({
@@ -3386,8 +3718,12 @@ export const createBlog = async (request, response) => {
                 if (file.mimetype.startsWith("image")) {
 
                     const compressedBuffer = await sharp(file.buffer)
-                        .resize({ width: 1024 }) // max width
-                        .jpeg({ quality: 70 })   // compression
+                        .resize({
+                            width: 1024
+                        }) // max width
+                        .jpeg({
+                            quality: 70
+                        }) // compression
                         .toBuffer();
 
                     fileBuffer = compressedBuffer;
@@ -3399,8 +3735,10 @@ export const createBlog = async (request, response) => {
                 }
 
                 // ✅ upload
-                const result = await uploadMediaCloudinary(
-                    { ...file, buffer: fileBuffer },
+                const result = await uploadMediaCloudinary({
+                        ...file,
+                        buffer: fileBuffer
+                    },
                     "blog/post"
                 );
 
@@ -3429,10 +3767,13 @@ export const createBlog = async (request, response) => {
             media: mediaUploads
         });
 
-        await EscortModel.findOneAndUpdate(
-            { escortId },
-            { $push: { blog: post._id } }
-        );
+        await EscortModel.findOneAndUpdate({
+            escortId
+        }, {
+            $push: {
+                blog: post._id
+            }
+        });
 
         const admin = await AdminModel.findOne();
         if (!admin) {
@@ -3484,7 +3825,11 @@ export const createBlog = async (request, response) => {
 export const updateBlog = async (request, response) => {
     try {
 
-        const { _id, title, description } = request.body;
+        const {
+            _id,
+            title,
+            description
+        } = request.body;
 
         console.log("request.body: ", request.body);
 
@@ -3526,8 +3871,7 @@ export const updateBlog = async (request, response) => {
 
                     if (m.public_id) {
                         await cloudinary.uploader.destroy(
-                            m.public_id,
-                            {
+                            m.public_id, {
                                 resource_type: m.type === "video" ? "video" : "image"
                             }
                         );
@@ -3548,9 +3892,9 @@ export const updateBlog = async (request, response) => {
                         url: result.secure_url,
                         public_id: result.public_id,
                         type: result.resource_type || (
-                            file.mimetype.startsWith("video")
-                                ? "video"
-                                : "image"
+                            file.mimetype.startsWith("video") ?
+                            "video" :
+                            "image"
                         )
                     };
                 })
@@ -3559,13 +3903,13 @@ export const updateBlog = async (request, response) => {
 
         // update post
         const updatedPost = await BlogModel.findByIdAndUpdate(
-            _id,
-            {
+            _id, {
                 title: title || post.title,
                 description: description || post.description,
                 media: mediaUploads
-            },
-            { new: true }
+            }, {
+                new: true
+            }
         );
 
         return response.status(200).json({
@@ -3592,7 +3936,9 @@ export const updateBlog = async (request, response) => {
 export const deleteBlog = async (request, response) => {
     try {
 
-        const { _id } = request.body;
+        const {
+            _id
+        } = request.body;
 
         if (!_id) {
             return response.status(400).json({
@@ -3619,8 +3965,7 @@ export const deleteBlog = async (request, response) => {
 
                 if (m.public_id) {
                     await cloudinary.uploader.destroy(
-                        m.public_id,
-                        {
+                        m.public_id, {
                             resource_type: m.type === "video" ? "video" : "image"
                         }
                     );
@@ -3628,17 +3973,24 @@ export const deleteBlog = async (request, response) => {
             }
         }
 
-        await BlogCommentsModel.deleteMany({ postId: _id });
-        await BlogLikesModel.deleteMany({ postId: _id });
+        await BlogCommentsModel.deleteMany({
+            postId: _id
+        });
+        await BlogLikesModel.deleteMany({
+            postId: _id
+        });
 
         // ✅ delete post from DB
         await BlogModel.findByIdAndDelete(_id);
 
         // ✅ remove reference from EscortModel
-        await EscortModel.updateOne(
-            { escortId: post.escortId },
-            { $pull: { blog: _id } }
-        );
+        await EscortModel.updateOne({
+            escortId: post.escortId
+        }, {
+            $pull: {
+                blog: _id
+            }
+        });
 
         return response.status(200).json({
             message: "Post deleted successfully",
@@ -3663,7 +4015,10 @@ export const deleteBlog = async (request, response) => {
 export const blockBlogComments = async (request, response) => {
     try {
 
-        const { _id, userId } = request.body;
+        const {
+            _id,
+            userId
+        } = request.body;
 
         if (!_id) {
             return response.status(400).json({
@@ -3689,9 +4044,8 @@ export const blockBlogComments = async (request, response) => {
         await blog.save();
 
         return response.status(200).json({
-            message: blog.isCommentsBlocked
-                ? "Comments blocked successfully"
-                : "Comments unblocked successfully",
+            message: blog.isCommentsBlocked ?
+                "Comments blocked successfully" : "Comments unblocked successfully",
             success: true,
             error: false,
             data: blog
@@ -3714,7 +4068,10 @@ export const blockBlogComments = async (request, response) => {
 export const fetchAllBlogs = async (request, response) => {
     try {
 
-        const { country, city } = request.query;
+        const {
+            country,
+            city
+        } = request.query;
 
         if (!country) {
             return response.status(400).json({
@@ -3736,7 +4093,9 @@ export const fetchAllBlogs = async (request, response) => {
 
         const posts = await BlogModel
             .find(query)
-            .sort({ createdAt: -1 })
+            .sort({
+                createdAt: -1
+            })
             .limit(24)
             .populate({
                 path: "userId",
@@ -3773,7 +4132,9 @@ export const fetchAllBlogs = async (request, response) => {
 export const fetchSelectBlog = async (request, response) => {
     try {
 
-        const { _id } = request.query;
+        const {
+            _id
+        } = request.query;
 
         // check id exist
         if (!_id) {
@@ -3828,7 +4189,9 @@ export const fetchSelectBlog = async (request, response) => {
 // fetch all blogs of escort
 export const fetchEscortBlog = async (request, response) => {
     try {
-        const { escortId } = request.query;
+        const {
+            escortId
+        } = request.query;
 
         if (!escortId) {
             return response.status(400).json({
@@ -3839,8 +4202,13 @@ export const fetchEscortBlog = async (request, response) => {
         }
 
         const posts = await BlogModel
-            .find({ escortId: escortId, status: "active" })
-            .sort({ createdAt: -1 })
+            .find({
+                escortId: escortId,
+                status: "active"
+            })
+            .sort({
+                createdAt: -1
+            })
             .limit(15)
             .populate({
                 path: "userId",
@@ -3874,7 +4242,10 @@ export const fetchEscortBlog = async (request, response) => {
 export const toggleBlogLike = async (request, response) => {
     try {
 
-        const { postId, userId } = request.body;
+        const {
+            postId,
+            userId
+        } = request.body;
 
         console.log("like request body : ", request.body);
 
@@ -3899,10 +4270,13 @@ export const toggleBlogLike = async (request, response) => {
                 _id: existingLike._id
             });
 
-            await BlogModel.updateOne(
-                { _id: postId },
-                { $pull: { blogLikes: existingLike._id } }
-            );
+            await BlogModel.updateOne({
+                _id: postId
+            }, {
+                $pull: {
+                    blogLikes: existingLike._id
+                }
+            });
 
             return response.status(200).json({
                 message: "Like removed",
@@ -3919,14 +4293,19 @@ export const toggleBlogLike = async (request, response) => {
 
         console.log("Like : ", like);
 
-        await BlogModel.updateOne(
-            { _id: postId },
-            { $push: { blogLikes: like._id } }
-        );
+        await BlogModel.updateOne({
+            _id: postId
+        }, {
+            $push: {
+                blogLikes: like._id
+            }
+        });
 
         const post = await BlogModel.findById(postId);
 
-        const Client = await ClientModel.findOne({ userId });
+        const Client = await ClientModel.findOne({
+            userId
+        });
 
         if (!post.userId) {
             console.error("❌ Notification skipped: No Escort found in database.");
@@ -3966,7 +4345,12 @@ export const toggleBlogLike = async (request, response) => {
 export const addBlogComment = async (request, response) => {
     try {
 
-        const { postId, userId, userType, comment } = request.body;
+        const {
+            postId,
+            userId,
+            userType,
+            comment
+        } = request.body;
 
         if (!userId) {
             return response.status(401).json({
@@ -4010,14 +4394,19 @@ export const addBlogComment = async (request, response) => {
         });
 
         // ================= UPDATE POST =================
-        await BlogModel.updateOne(
-            { _id: postId },
-            { $push: { blogComments: newComment._id } }
-        );
+        await BlogModel.updateOne({
+            _id: postId
+        }, {
+            $push: {
+                blogComments: newComment._id
+            }
+        });
 
         const post = await BlogModel.findById(postId);
 
-        const Client = await ClientModel.findOne({ userId });
+        const Client = await ClientModel.findOne({
+            userId
+        });
 
         if (!post.userId) {
             console.error("❌ Notification skipped: No Escort found in database.");
@@ -4055,7 +4444,9 @@ export const addBlogComment = async (request, response) => {
 // fetch selected Blog comments
 export const fetchSelectedBlogComments = async (request, response) => {
     try {
-        const { postId } = request.query;
+        const {
+            postId
+        } = request.query;
 
         if (!postId) {
             return response.status(400).json({
@@ -4066,8 +4457,12 @@ export const fetchSelectedBlogComments = async (request, response) => {
         }
 
         const postComments = await BlogCommentsModel
-            .find({ postId: postId })
-            .sort({ createdAt: -1 })
+            .find({
+                postId: postId
+            })
+            .sort({
+                createdAt: -1
+            })
             .populate({
                 path: "userId",
                 select: "name avatar"
@@ -4189,8 +4584,7 @@ export const addBooking = async (request, response) => {
 
             return response.status(400).json({
 
-                message:
-                    "Start and end time cannot be same",
+                message: "Start and end time cannot be same",
 
                 success: false,
                 error: true
@@ -4459,8 +4853,7 @@ export const addBooking = async (request, response) => {
                     isAllDay,
                     notAvailable,
 
-                    status:
-                        status || "active",
+                    status: status || "active",
 
                     title,
 
@@ -4480,7 +4873,9 @@ export const addBooking = async (request, response) => {
 
             await EscortModel.findOneAndUpdate(
 
-                { escortId },
+                {
+                    escortId
+                },
 
                 {
 
@@ -4520,10 +4915,8 @@ export const addBooking = async (request, response) => {
                     .status(400)
                     .json({
 
-                        message:
-                            type === "booking"
-                                ? "Time slot already booked"
-                                : "Availability conflicts with booking",
+                        message: type === "booking" ?
+                            "Time slot already booked" : "Availability conflicts with booking",
 
                         success: false,
                         error: true
@@ -4541,7 +4934,6 @@ export const addBooking = async (request, response) => {
         // =========================================
         // MULTIPLE
         // =========================================
-
         else if (
             availabilityMode === "multiple"
         ) {
@@ -4571,7 +4963,6 @@ export const addBooking = async (request, response) => {
         // =========================================
         // WEEKLY
         // =========================================
-
         else if (
             availabilityMode === "weekly"
         ) {
@@ -4620,16 +5011,13 @@ export const addBooking = async (request, response) => {
 
         return response.status(201).json({
 
-            message:
-                type === "booking"
-                    ? "Booking added successfully"
-                    : "Availability added successfully",
+            message: type === "booking" ?
+                "Booking added successfully" : "Availability added successfully",
 
             success: true,
             error: false,
 
-            totalCreated:
-                createdRecords.length,
+            totalCreated: createdRecords.length,
 
             data: createdRecords
 
@@ -4644,8 +5032,7 @@ export const addBooking = async (request, response) => {
 
         return response.status(500).json({
 
-            message:
-                error.message ||
+            message: error.message ||
                 "Server error",
 
             success: false,
@@ -4662,7 +5049,10 @@ export const addBooking = async (request, response) => {
 export const fetchBookings = async (request, response) => {
     try {
 
-        const { escortId, date } = request.query;
+        const {
+            escortId,
+            date
+        } = request.query;
 
         if (!escortId) {
             return response.status(400).json({
@@ -4673,14 +5063,19 @@ export const fetchBookings = async (request, response) => {
         }
 
         // ✅ Filter (date optional hai)
-        let query = { escortId };
+        let query = {
+            escortId
+        };
 
         if (date) {
             query.date = date;
         }
 
         const bookings = await BookingModel.find(query)
-            .sort({ date: 1, startTime: 1 });
+            .sort({
+                date: 1,
+                startTime: 1
+            });
 
         return response.status(200).json({
             message: "Bookings fetched successfully",
@@ -4739,8 +5134,7 @@ export const updateBooking = async (
 
             return response.status(400).json({
 
-                message:
-                    "Booking ID is required",
+                message: "Booking ID is required",
 
                 success: false,
                 error: true
@@ -4760,8 +5154,7 @@ export const updateBooking = async (
 
             return response.status(404).json({
 
-                message:
-                    "Booking not found",
+                message: "Booking not found",
 
                 success: false,
                 error: true
@@ -4782,8 +5175,7 @@ export const updateBooking = async (
 
             return response.status(400).json({
 
-                message:
-                    "Date is required",
+                message: "Date is required",
 
                 success: false,
                 error: true
@@ -4804,8 +5196,7 @@ export const updateBooking = async (
 
             return response.status(400).json({
 
-                message:
-                    "Please select week days",
+                message: "Please select week days",
 
                 success: false,
                 error: true
@@ -4826,8 +5217,7 @@ export const updateBooking = async (
 
             return response.status(400).json({
 
-                message:
-                    "Start and end time cannot be same",
+                message: "Start and end time cannot be same",
 
                 success: false,
                 error: true
@@ -4898,8 +5288,7 @@ export const updateBooking = async (
         const existingSlots =
             await BookingModel.find({
 
-                escortId:
-                    booking.escortId,
+                escortId: booking.escortId,
 
                 date: selectedDate,
 
@@ -4957,8 +5346,7 @@ export const updateBooking = async (
 
                 return response.status(400).json({
 
-                    message:
-                        "This date is marked unavailable",
+                    message: "This date is marked unavailable",
 
                     success: false,
                     error: true
@@ -4982,8 +5370,7 @@ export const updateBooking = async (
 
                     return response.status(400).json({
 
-                        message:
-                            "Time slot already booked",
+                        message: "Time slot already booked",
 
                         success: false,
                         error: true
@@ -5018,8 +5405,7 @@ export const updateBooking = async (
 
                     return response.status(400).json({
 
-                        message:
-                            "Availability conflicts with booking",
+                        message: "Availability conflicts with booking",
 
                         success: false,
                         error: true
@@ -5035,8 +5421,7 @@ export const updateBooking = async (
 
                     return response.status(400).json({
 
-                        message:
-                            "Availability already exists in this time slot",
+                        message: "Availability already exists in this time slot",
 
                         success: false,
                         error: true
@@ -5104,10 +5489,8 @@ export const updateBooking = async (
 
         return response.status(200).json({
 
-            message:
-                type === "booking"
-                    ? "Booking updated successfully"
-                    : "Availability updated successfully",
+            message: type === "booking" ?
+                "Booking updated successfully" : "Availability updated successfully",
 
             success: true,
             error: false,
@@ -5125,8 +5508,7 @@ export const updateBooking = async (
 
         return response.status(500).json({
 
-            message:
-                error.message ||
+            message: error.message ||
                 "Server error",
 
             success: false,
@@ -5142,7 +5524,9 @@ export const updateBooking = async (
 export const deleteBooking = async (request, response) => {
     try {
 
-        const { _id } = request.body;
+        const {
+            _id
+        } = request.body;
 
         if (!_id) {
             return response.status(400).json({
@@ -5181,7 +5565,9 @@ export const deleteBooking = async (request, response) => {
 export const fetchSelectBooking = async (request, response) => {
     try {
 
-        const { _id } = request.query;
+        const {
+            _id
+        } = request.query;
 
         if (!_id) {
             return response.status(400).json({
@@ -5221,7 +5607,9 @@ export const fetchSelectBooking = async (request, response) => {
 export const cancelBooking = async (request, response) => {
     try {
 
-        const { _id } = request.body;
+        const {
+            _id
+        } = request.body;
 
         if (!_id) {
             return response.status(400).json({
@@ -5232,9 +5620,11 @@ export const cancelBooking = async (request, response) => {
         }
 
         const booking = await BookingModel.findByIdAndUpdate(
-            _id,
-            { status: "cancel" },
-            { new: true }
+            _id, {
+                status: "cancel"
+            }, {
+                new: true
+            }
         );
 
         return response.status(200).json({
@@ -5257,7 +5647,9 @@ export const cancelBooking = async (request, response) => {
 export const complteBooking = async (request, response) => {
     try {
 
-        const { _id } = request.body;
+        const {
+            _id
+        } = request.body;
 
         if (!_id) {
             return response.status(400).json({
@@ -5268,9 +5660,11 @@ export const complteBooking = async (request, response) => {
         }
 
         const booking = await BookingModel.findByIdAndUpdate(
-            _id,
-            { status: "completed" },
-            { new: true }
+            _id, {
+                status: "completed"
+            }, {
+                new: true
+            }
         );
 
         return response.status(200).json({
@@ -5294,7 +5688,14 @@ export const complteBooking = async (request, response) => {
 // add tour
 export const addTour = async (request, response) => {
     try {
-        const { escortId, userId, city, startDate, endDate, tourNotes } = request.body;
+        const {
+            escortId,
+            userId,
+            city,
+            startDate,
+            endDate,
+            tourNotes
+        } = request.body;
 
         // 🔴 Required validation
         if (!escortId || !city || !startDate || !endDate) {
@@ -5340,13 +5741,17 @@ export const addTour = async (request, response) => {
         // 🔥 Overlapping check (escort-wise)
         const existingTour = await TourModel.findOne({
             escortId: escortId,
-            status: { $ne: "cancelled" },
-            $or: [
-                {
-                    startDate: { $lte: end },
-                    endDate: { $gte: start },
+            status: {
+                $ne: "cancelled"
+            },
+            $or: [{
+                startDate: {
+                    $lte: end
                 },
-            ],
+                endDate: {
+                    $gte: start
+                },
+            }, ],
         });
 
         if (existingTour) {
@@ -5370,15 +5775,15 @@ export const addTour = async (request, response) => {
 
         const savedTour = await newTour.save();
 
-        const updatedEscort = await EscortModel.findOneAndUpdate(
-            { escortId: escortId },
-            {
-                $push: {
-                    tours: savedTour._id
-                }
-            },
-            { new: true }
-        );
+        const updatedEscort = await EscortModel.findOneAndUpdate({
+            escortId: escortId
+        }, {
+            $push: {
+                tours: savedTour._id
+            }
+        }, {
+            new: true
+        });
 
         return response.status(201).json({
             message: "Tour added successfully",
@@ -5401,7 +5806,12 @@ export const addTour = async (request, response) => {
 // fetching tour by date and status
 export const getToursByDate = async (request, response) => {
     try {
-        const { escortId, startDate, endDate, status } = request.query;
+        const {
+            escortId,
+            startDate,
+            endDate,
+            status
+        } = request.query;
 
         if (!escortId || !startDate || !endDate) {
             return response.status(400).json({
@@ -5416,8 +5826,12 @@ export const getToursByDate = async (request, response) => {
 
         let query = {
             escortId,
-            startDate: { $lte: end },
-            endDate: { $gte: start },
+            startDate: {
+                $lte: end
+            },
+            endDate: {
+                $gte: start
+            },
         };
 
         if (status && status !== "all") {
@@ -5448,7 +5862,14 @@ export const getToursByDate = async (request, response) => {
 // update tour
 export const updateTour = async (request, response) => {
     try {
-        const { escortId, _id, city, startDate, endDate, tourNotes } = request.body;
+        const {
+            escortId,
+            _id,
+            city,
+            startDate,
+            endDate,
+            tourNotes
+        } = request.body;
 
         // 🔴 Check tourId
         if (!_id) {
@@ -5495,13 +5916,17 @@ export const updateTour = async (request, response) => {
         // 🔥 Overlap check (exclude current tour)
         const overlapTour = await TourModel.findOne({
             escortId: escortId || existingTour.escortId,
-            _id: { $ne: _id }, // ❗ exclude current
-            $or: [
-                {
-                    startDate: { $lte: end },
-                    endDate: { $gte: start },
+            _id: {
+                $ne: _id
+            }, // ❗ exclude current
+            $or: [{
+                startDate: {
+                    $lte: end
                 },
-            ],
+                endDate: {
+                    $gte: start
+                },
+            }, ],
         });
 
         if (overlapTour) {
@@ -5542,7 +5967,10 @@ export const updateTour = async (request, response) => {
 // delete tour
 export const deleteTour = async (request, response) => {
     try {
-        const { _id, userId } = request.body;
+        const {
+            _id,
+            userId
+        } = request.body;
 
         // 🔴 Check tourId
         if (!_id) {
@@ -5606,7 +6034,10 @@ export const deleteTour = async (request, response) => {
 // cancel tour
 export const cancelTour = async (request, response) => {
     try {
-        const { _id, userId } = request.body;
+        const {
+            _id,
+            userId
+        } = request.body;
 
         // 🔴 validation
         if (!_id) {
@@ -5674,7 +6105,13 @@ export const cancelTour = async (request, response) => {
 // country escorts for home page banner
 export async function fetchHomeSliderEscorts(request, response) {
     try {
-        const { role, isVerified, country, city, isVisible } = request.query;
+        const {
+            role,
+            isVerified,
+            country,
+            city,
+            isVisible
+        } = request.query;
 
         let filter = {};
 
@@ -5696,7 +6133,11 @@ export async function fetchHomeSliderEscorts(request, response) {
             filter.isVisible = isVisible === "true";
 
         // Only escorts with avatar
-        filter.avatar = { $exists: true, $ne: null, $ne: "" };
+        filter.avatar = {
+            $exists: true,
+            $ne: null,
+            $ne: ""
+        };
 
         // City filter only if city is provided
         if (city) filter.city = city;
@@ -5724,7 +6165,13 @@ export async function fetchHomeSliderEscorts(request, response) {
 // city escorts for banner slider
 export async function fetchCitySliderEscorts(request, response) {
     try {
-        const { role, isVerified, city, country, isVisible } = request.query;
+        const {
+            role,
+            isVerified,
+            city,
+            country,
+            isVisible
+        } = request.query;
 
         let filter = {};
 
@@ -5749,7 +6196,11 @@ export async function fetchCitySliderEscorts(request, response) {
             filter.isVisible = isVisible === "true";
 
         // Only escorts with avatar
-        filter.avatar = { $exists: true, $ne: null, $ne: "" };
+        filter.avatar = {
+            $exists: true,
+            $ne: null,
+            $ne: ""
+        };
 
         const escorts = await EscortModel.find(filter);
 
@@ -5773,7 +6224,10 @@ export async function fetchCitySliderEscorts(request, response) {
 
 export const getEscortContact = async (request, response) => {
     try {
-        const { _id, type } = request.body;
+        const {
+            _id,
+            type
+        } = request.body;
 
         const escort = await EscortModel.findById(_id);
 
@@ -5862,7 +6316,13 @@ export const getEscortContact = async (request, response) => {
 // edit and update escort account details 
 export async function updateEscortProfile(request, response) {
     try {
-        const { _id, name, onlineStatus, contactVisible, muteNotifications } = request.body;
+        const {
+            _id,
+            name,
+            onlineStatus,
+            contactVisible,
+            muteNotifications
+        } = request.body;
 
         if (!_id) {
             return response.status(400).json({
@@ -5880,9 +6340,12 @@ export async function updateEscortProfile(request, response) {
         if (muteNotifications !== undefined) updateData.muteNotifications = muteNotifications;
 
         const updatedEscort = await EscortModel.findByIdAndUpdate(
-            _id,
-            { $set: updateData },
-            { new: true, runValidators: true }
+            _id, {
+                $set: updateData
+            }, {
+                new: true,
+                runValidators: true
+            }
         );
 
         if (!updatedEscort) {
@@ -5912,7 +6375,10 @@ export async function updateEscortProfile(request, response) {
 // Hide un hide escort profile
 export async function hideEscortProfile(request, response) {
     try {
-        const { _id, isVisible } = request.body;
+        const {
+            _id,
+            isVisible
+        } = request.body;
 
         if (!_id) {
             return response.status(400).json({
@@ -5923,9 +6389,14 @@ export async function hideEscortProfile(request, response) {
         }
 
         const updatedEscort = await EscortModel.findByIdAndUpdate(
-            _id,
-            { $set: { isVisible: isVisible } }, // ✅ dynamic value
-            { new: true }
+            _id, {
+                $set: {
+                    isVisible: isVisible
+                }
+            }, // ✅ dynamic value
+            {
+                new: true
+            }
         );
 
         if (!updatedEscort) {
@@ -5955,7 +6426,9 @@ export async function hideEscortProfile(request, response) {
 //  permanent delete escort profile
 export async function deleteEscortProfile(request, response) {
     try {
-        const { _id } = request.body;
+        const {
+            _id
+        } = request.body;
 
         if (!_id) {
             return response.status(400).json({
@@ -5977,16 +6450,27 @@ export async function deleteEscortProfile(request, response) {
 
         // ✅ delete escort
 
-        await BlogModel.deleteMany({ userId: _id });
-        await ServiceModel.deleteMany({ userId: _id });
-        await RatesModel.deleteMany({ userId: _id });
-        await NewsAndTourModel.deleteMany({ userId: _id });
-        await TourModel.deleteMany({ userId: _id });
-        await BookingModel.deleteMany({ userId: _id });
+        await BlogModel.deleteMany({
+            userId: _id
+        });
+        await ServiceModel.deleteMany({
+            userId: _id
+        });
+        await RatesModel.deleteMany({
+            userId: _id
+        });
+        await NewsAndTourModel.deleteMany({
+            userId: _id
+        });
+        await TourModel.deleteMany({
+            userId: _id
+        });
+        await BookingModel.deleteMany({
+            userId: _id
+        });
 
         await NotificationModel.deleteMany({
-            $or: [
-                {
+            $or: [{
                     recipient: escort._id,
                     recipientModel: "Escort"
                 },
@@ -6082,9 +6566,11 @@ export async function editEscortProfileDetails(request, response) {
 
         // ✅ UPDATE USER
         const updatedEscort = await EscortModel.findByIdAndUpdate(
-            _id,
-            { $set: updateData },
-            { new: true }
+            _id, {
+                $set: updateData
+            }, {
+                new: true
+            }
         );
 
         if (!updatedEscort) {
@@ -6112,3 +6598,16 @@ export async function editEscortProfileDetails(request, response) {
 }
 
 
+
+export async function escortSubscription(request, response) {
+    try {
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+
+}
