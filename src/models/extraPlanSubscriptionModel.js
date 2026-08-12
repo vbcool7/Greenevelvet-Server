@@ -46,7 +46,7 @@ const extraPlanSubscriptionSchema = new mongoose.Schema({
 
     currency: {
         type: String,
-        default: "AUD"
+        default: "USD"
     },
 
     totalSlots: {
