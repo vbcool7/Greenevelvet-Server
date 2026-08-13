@@ -1,8 +1,85 @@
-import { Router } from "express";
-import { addBlogComment, addBooking, addNewstourCommentController, addTour, advanceSearchController, blockBlogComments, cancelBooking, cancelTour, changeMobilenumber, complteBooking, createBlog, createNewsTourcontroller, deleteBlog, deleteBooking, deleteEscortProfile, deleteNewsTourController, deleteRate, DeleteService, deleteTour, editEscortProfileDetails, escortChangePassword, escortdetailscontroller, escortForgotPassword, escortLogincontroller, escortRatescontroller, escortResetPassword, escortServicescontroller, escortUploadverification, escortVerifyOtp, fetchAllBlogs, fetchAllNewsTourController, fetchBookings, fetchCitySliderEscorts, fetchEscortBlog, fetchEscortdetailscontroller, fetchEscortNewsTourcontroller, fetchFiltercityescortscontroller, fetchFilterHomescortscontroller, fetchHomeSliderEscorts, fetchSelectBlog, fetchSelectBooking, fetchSelectedBlogComments, fetchSelectedNewsTourComments, fetchSelectNewsTourController, getEscortContact, getToursByDate, hideEscortProfile, logoutEscortcontroller, registerEscortcontroller, registerGalleryController, resendEmailVerification, sendOtpcontroller, toggleBlogLike, toggleFaceBlur, toggleNewstourLikeController, updateBlog, updateBooking, updateEscortProfile, updateHighlightscontroller, updateNewsTourController, updateRate, UpdateService, updateTour, uploadAvatarcontroller, uploadImagescontroller, uploadVideoscontroller, verifiedEscortcontroller, verifyEmailcontroller, verifyMobileotp } from '../controllers/escort.controller.js'
+import {
+    Router
+} from "express";
+import {
+    addBlogComment,
+    addBooking,
+    addNewstourCommentController,
+    addTour,
+    advanceSearchController,
+    blockBlogComments,
+    cancelBooking,
+    cancelTour,
+    changeMobilenumber,
+    complteBooking,
+    createBlog,
+    createNewsTourcontroller,
+    deleteBlog,
+    deleteBooking,
+    deleteEscortProfile,
+    deleteNewsTourController,
+    deleteRate,
+    DeleteService,
+    deleteTour,
+    editEscortProfileDetails,
+    escortChangePassword,
+    escortdetailscontroller,
+    escortForgotPassword,
+    escortLogincontroller,
+    escortRatescontroller,
+    escortResetPassword,
+    escortServicescontroller,
+    escortUploadverification,
+    escortVerifyOtp,
+    fetchAllBlogs,
+    fetchAllNewsTourController,
+    fetchBookings,
+    fetchCitySliderEscorts,
+    fetchEscortBlog,
+    fetchEscortdetailscontroller,
+    fetchEscortNewsTourcontroller,
+    fetchFiltercityescortscontroller,
+    fetchFilterHomescortscontroller,
+    fetchHomeSliderEscorts,
+    fetchSelectBlog,
+    fetchSelectBooking,
+    fetchSelectedBlogComments,
+    fetchSelectedNewsTourComments,
+    fetchSelectNewsTourController,
+    getEscortContact,
+    getToursByDate,
+    hideEscortProfile,
+    logoutEscortcontroller,
+    registerEscortcontroller,
+    registerGalleryController,
+    registrationResubmit,
+    resendEmailVerification,
+    sendOtpcontroller,
+    toggleBlogLike,
+    toggleFaceBlur,
+    toggleNewstourLikeController,
+    updateBlog,
+    updateBooking,
+    updateEscortProfile,
+    updateHighlightscontroller,
+    updateNewsTourController,
+    updateRate,
+    UpdateService,
+    updateTour,
+    uploadAvatarcontroller,
+    uploadImagescontroller,
+    uploadVideoscontroller,
+    verifiedEscortcontroller,
+    verifyEmailcontroller,
+    verifyMobileotp
+} from '../controllers/escort.controller.js'
 import upload from "../middleware/multer.js";
-import { protect } from "../middleware/auth.js";
-import { rateLimit } from "../middleware/rateLimit.js";
+import {
+    protect
+} from "../middleware/auth.js";
+import {
+    rateLimit
+} from "../middleware/rateLimit.js";
 
 const escortRouter = Router()
 
@@ -10,7 +87,10 @@ escortRouter.post("/login", escortLogincontroller)
 
 // Protected example route
 escortRouter.get("/escort-data", protect(["Escort"]), async (request, response) => {
-    response.json({ success: true, data: request.user });
+    response.json({
+        success: true,
+        data: request.user
+    });
 });
 
 // registration
@@ -20,9 +100,41 @@ escortRouter.post("/resend-email-verification", resendEmailVerification);
 escortRouter.post("/change-mobilenumber", changeMobilenumber)
 escortRouter.post("/send-otp", sendOtpcontroller)
 escortRouter.post("/verify-otp", verifyMobileotp)
-escortRouter.post("/adddetails", escortdetailscontroller)
-escortRouter.post("/upload-verification", upload.fields([{ name: "verificationselfie", maxCount: 1 }, { name: "verificationgovtId", maxCount: 1 },]), escortUploadverification);
+escortRouter.post("/adddetails", escortdetailscontroller);
+
+escortRouter.post("/upload-verification", upload.fields([{
+    name: "verificationselfie",
+    maxCount: 1
+}, {
+    name: "verificationgovtId",
+    maxCount: 1
+}, ]), escortUploadverification);
+
 escortRouter.post("/register-gallery-upload", upload.array("photos", 6), registerGalleryController)
+
+escortRouter.post("/registration-resubmit", upload.array("photos", 6), registerGalleryController)
+
+escortRouter.post(
+    "/registration-resubmit",
+    upload.fields([{
+            name: "avatar",
+            maxCount: 1
+        },
+        {
+            name: "verificationselfie",
+            maxCount: 1
+        },
+        {
+            name: "verificationgovtId",
+            maxCount: 1
+        },
+        {
+            name: "photos",
+            maxCount: 6
+        },
+    ]),
+    registrationResubmit
+);
 
 escortRouter.post('/change-password', protect(["Escort"]), escortChangePassword);
 escortRouter.post('/send-reset-password-otp', escortForgotPassword)
@@ -31,8 +143,13 @@ escortRouter.post('/reset-password', escortResetPassword)
 
 // dashboard
 escortRouter.get("/escort-details", fetchEscortdetailscontroller)
-escortRouter.post('/logout', logoutEscortcontroller)
-escortRouter.patch("/upload-avatar", upload.fields([{ name: "avatar", maxCount: 1 }]), uploadAvatarcontroller)
+escortRouter.post('/logout', logoutEscortcontroller);
+
+escortRouter.patch("/upload-avatar", upload.fields([{
+    name: "avatar",
+    maxCount: 1
+}]), uploadAvatarcontroller);
+
 escortRouter.patch("/blur-avatar-face", protect(["Escort"]), toggleFaceBlur)
 escortRouter.post("/upload-gallery-images", upload.array("photos", 6), uploadImagescontroller)
 escortRouter.post("/upload-gallery-videos", upload.array("videos", 6), uploadVideoscontroller)

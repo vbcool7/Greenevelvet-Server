@@ -3,7 +3,9 @@ import jwt from "jsonwebtoken";
 import AdminModel from "../models/adminModel.js";
 import EscortModel from "../models/escortModel.js";
 import ClientModel from "../models/clientModel.js";
-import { sendMail } from "../utils/sendMail.js";
+import {
+    sendMail
+} from "../utils/sendMail.js";
 import TourModel from '../models/tourModel.js';
 import BlogModel from '../models/blogModel.js';
 import BlogCommentsModel from '../models/blogCommentsModel.js';
@@ -12,8 +14,12 @@ import cloudinary from '../config/cloudinary.js';
 import NewsAndTourModel from '../models/newsandtourModel.js';
 import NewstourCommentsModel from '../models/newstourCommentsModel.js';
 import NewstourLikesModel from '../models/newstourLikesModel.js';
-import { decrypt } from '../utils/crypto.js';
-import { error } from 'console';
+import {
+    decrypt
+} from '../utils/crypto.js';
+import {
+    error
+} from 'console';
 import ServiceModel from '../models/escortserviceModel.js';
 import BookingModel from '../models/bookingModel.js';
 import RatesModel from '../models/escortratesModel.js';
@@ -22,7 +28,10 @@ import NotificationModel from '../models/notificationModel.js';
 // Admin login
 export async function adminlogincontroller(request, response) {
     try {
-        const { username, password } = request.body;
+        const {
+            username,
+            password
+        } = request.body;
 
         if (!username || !password) {
             return response.status(400).json({
@@ -31,7 +40,9 @@ export async function adminlogincontroller(request, response) {
                 error: true
             })
         }
-        const admin = await AdminModel.findOne({ username }).select("+password");
+        const admin = await AdminModel.findOne({
+            username
+        }).select("+password");
 
         if (!admin) {
             return response.status(401).json({
@@ -58,13 +69,13 @@ export async function adminlogincontroller(request, response) {
             })
         }
 
-        const token = jwt.sign(
-            {
+        const token = jwt.sign({
                 _id: admin._id,
                 role: admin.role || "Admin"
             },
-            process.env.JWT_SECRET,
-            { expiresIn: "3d" }
+            process.env.JWT_SECRET, {
+                expiresIn: "3d"
+            }
         );
 
         admin.refresh_token = token;
@@ -200,7 +211,9 @@ export const getAdminDetails = async (request, response) => {
 // name update
 export const updateAdminName = async (request, response) => {
     try {
-        const { name } = request.body;
+        const {
+            name
+        } = request.body;
 
         // ❗ Validation
         if (!name || name.trim() === "") {
@@ -215,9 +228,14 @@ export const updateAdminName = async (request, response) => {
         const adminId = request.user?._id;
 
         const updatedAdmin = await AdminModel.findByIdAndUpdate(
-            adminId,
-            { $set: { name: name.trim() } },
-            { new: true, runValidators: true }
+            adminId, {
+                $set: {
+                    name: name.trim()
+                }
+            }, {
+                new: true,
+                runValidators: true
+            }
         ).select("-password");
 
         if (!updatedAdmin) {
@@ -250,7 +268,11 @@ export const changePassword = async (request, response) => {
     try {
         const userId = request.user?._id;
 
-        const { currentPassword, newPassword, confirmPassword } = request.body;
+        const {
+            currentPassword,
+            newPassword,
+            confirmPassword
+        } = request.body;
 
         // 1. Required check
         if (!currentPassword || !newPassword || !confirmPassword) {
@@ -339,7 +361,9 @@ export const changePassword = async (request, response) => {
 // forgot passwor send otp
 export const forgotPassword = async (request, response) => {
     try {
-        const { email } = request.body;
+        const {
+            email
+        } = request.body;
 
         if (!email) {
             return response.status(400).json({
@@ -349,7 +373,9 @@ export const forgotPassword = async (request, response) => {
             });
         }
 
-        const admin = await AdminModel.findOne({ email });
+        const admin = await AdminModel.findOne({
+            email
+        });
 
         if (!admin) {
             return response.status(200).json({
@@ -375,18 +401,16 @@ export const forgotPassword = async (request, response) => {
 
         console.log("otp", otp);
 
-        const updated = await AdminModel.findOneAndUpdate(
-            {
-                email,
-            },
-            {
-                resetOtp: hashedOtp,
-                otpExpiry: expiry,
-                otpResendTime: resendCooldown,
-                otpAttempts: 0
-            },
-            { new: true }
-        );
+        const updated = await AdminModel.findOneAndUpdate({
+            email,
+        }, {
+            resetOtp: hashedOtp,
+            otpExpiry: expiry,
+            otpResendTime: resendCooldown,
+            otpAttempts: 0
+        }, {
+            new: true
+        });
 
         if (!updated) {
             return response.status(429).json({
@@ -499,7 +523,10 @@ export const forgotPassword = async (request, response) => {
 // verify otp
 export const verifyOtp = async (request, response) => {
     try {
-        const { email, otp } = request.body;
+        const {
+            email,
+            otp
+        } = request.body;
 
         // 1. validation
         if (!email || !otp) {
@@ -510,7 +537,9 @@ export const verifyOtp = async (request, response) => {
         }
 
         // 2. find admin
-        const admin = await AdminModel.findOne({ email });
+        const admin = await AdminModel.findOne({
+            email
+        });
 
         if (!admin || !admin.resetOtp) {
             return response.status(400).json({
@@ -540,10 +569,13 @@ export const verifyOtp = async (request, response) => {
 
         // ❌ WRONG OTP
         if (!isMatch) {
-            await AdminModel.updateOne(
-                { email },
-                { $inc: { otpAttempts: 1 } }
-            );
+            await AdminModel.updateOne({
+                email
+            }, {
+                $inc: {
+                    otpAttempts: 1
+                }
+            });
 
             return response.status(400).json({
                 success: false,
@@ -552,18 +584,17 @@ export const verifyOtp = async (request, response) => {
         }
 
         // 6. SUCCESS → clear OTP (NO save used)
-        await AdminModel.updateOne(
-            { email },
-            {
-                $unset: {
-                    resetOtp: "",
-                    otpExpiry: ""
-                },
-                $set: {
-                    otpAttempts: 0
-                }
+        await AdminModel.updateOne({
+            email
+        }, {
+            $unset: {
+                resetOtp: "",
+                otpExpiry: ""
+            },
+            $set: {
+                otpAttempts: 0
             }
-        );
+        });
 
         return response.status(200).json({
             success: true,
@@ -583,7 +614,11 @@ export const verifyOtp = async (request, response) => {
 // reset password
 export const resetPassword = async (request, response) => {
     try {
-        const { email, newPassword, confirmPassword } = request.body;
+        const {
+            email,
+            newPassword,
+            confirmPassword
+        } = request.body;
 
         // 1. validation
         if (!email || !newPassword || !confirmPassword) {
@@ -614,7 +649,9 @@ export const resetPassword = async (request, response) => {
 
 
         // 4. find admin
-        const admin = await AdminModel.findOne({ email });
+        const admin = await AdminModel.findOne({
+            email
+        });
 
         if (!admin) {
             return response.status(400).json({
@@ -637,21 +674,20 @@ export const resetPassword = async (request, response) => {
         const hashedPassword = await bcryptjs.hash(newPassword, 10);
 
         // 7. update password + clear any leftover fields (NO save)
-        await AdminModel.updateOne(
-            { email },
-            {
-                $set: {
-                    password: hashedPassword
-                },
-                $unset: {
-                    resetOtp: "",
-                    otpExpiry: ""
-                },
-                $setOnInsert: {
-                    otpAttempts: 0
-                }
+        await AdminModel.updateOne({
+            email
+        }, {
+            $set: {
+                password: hashedPassword
+            },
+            $unset: {
+                resetOtp: "",
+                otpExpiry: ""
+            },
+            $setOnInsert: {
+                otpAttempts: 0
             }
-        );
+        });
 
         return response.status(200).json({
             success: true,
@@ -674,7 +710,9 @@ export const resetPassword = async (request, response) => {
 // fetch awaiting verification escorts
 export async function fetchEscortcontroller(request, response) {
     try {
-        const { role } = request.query;
+        const {
+            role
+        } = request.query;
 
         let filter = {};
 
@@ -684,16 +722,26 @@ export async function fetchEscortcontroller(request, response) {
 
         filter.isEmailVerified = true;
 
-        filter.verificationSelfie = { $ne: "" };
+        filter.verificationSelfie = {
+            $ne: ""
+        };
 
-        filter.verificationgovtId = { $ne: "" };
+        filter.verificationgovtId = {
+            $ne: ""
+        };
 
-        filter["avatar.url"] = { $ne: "" };
+        filter["avatar.url"] = {
+            $ne: ""
+        };
 
-        filter["gallery.photos.2"] = { $exists: true };
+        filter["gallery.photos.2"] = {
+            $exists: true
+        };
 
         const escorts = await EscortModel.find(filter)
-            .sort({ createdAt: -1 });
+            .sort({
+                createdAt: -1
+            });
 
         let mobile = escorts.mobile;
 
@@ -729,7 +777,9 @@ export async function fetchEscortcontroller(request, response) {
 // fetch escort-details
 export async function fetchEscortdetailscontroller(request, response) {
     try {
-        const { escortId } = request.query;
+        const {
+            escortId
+        } = request.query;
 
         if (!escortId) {
             return response.status(400).json({
@@ -739,7 +789,9 @@ export async function fetchEscortdetailscontroller(request, response) {
             })
         }
 
-        const escort = await EscortModel.findOne({ escortId });
+        const escort = await EscortModel.findOne({
+            escortId
+        });
 
         if (!escort) {
             return response.status(404).json({
@@ -785,7 +837,9 @@ export async function fetchEscortdetailscontroller(request, response) {
 // escort profile details with fetch all related schema details
 export async function escortProfileDetails(request, response) {
     try {
-        const { id } = request.query;
+        const {
+            id
+        } = request.query;
 
         if (!id) {
             return response.status(400).json({
@@ -839,13 +893,19 @@ export async function escortProfileDetails(request, response) {
 // update escort
 export async function updateEscortcontroller(request, response) {
     try {
-        const { escortId, action, reason } = request.body;
+        const {
+            escortId,
+            action,
+            reason
+        } = request.body;
 
         let updateData = {};
         let emailSubject = "";
         let emailHtml = "";
 
-        const escort = await EscortModel.findOne({ escortId });
+        const escort = await EscortModel.findOne({
+            escortId
+        });
 
         if (!escort) {
             return response.status(400).json({
@@ -856,6 +916,7 @@ export async function updateEscortcontroller(request, response) {
         }
 
         const verifyLink = `https://www.greenevelvet.com/login`
+        const resubmitLink = `https://www.greenevelvet.com/registration-resubmit/${escort.escortId}`;
 
         const verifyHtml = `
 <!DOCTYPE html>
@@ -944,7 +1005,7 @@ export async function updateEscortcontroller(request, response) {
     <td align="center">
       <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:460px;background:#ffffff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.05);border:1px solid #eeeeee;overflow:hidden;">
         
-        <!-- Subtle Red Top Bar (Indicates Action Required) -->
+        <!-- Red Top Bar -->
         <tr>
           <td height="5" style="background-color:#e74c3c;"></td>
         </tr>
@@ -961,22 +1022,70 @@ export async function updateEscortcontroller(request, response) {
         <!-- Content -->
         <tr>
           <td style="padding:20px 40px 40px 40px;">
-            <h2 style="margin:0 0 12px 0;color:#1a1a1a;font-size:20px;font-weight:600;text-align:center;">Account Status Update</h2>
+
+            <h2 style="margin:0 0 12px 0;color:#1a1a1a;font-size:20px;font-weight:600;text-align:center;">
+              Account Status Update
+            </h2>
+
             <p style="margin:0 0 20px 0;color:#555555;font-size:15px;line-height:22px;text-align:center;">
               Hello <strong>${escort.name}</strong>, we reviewed your profile verification request. Unfortunately, it could not be approved at this time.
             </p>
 
             <!-- Reason Box -->
             <div style="margin:25px 0;background-color:#fff5f5;border-left:4px solid #e74c3c;padding:15px 20px;">
-              <span style="display:block;font-size:12px;color:#e74c3c;font-weight:700;margin-bottom:5px;text-transform:uppercase;">Reason for Rejection:</span>
+              
+              <span style="display:block;font-size:12px;color:#e74c3c;font-weight:700;margin-bottom:5px;text-transform:uppercase;">
+                Reason for Rejection:
+              </span>
+
               <p style="margin:0;color:#2d3436;font-size:15px;font-weight:500;">
                 ${reason || "Incomplete or unclear documentation provided."}
               </p>
+
             </div>
 
-            <p style="margin:20px 0 0 0; color:#888888; font-size:13px; line-height:20px; text-align:center;">
-              Please log in to your dashboard to update your information and re-submit your profile for review.
+            <p style="margin:20px 0 10px 0;color:#555555;font-size:14px;line-height:21px;text-align:center;">
+              Please update the required information and submit your profile again for verification.
             </p>
+
+            <!-- Resubmit Button -->
+            <div style="text-align:center;margin:30px 0;">
+
+              <a
+                href="${resubmitLink}"
+                target="_blank"
+                style="
+                  display:inline-block;
+                  background-color:#00A68F;
+                  color:#ffffff;
+                  padding:15px 32px;
+                  font-size:15px;
+                  font-weight:700;
+                  text-decoration:none;
+                  border-radius:8px;
+                  box-shadow:0 4px 12px rgba(0,166,143,0.20);
+                "
+              >
+                Update & Re-submit Profile
+              </a>
+
+            </div>
+
+            <!-- Direct Link -->
+            <p style="margin:15px 0 0 0;color:#999999;font-size:11px;line-height:18px;text-align:center;">
+              If the button above does not work, copy and open this link:
+            </p>
+
+            <p style="margin:5px 0 0 0;text-align:center;word-break:break-all;">
+              <a
+                href="${resubmitLink}"
+                target="_blank"
+                style="color:#00A68F;font-size:11px;text-decoration:none;"
+              >
+                ${resubmitLink}
+              </a>
+            </p>
+
           </td>
         </tr>
 
@@ -989,6 +1098,7 @@ export async function updateEscortcontroller(request, response) {
             </p>
           </td>
         </tr>
+
       </table>
     </td>
   </tr>
@@ -997,6 +1107,8 @@ export async function updateEscortcontroller(request, response) {
 </body>
 </html>
 `;
+
+
         if (escort?.isVerified) {
 
             if (action === "Active") {
@@ -1007,9 +1119,7 @@ export async function updateEscortcontroller(request, response) {
 
                 emailSubject = "Your account has been Activated ✅ - GreeneVelvet";
                 emailHtml = verifyHtml;
-            }
-
-            else if (action === "Suspended") {
+            } else if (action === "Suspended") {
                 updateData = {
                     isVerified: true,
                     status: "Suspended",
@@ -1018,9 +1128,7 @@ export async function updateEscortcontroller(request, response) {
 
                 emailSubject = "Your account has been Deactivated - GreeneVelvet";
                 emailHtml = rejectedHtml;
-            }
-
-            else {
+            } else {
                 return response.status(400).json({
                     message: "action is undefined!",
                     success: false,
@@ -1038,21 +1146,18 @@ export async function updateEscortcontroller(request, response) {
 
                 emailSubject = "Your account has been verified ✅ - GreeneVelvet";
                 emailHtml = verifyHtml;
-            }
-
-            else if (action === "Suspended") {
+            } else if (action === "Rejected") {
                 updateData = {
                     isVerified: false,
-                    status: "Suspended",
+                    status: "Rejected",
                     docsuploadStatus: "failed",
                     reason
+
                 };
 
                 emailSubject = "Your verification was rejected - GreeneVelvet";
                 emailHtml = rejectedHtml;
-            }
-
-            else {
+            } else {
                 return response.status(400).json({
                     message: "action is undefined!",
                     success: false,
@@ -1063,10 +1168,12 @@ export async function updateEscortcontroller(request, response) {
 
         console.log("updateData", updateData);
 
-        const updatedEscort = await EscortModel.findOneAndUpdate(
-            { escortId: escortId },
-            updateData,
-            { new: true }
+        const updatedEscort = await EscortModel.findOneAndUpdate({
+                escortId: escortId
+            },
+            updateData, {
+                new: true
+            }
         )
 
         if (!updatedEscort) {
@@ -1102,7 +1209,9 @@ export async function updateEscortcontroller(request, response) {
 //  delete escort 
 export async function deleteEscortcontroller(request, response) {
     try {
-        const { escortId } = request.body;
+        const {
+            escortId
+        } = request.body;
 
         if (!escortId) {
             return response.status(400).json({
@@ -1113,7 +1222,9 @@ export async function deleteEscortcontroller(request, response) {
         }
 
 
-        const escort = await EscortModel.findOne({ escortId });
+        const escort = await EscortModel.findOne({
+            escortId
+        });
 
         if (!escort) {
             return response.status(404).json({
@@ -1124,15 +1235,26 @@ export async function deleteEscortcontroller(request, response) {
         }
 
         await Promise.all([
-            TourModel.deleteMany({ userId: escort._id }),
-            ServiceModel.deleteMany({ userId: escort._id }),
-            RatesModel.deleteMany({ userId: escort._id }),
-            BlogModel.deleteMany({ userId: escort._id }),
-            NewsAndTourModel.deleteMany({ userId: escort._id }),
-            BookingModel.deleteMany({ userId: escort._id }),
+            TourModel.deleteMany({
+                userId: escort._id
+            }),
+            ServiceModel.deleteMany({
+                userId: escort._id
+            }),
+            RatesModel.deleteMany({
+                userId: escort._id
+            }),
+            BlogModel.deleteMany({
+                userId: escort._id
+            }),
+            NewsAndTourModel.deleteMany({
+                userId: escort._id
+            }),
+            BookingModel.deleteMany({
+                userId: escort._id
+            }),
             await NotificationModel.deleteMany({
-                $or: [
-                    {
+                $or: [{
                         recipient: escort._id,
                         recipientModel: "Escort"
                     },
@@ -1144,7 +1266,9 @@ export async function deleteEscortcontroller(request, response) {
             })
         ]);
 
-        const escortDeleted = await EscortModel.deleteOne({ _id: escort._id });
+        const escortDeleted = await EscortModel.deleteOne({
+            _id: escort._id
+        });
 
         if (!escortDeleted) {
             return response.status(404).json({
@@ -1175,11 +1299,14 @@ export async function deleteEscortcontroller(request, response) {
 // fecth verified escorts 
 export async function verifiedEscortcontroller(request, response) {
     try {
-        const { role, isVerified, } = request.query;
+        const {
+            role,
+            isVerified,
+        } = request.query;
 
         let filter = {
             status: {
-                $in: ["Active", "Suspended"]
+                $in: ["Active", "Suspended", "Rejected"]
             }
         };
 
@@ -1189,7 +1316,9 @@ export async function verifiedEscortcontroller(request, response) {
             filter.isVerified = isVerified === "true";
 
         const escorts = await EscortModel.find(filter)
-            .sort({ createdAt: -1 });
+            .sort({
+                createdAt: -1
+            });
 
         return response.status(200).json({
             message: "Escort list fetched",
@@ -1213,14 +1342,18 @@ export async function verifiedEscortcontroller(request, response) {
 // fetch clients
 export async function fetchClients(request, response) {
     try {
-        const { role } = request.query;
+        const {
+            role
+        } = request.query;
 
         let filter = {};
 
         if (role) filter.role = role;
 
         const clients = await ClientModel.find(filter)
-            .sort({ createdAt: -1 });
+            .sort({
+                createdAt: -1
+            });
 
 
         return response.status(200).json({
@@ -1242,7 +1375,9 @@ export async function fetchClients(request, response) {
 // fetch client-details
 export async function fetchClientdetails(request, response) {
     try {
-        const { _id } = request.query;
+        const {
+            _id
+        } = request.query;
 
         if (!_id) {
             return response.status(400).json({
@@ -1252,7 +1387,9 @@ export async function fetchClientdetails(request, response) {
             })
         }
 
-        const client = await ClientModel.findById({ _id });
+        const client = await ClientModel.findById({
+            _id
+        });
 
         if (!client) {
             return response.status(404).json({
@@ -1281,7 +1418,11 @@ export async function fetchClientdetails(request, response) {
 // update client
 export async function updateClient(request, response) {
     try {
-        const { _id, action, reason } = request.body;
+        const {
+            _id,
+            action,
+            reason
+        } = request.body;
 
         if (!_id || !action) {
             return response.status(400).json({
@@ -1290,7 +1431,9 @@ export async function updateClient(request, response) {
             });
         }
 
-        const client = await ClientModel.findById({ _id });
+        const client = await ClientModel.findById({
+            _id
+        });
 
         if (!client) {
             return response.status(404).json({
@@ -1451,9 +1594,7 @@ export async function updateClient(request, response) {
 
             emailSubject = "Account Activated  ✅ - GreeneVelvet";
             emailHtml = verifyHtml;
-        }
-
-        else if (action === "Suspended") {
+        } else if (action === "Suspended") {
             updateData = {
                 isVerified: false,
                 status: "Suspended",
@@ -1462,9 +1603,7 @@ export async function updateClient(request, response) {
 
             emailSubject = "Account Suspended ❌ - GreeneVelvet";
             emailHtml = suspendHtml;
-        }
-
-        else {
+        } else {
             return response.status(400).json({
                 message: "action is undefined!",
                 success: false,
@@ -1475,9 +1614,11 @@ export async function updateClient(request, response) {
         console.log("updateData", updateData);
 
         const updatedClient = await ClientModel.findByIdAndUpdate(
-            _id,
-            { $set: updateData },
-            { new: true }
+            _id, {
+                $set: updateData
+            }, {
+                new: true
+            }
         );
 
         if (client.email) {
@@ -1506,7 +1647,9 @@ export async function updateClient(request, response) {
 //  delete client
 export async function deleteClient(request, response) {
     try {
-        const { _id } = request.body;
+        const {
+            _id
+        } = request.body;
 
         if (!_id) {
             return response.status(400).json({
@@ -1516,7 +1659,9 @@ export async function deleteClient(request, response) {
             })
         }
 
-        const deletedClient = await ClientModel.findByIdAndDelete({ _id })
+        const deletedClient = await ClientModel.findByIdAndDelete({
+            _id
+        })
 
         if (!deletedClient) {
             return response.status(404).json({
@@ -1549,7 +1694,9 @@ export async function fetchTours(request, response) {
 
         const tours = await TourModel.find()
             .populate("userId", "name")
-            .sort({ createdAt: -1 });
+            .sort({
+                createdAt: -1
+            });
 
         const formattedTours = tours.map(tour => ({
             ...tour.toObject(),
@@ -1575,7 +1722,9 @@ export async function fetchTours(request, response) {
 // fetch tour details
 export async function fetchTourDetails(request, response) {
     try {
-        const { _id } = request.query;
+        const {
+            _id
+        } = request.query;
 
         if (!_id) {
             return response.status(400).json({
@@ -1622,7 +1771,9 @@ export async function fetchTourDetails(request, response) {
 // delete tour
 export async function deleteTour(request, response) {
     try {
-        const { _id } = request.body;
+        const {
+            _id
+        } = request.body;
 
         if (!_id) {
             return response.status(400).json({
@@ -1682,7 +1833,9 @@ export async function fetchBlogs(request, response) {
 
         const blogs = await BlogModel.find()
             .populate("userId", "name")
-            .sort({ createdAt: -1 });
+            .sort({
+                createdAt: -1
+            });
 
         const formattedBlogs = blogs.map(blog => ({
             ...blog.toObject(),
@@ -1709,7 +1862,9 @@ export async function fetchBlogs(request, response) {
 // fetch blog details
 export async function fetchBlogDetails(request, response) {
     try {
-        const { _id } = request.query;
+        const {
+            _id
+        } = request.query;
 
         if (!_id) {
             return response.status(400).json({
@@ -1755,7 +1910,10 @@ export async function fetchBlogDetails(request, response) {
 
 export async function updateBlogStatus(request, response) {
     try {
-        const { _id, status } = request.body;
+        const {
+            _id,
+            status
+        } = request.body;
 
         if (!_id || !status) {
             return response.status(400).json({
@@ -1766,9 +1924,11 @@ export async function updateBlogStatus(request, response) {
         }
 
         const updated = await BlogModel.findByIdAndUpdate(
-            _id,
-            { status },
-            { new: true }
+            _id, {
+                status
+            }, {
+                new: true
+            }
         );
 
         if (!updated) {
@@ -1798,7 +1958,9 @@ export async function updateBlogStatus(request, response) {
 // delete blog and related data
 export async function deleteBlog(request, response) {
     try {
-        const { _id } = request.body;
+        const {
+            _id
+        } = request.body;
 
         if (!_id) {
             return response.status(400).json({
@@ -1831,14 +1993,21 @@ export async function deleteBlog(request, response) {
         }
 
         // 🔥 2. Delete comments & likes
-        await BlogCommentsModel.deleteMany({ postId: _id });
-        await BlogLikesModel.deleteMany({ postId: _id });
+        await BlogCommentsModel.deleteMany({
+            postId: _id
+        });
+        await BlogLikesModel.deleteMany({
+            postId: _id
+        });
 
         // 🔥 3. Remove blog reference from Escort
-        await EscortModel.updateMany(
-            { blog: _id },
-            { $pull: { blog: _id } }
-        );
+        await EscortModel.updateMany({
+            blog: _id
+        }, {
+            $pull: {
+                blog: _id
+            }
+        });
 
         // 🔥 4. Delete blog
         await blog.deleteOne();
@@ -1865,7 +2034,9 @@ export async function fetchNewsandtours(request, response) {
 
         const newsandtours = await NewsAndTourModel.find()
             .populate("userId", "name")
-            .sort({ createdAt: -1 });
+            .sort({
+                createdAt: -1
+            });
 
         const formattedNewsandtours = newsandtours.map(newsandtour => ({
             ...newsandtour.toObject(),
@@ -1891,7 +2062,9 @@ export async function fetchNewsandtours(request, response) {
 // fetch newsandtour details
 export async function fetchNewsandtourDetails(request, response) {
     try {
-        const { _id } = request.query;
+        const {
+            _id
+        } = request.query;
 
         if (!_id) {
             return response.status(400).json({
@@ -1938,7 +2111,10 @@ export async function fetchNewsandtourDetails(request, response) {
 // update newstour status
 export async function updateNewsandtourStatus(request, response) {
     try {
-        const { _id, status } = request.body;
+        const {
+            _id,
+            status
+        } = request.body;
 
         if (!_id || !status) {
             return response.status(400).json({
@@ -1949,9 +2125,11 @@ export async function updateNewsandtourStatus(request, response) {
         }
 
         const updated = await NewsAndTourModel.findByIdAndUpdate(
-            _id,
-            { status },
-            { new: true }
+            _id, {
+                status
+            }, {
+                new: true
+            }
         );
 
         if (!updated) {
@@ -1981,7 +2159,9 @@ export async function updateNewsandtourStatus(request, response) {
 // delete newsandtour and related data like and comments
 export async function deleteNewsandtour(request, response) {
     try {
-        const { _id } = request.body;
+        const {
+            _id
+        } = request.body;
 
         if (!_id) {
             return response.status(400).json({
@@ -2012,14 +2192,21 @@ export async function deleteNewsandtour(request, response) {
             );
         }
 
-        await NewstourCommentsModel.deleteMany({ postId: _id });
-        await NewstourLikesModel.deleteMany({ postId: _id });
+        await NewstourCommentsModel.deleteMany({
+            postId: _id
+        });
+        await NewstourLikesModel.deleteMany({
+            postId: _id
+        });
         await newsandtour.deleteOne();
 
-        await EscortModel.updateMany(
-            { newsTour: _id },
-            { $pull: { newsTour: _id } }
-        );
+        await EscortModel.updateMany({
+            newsTour: _id
+        }, {
+            $pull: {
+                newsTour: _id
+            }
+        });
 
         return response.status(200).json({
             message: "Newsandtour and related data deleted successfully",
@@ -2043,7 +2230,12 @@ export async function verifyUploadImages(request, response) {
 
     try {
 
-        const { escortId, imageUrl, status, type } = request.body;
+        const {
+            escortId,
+            imageUrl,
+            status,
+            type
+        } = request.body;
 
         const allowedStatus = ["Pending", "Approved", "Rejected"];
 
@@ -2063,7 +2255,9 @@ export async function verifyUploadImages(request, response) {
             });
         }
 
-        const escort = await EscortModel.findOne({ escortId });
+        const escort = await EscortModel.findOne({
+            escortId
+        });
 
         if (!escort) {
             return response.status(404).json({
@@ -2078,15 +2272,15 @@ export async function verifyUploadImages(request, response) {
         if (type === "avatar") {
 
             // update avatar status
-            updatedEscort = await EscortModel.findOneAndUpdate(
-                { escortId },
-                {
-                    $set: {
-                        "avatar.status": status
-                    }
-                },
-                { new: true }
-            );
+            updatedEscort = await EscortModel.findOneAndUpdate({
+                escortId
+            }, {
+                $set: {
+                    "avatar.status": status
+                }
+            }, {
+                new: true
+            });
 
         }
 
@@ -2094,36 +2288,32 @@ export async function verifyUploadImages(request, response) {
         if (type === "gallery") {
 
             // update single image status
-            updatedEscort = await EscortModel.findOneAndUpdate(
-                {
-                    escortId,
-                    "gallery.photos.url": imageUrl
-                },
-                {
-                    $set: {
-                        "gallery.photos.$.status": status
-                    }
-                },
-                { new: true }
-            );
+            updatedEscort = await EscortModel.findOneAndUpdate({
+                escortId,
+                "gallery.photos.url": imageUrl
+            }, {
+                $set: {
+                    "gallery.photos.$.status": status
+                }
+            }, {
+                new: true
+            });
 
         }
 
         if (type === "video") {
 
             // update single image status
-            updatedEscort = await EscortModel.findOneAndUpdate(
-                {
-                    escortId,
-                    "gallery.videos.url": imageUrl
-                },
-                {
-                    $set: {
-                        "gallery.videos.$.status": status
-                    }
-                },
-                { new: true }
-            );
+            updatedEscort = await EscortModel.findOneAndUpdate({
+                escortId,
+                "gallery.videos.url": imageUrl
+            }, {
+                $set: {
+                    "gallery.videos.$.status": status
+                }
+            }, {
+                new: true
+            });
 
         }
 

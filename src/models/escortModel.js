@@ -1,4 +1,7 @@
 import mongoose from "mongoose";
+import {
+    type
+} from "os";
 
 const EscortSchema = new mongoose.Schema({
 
@@ -107,9 +110,27 @@ const EscortSchema = new mongoose.Schema({
     verificationselfie: {
         type: String
     },
+
+    selfieStatus: {
+        type: String,
+        enum: ["Pending", "Approved", "Rejected"],
+    },
+
     verificationgovtId: {
         type: String
     },
+
+    govtId: {
+        type: String,
+        enum: ["Pending", "Approved", "Rejected"],
+    },
+
+    hasAcceptedIdentity: {
+        type: Boolean,
+        default: false
+    },
+
+
     hasAcceptedDocsOwnership: {
         type: Boolean,
         default: false
@@ -484,6 +505,10 @@ const EscortSchema = new mongoose.Schema({
     infmty: {
         type: Boolean,
         default: false,
+    },
+
+    reason: {
+        type: String,
     },
 
 

@@ -1363,6 +1363,362 @@ export async function registerGalleryController(request, response) {
     }
 }
 
+//------------- Registration Resubmit --------------------//
+export async function registrationResubmit(request, response) {
+    try {
+        const {
+            escortId,
+            deletedImages,
+            hasAcceptedImageOwnership
+        } = request.body;
+
+        // ================= ESCORT ID =================
+        if (!escortId) {
+            return response.status(400).json({
+                message: "escortId required",
+                success: false,
+                error: true
+            });
+        }
+
+        // ================= GALLERY ACCEPTANCE =================
+        if (
+            hasAcceptedImageOwnership !== true &&
+            hasAcceptedImageOwnership !== "true"
+        ) {
+            return response.status(400).json({
+                message: "Please accept the gallery image ownership confirmation",
+                success: false,
+                error: true
+            });
+        }
+
+        // ================= FIND ESCORT =================
+        const escort = await EscortModel.findOne({
+            escortId
+        });
+
+        if (!escort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+        // ================= CHECK CHANGES =================
+
+        const hasAvatar =
+            request.files?.avatar &&
+            request.files.avatar.length > 0;
+
+        const hasSelfie =
+            request.files?.verificationselfie &&
+            request.files.verificationselfie.length > 0;
+
+        const hasGovtId =
+            request.files?.verificationgovtId &&
+            request.files.verificationgovtId.length > 0;
+
+        const hasNewGalleryImages =
+            request.files?.photos &&
+            request.files.photos.length > 0;
+
+        let parsedDeletedImages = [];
+
+        if (deletedImages) {
+            try {
+                parsedDeletedImages =
+                    typeof deletedImages === "string" ?
+                    JSON.parse(deletedImages) :
+                    deletedImages;
+
+                if (!Array.isArray(parsedDeletedImages)) {
+                    parsedDeletedImages = [];
+                }
+            } catch (error) {
+                return response.status(400).json({
+                    message: "Invalid deletedImages data",
+                    success: false,
+                    error: true
+                });
+            }
+        }
+
+        const hasDeletedGalleryImages =
+            parsedDeletedImages.length > 0;
+
+        // At least one actual change required
+        if (
+            !hasAvatar &&
+            !hasSelfie &&
+            !hasGovtId &&
+            !hasNewGalleryImages &&
+            !hasDeletedGalleryImages
+        ) {
+            return response.status(400).json({
+                message: "Please update at least one image or document",
+                success: false,
+                error: true
+            });
+        }
+
+
+        // =====================================================
+        // UPDATE OBJECT
+        // =====================================================
+
+        const updateData = {};
+
+        // =====================================================
+        // 1. AVATAR
+        // =====================================================
+
+        if (hasAvatar) {
+
+            // Delete old avatar from Cloudinary
+            if (escort?.avatar?.public_id) {
+                await deleteFromCloudinary(
+                    escort.avatar.public_id
+                );
+            }
+
+            const avatarUpload =
+                await uploadImageCloudinary(
+                    request.files.avatar[0],
+                    "profileImg/avatar"
+                );
+
+            updateData.avatar = {
+                url: avatarUpload.secure_url,
+                public_id: avatarUpload.public_id,
+                status: "Pending"
+            };
+
+            updateData.isAvatarApproved = "Pending";
+        }
+
+
+        // =====================================================
+        // 2. SELFIE
+        // =====================================================
+
+        if (hasSelfie) {
+
+            const selfieUpload =
+                await uploadImageCloudinary(
+                    request.files.verificationselfie[0],
+                    "verification/verificationselfie"
+                );
+
+            updateData.verificationselfie =
+                selfieUpload.secure_url;
+
+            updateData.selfieStatus = "Pending";
+        }
+
+
+        // =====================================================
+        // 3. GOVERNMENT ID
+        // =====================================================
+
+        if (hasGovtId) {
+
+            const govtIdUpload =
+                await uploadImageCloudinary(
+                    request.files.verificationgovtId[0],
+                    "verification/verificationgovtId"
+                );
+
+            updateData.verificationgovtId =
+                govtIdUpload.secure_url;
+
+            updateData.govtId = "Pending";
+        }
+
+
+        // =====================================================
+        // 4. DELETE GALLERY IMAGES
+        // =====================================================
+
+        let galleryPhotos = [
+            ...(escort?.gallery?.photos || [])
+        ];
+
+        if (hasDeletedGalleryImages) {
+
+            for (const deletedImage of parsedDeletedImages) {
+
+                if (!deletedImage?.public_id) continue;
+
+                // Delete from Cloudinary
+                await deleteFromCloudinary(
+                    deletedImage.public_id
+                );
+
+                // Remove from DB array
+                galleryPhotos = galleryPhotos.filter(
+                    (photo) =>
+                    photo.public_id !==
+                    deletedImage.public_id
+                );
+            }
+        }
+
+
+        // =====================================================
+        // 5. NEW GALLERY IMAGES
+        // =====================================================
+
+        if (hasNewGalleryImages) {
+
+            for (const file of request.files.photos) {
+
+                const uploadResult =
+                    await uploadImageCloudinary(
+                        file,
+                        "gallery/images"
+                    );
+
+                galleryPhotos.push({
+                    public_id: uploadResult.public_id,
+                    url: uploadResult.secure_url,
+                    status: "Pending"
+                });
+            }
+        }
+
+
+        // =====================================================
+        // 6. GALLERY VALIDATION
+        // =====================================================
+
+        if (
+            hasDeletedGalleryImages ||
+            hasNewGalleryImages
+        ) {
+
+            if (galleryPhotos.length < 3) {
+                return response.status(400).json({
+                    message: "Minimum 3 gallery images are required",
+                    success: false,
+                    error: true
+                });
+            }
+
+            if (galleryPhotos.length > 6) {
+                return response.status(400).json({
+                    message: "Maximum 6 gallery images allowed",
+                    success: false,
+                    error: true
+                });
+            }
+
+            updateData["gallery.photos"] =
+                galleryPhotos;
+        }
+
+
+        // =====================================================
+        // 7. GALLERY OWNERSHIP ACCEPTANCE
+        // =====================================================
+
+        updateData.hasAcceptedImageOwnership = true;
+        updateData.imageOwnershipAcceptedAt = new Date();
+
+
+        // =====================================================
+        // 8. PROFILE GOES BACK FOR ADMIN REVIEW
+        // =====================================================
+
+        updateData.status = "Pending";
+        updateData.isVerified = false;
+
+
+        // =====================================================
+        // 9. UPDATE DATABASE
+        // =====================================================
+
+        const updatedEscort =
+            await EscortModel.findOneAndUpdate({
+                escortId
+            }, {
+                $set: updateData
+            }, {
+                new: true
+            });
+
+
+        if (!updatedEscort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+
+        // =====================================================
+        // 10. ADMIN NOTIFICATION
+        // =====================================================
+
+        const admin = await AdminModel.findOne();
+
+        if (!admin) {
+
+            console.error(
+                "❌ Notification skipped: No Admin found in database."
+            );
+
+        } else {
+
+            await createAndSendNotification(
+                request.app, {
+                    recipientId: admin._id,
+                    recipientModel: "Admin",
+
+                    senderId: updatedEscort._id,
+                    senderModel: "Escort",
+
+                    type: "VERIFICATION",
+
+                    title: "Registration Resubmitted",
+
+                    message: `${updatedEscort.name} has resubmitted their registration for verification.`,
+
+                    link: `/viewescortprofile/${updatedEscort._id}`
+                }
+            );
+        }
+
+
+        // =====================================================
+        // RESPONSE
+        // =====================================================
+
+        return response.status(200).json({
+            message: "Registration resubmitted successfully. Your profile is now under review.",
+            success: true,
+            error: false,
+            data: updatedEscort
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "Registration Resubmit Error:",
+            error
+        );
+
+        return response.status(500).json({
+            message: error.message || error,
+            success: false,
+            error: true
+        });
+    }
+}
+
 // Subcribe plan controll
 export async function subcribePlans(request, response) {
     try {
