@@ -15,10 +15,16 @@ export const createAndSendNotification = async (app, {
     link = ""
 }) => {
     try {
-        console.log("add notification api call", "recipientModel", recipientId,
-            "recipientModel", recipientModel, "senderId", senderId,
-            "senderModel", senderModel, "type", type, "title", title,
-            "message", message, "link", link
+        console.log(
+            "add notification api call",
+            "recipientId", recipientId,
+            "recipientModel", recipientModel,
+            "senderId", senderId,
+            "senderModel", senderModel,
+            "type", type,
+            "title", title,
+            "message", message,
+            "link", link
         );
 
         // 1. Database me save karo
