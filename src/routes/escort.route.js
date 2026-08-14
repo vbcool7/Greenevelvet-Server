@@ -112,8 +112,6 @@ escortRouter.post("/upload-verification", upload.fields([{
 
 escortRouter.post("/register-gallery-upload", upload.array("photos", 6), registerGalleryController)
 
-escortRouter.post("/registration-resubmit", upload.array("photos", 6), registerGalleryController)
-
 escortRouter.post(
     "/registration-resubmit",
     upload.fields([{

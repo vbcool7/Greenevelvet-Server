@@ -1686,7 +1686,7 @@ export async function registrationResubmit(request, response) {
 
                     message: `${updatedEscort.name} has resubmitted their registration for verification.`,
 
-                    link: `/viewescortprofile/${updatedEscort._id}`
+                    link: `/dashboard/awaiting-verification`
                 }
             );
         }

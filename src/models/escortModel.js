@@ -145,7 +145,7 @@ const EscortSchema = new mongoose.Schema({
 
     status: {
         type: String,
-        enum: ["Pending", "Active", "Inactive", "Suspended"],
+        enum: ["Pending", "Active", "Inactive", "Suspended", "Rejected"],
         default: "Pending"
     },
 
