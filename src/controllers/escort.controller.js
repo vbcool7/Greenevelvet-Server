@@ -2360,6 +2360,8 @@ export async function verifiedEscortcontroller(request, response) {
         if (isVisible !== undefined)
             filter.isVisible = isVisible === "true";
 
+        filter.status = "Active";
+
         const escorts = await EscortModel.find(filter);
 
         if (escorts.length === 0) {
@@ -2914,6 +2916,8 @@ export async function fetchFiltercityescortscontroller(request, response) {
         // 🔹 Build query (ONLY EscortModel fields)
         const query = {};
 
+        query.status = "Active";
+
         if (filters.city) query.city = filters.city;
         if (filters.country) query.country = filters.country;
 
@@ -2993,6 +2997,8 @@ export async function fetchFiltercityescortscontroller(request, response) {
         };
 
         query["avatar.status"] = "Approved";
+
+
 
         // 🔹 Fetch escorts (NO populate)
         const escortList = await EscortModel.find(query)
@@ -3085,6 +3091,8 @@ export async function fetchFilterHomescortscontroller(request, response) {
             $ne: ""
         };
 
+        query.status = "Active";
+
         const escortList = await EscortModel.find(query)
             .skip(skip)
             .limit(parseInt(limit))
@@ -3174,6 +3182,8 @@ export const advanceSearchController = async (request, response) => {
         };
 
         query["avatar.status"] = "Approved";
+
+        query.status = "Active";
 
         // ---------- Aggregation Pipeline ----------
         let pipeline = [
@@ -6495,6 +6505,8 @@ export async function fetchHomeSliderEscorts(request, response) {
             $ne: ""
         };
 
+        filter.status = "Active";
+
         // City filter only if city is provided
         if (city) filter.city = city;
 
@@ -6557,6 +6569,8 @@ export async function fetchCitySliderEscorts(request, response) {
             $ne: null,
             $ne: ""
         };
+
+        filter.status = "Active";
 
         const escorts = await EscortModel.find(filter);
 

@@ -25,15 +25,17 @@ export const createPlan = async (req, res) => {
         }
 
         const count = await SubscriptionModel.countDocuments();
-        if (count >= 3) {
+        if (count >= 4) {
             return res.status(400).json({
                 success: false,
-                message: "Only 3 plans allowed"
+                message: "Only 4 plans allowed"
             });
         }
 
         // ✅ Check duplicate slug
-        const existing = await SubscriptionModel.findOne({ slug });
+        const existing = await SubscriptionModel.findOne({
+            slug
+        });
         if (existing) {
             return res.status(400).json({
                 success: false,
@@ -73,7 +75,9 @@ export const createPlan = async (req, res) => {
 // update plan
 export const updatePlan = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {
+            id
+        } = req.params;
 
         // ✅ Validate ObjectId
         if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -109,7 +113,9 @@ export const updatePlan = async (req, res) => {
         if (slug) {
             const duplicate = await SubscriptionModel.findOne({
                 slug,
-                _id: { $ne: id }
+                _id: {
+                    $ne: id
+                }
             });
 
             if (duplicate) {
@@ -122,22 +128,43 @@ export const updatePlan = async (req, res) => {
 
         // ✅ Update object (only passed fields)
         const updateData = {
-            ...(title && { title }),
-            ...(slug && { slug }),
-            ...(duration && { duration }),
-            ...(originalPrice !== undefined && { originalPrice }),
-            ...(discountedPrice !== undefined && { discountedPrice }),
-            ...(currency && { currency }),
-            ...(features && { features }),
-            ...(totalSpots !== undefined && { totalSpots }),
-            ...(isFeatureHide !== undefined && { isFeatureHide }),
-            ...(isActive !== undefined && { isActive })
+            ...(title && {
+                title
+            }),
+            ...(slug && {
+                slug
+            }),
+            ...(duration && {
+                duration
+            }),
+            ...(originalPrice !== undefined && {
+                originalPrice
+            }),
+            ...(discountedPrice !== undefined && {
+                discountedPrice
+            }),
+            ...(currency && {
+                currency
+            }),
+            ...(features && {
+                features
+            }),
+            ...(totalSpots !== undefined && {
+                totalSpots
+            }),
+            ...(isFeatureHide !== undefined && {
+                isFeatureHide
+            }),
+            ...(isActive !== undefined && {
+                isActive
+            })
         };
 
         const updatedPlan = await SubscriptionModel.findByIdAndUpdate(
             id,
-            updateData,
-            { new: true }
+            updateData, {
+                new: true
+            }
         );
 
         return res.status(200).json({
@@ -157,8 +184,12 @@ export const updatePlan = async (req, res) => {
 // get all active plan for Model
 export const getAllActivePlans = async (req, res) => {
     try {
-        const plans = await SubscriptionModel.find({ isActive: true })
-            .sort({ createdAt: 1 })
+        const plans = await SubscriptionModel.find({
+                isActive: true
+            })
+            .sort({
+                createdAt: 1
+            })
             .lean();
 
         return res.status(200).json({
@@ -179,7 +210,9 @@ export const getAllActivePlans = async (req, res) => {
 export const getAllPlans = async (req, res) => {
     try {
         const plans = await SubscriptionModel.find()
-            .sort({ createdAt: 1 });
+            .sort({
+                createdAt: 1
+            });
 
         return res.status(200).json({
             success: true,
@@ -198,7 +231,9 @@ export const getAllPlans = async (req, res) => {
 // get select plan
 export const getSinglePlan = async (req, res) => {
     try {
-        const { id } = req.params;
+        const {
+            id
+        } = req.params;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
