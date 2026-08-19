@@ -535,7 +535,7 @@ export async function registerEscortcontroller(request, response) {
 
         console.log(request.body);
 
-        if (!name || !email || !password || ) {
+        if (!name || !email || !password) {
             return response.status(400).json({
                 message: "Provide name, email, password",
                 error: true,
