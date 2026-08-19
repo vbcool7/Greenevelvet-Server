@@ -30,7 +30,6 @@ const EscortSchema = new mongoose.Schema({
     },
     mobile: {
         type: String,
-        unique: true
     },
     country: {
         type: String,
