@@ -525,7 +525,6 @@ export async function registerEscortcontroller(request, response) {
             name,
             email,
             password,
-            mobile,
             country,
             countryCode,
             city,
@@ -536,9 +535,9 @@ export async function registerEscortcontroller(request, response) {
 
         console.log(request.body);
 
-        if (!name || !email || !password || !mobile) {
+        if (!name || !email || !password || ) {
             return response.status(400).json({
-                message: "Provide name, email, password, mobile",
+                message: "Provide name, email, password",
                 error: true,
                 success: false
             })
@@ -608,7 +607,6 @@ export async function registerEscortcontroller(request, response) {
             error: false,
             success: true,
             data: {
-                mobile: mobile,
                 email: save.email,
                 id: save._id,
 
@@ -719,7 +717,7 @@ export async function verifyEmailcontroller(request, response) {
 
         if (!escort || !escort.escortId) {
             return response.status(400).json({
-                message: "Failed to create escort account",
+                message: "Failed to create account",
                 error: true,
                 success: false
             });
