@@ -6704,7 +6704,10 @@ export async function updateEscortProfile(request, response) {
         const updateData = {};
         if (name !== undefined) updateData.name = name;
         if (onlineStatus !== undefined) updateData.onlineStatus = onlineStatus;
-        if (contactVisible !== undefined) updateData.contactVisible = contactVisible;
+        if (contactVisible !== undefined) {
+            updateData.contactVisible = contactVisible;
+            updateData.displayContact = contactVisible;
+        };
         if (muteNotifications !== undefined) updateData.muteNotifications = muteNotifications;
 
         const updatedEscort = await EscortModel.findByIdAndUpdate(
