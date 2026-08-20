@@ -617,7 +617,7 @@ export async function registerEscortcontroller(request, response) {
         console.log("Reg error", error);
 
         return response.status(500).json({
-            message: error.message || error,
+            message: "Submit registration failed",
             error: true,
             success: false
         })
@@ -730,7 +730,7 @@ export async function verifyEmailcontroller(request, response) {
         console.log("verifyEmailcontroller error", error);
 
         return response.status(500).json({
-            message: error.message || error,
+            message: "Email verification failed!",
             success: false,
             error: true,
         })
@@ -799,7 +799,7 @@ export async function resendEmailVerification(request, response) {
         return response.status(500).json({
             success: false,
             error: true,
-            message: error.message || "Something went wrong"
+            message:"Resend Email Verification failed!"
         });
     }
 }
@@ -861,7 +861,7 @@ export async function changeMobilenumber(request, response) {
         }
 
         return response.json({
-            message: error.message || error,
+            message: "Mobile No. Already Exists",
             success: false,
             error: true
         })
@@ -1032,7 +1032,7 @@ export async function sendOtpcontroller(request, response) {
         }
 
         return response.status(500).json({
-            message: error.message || error,
+            message: "Invalid Mobile Number, Please select country and enter only mobile number",
             success: false,
             error: true
         })
@@ -1117,7 +1117,7 @@ export async function verifyMobileotp(request, response) {
     } catch (error) {
         console.log("VERIFY OTP ERROR:", error);
         return response.status(500).json({
-            message: error.message || "OTP verification failed",
+            message: "OTP verification failed",
             success: false,
             error: true
         });
@@ -1165,7 +1165,7 @@ export async function escortdetailscontroller(request, response) {
 
     } catch (error) {
         return response.status(500).json({
-            message: error.message || error,
+            message: "Add optional detailed failed!",
             error: true,
             success: false
         });
@@ -1238,7 +1238,7 @@ export async function escortUploadverification(request, response) {
         console.log("docs upload error ", error);
 
         return response.status(500).json({
-            message: error.message || error,
+            message: "Documnets upload failed!",
             error: true,
             success: false
         })
@@ -1351,10 +1351,10 @@ export async function registerGalleryController(request, response) {
 
     } catch (error) {
 
-        console.error(error);
+        console.error("Gallery uploaded error", error);
 
         return response.status(500).json({
-            message: error.message || error,
+            message: "Gallery upload failed!",
             success: false,
             error: true
         });
@@ -1710,7 +1710,7 @@ export async function registrationResubmit(request, response) {
         );
 
         return response.status(500).json({
-            message: error.message || error,
+            message: "Registration Resubmit Failed!",
             success: false,
             error: true
         });

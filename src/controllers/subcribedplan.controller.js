@@ -2,6 +2,10 @@ import axios from "axios";
 import subcribedModel from "../models/subcribedplanModel.js";
 import EscortModel from "../models/escortModel.js";
 import SubscriptionModel from "../models/subscriptionModel.js";
+import {
+    request,
+    response
+} from "express";
 
 
 const activePaymentStatuses = [
@@ -697,3 +701,32 @@ export const checkSubscription = async (request, response, next) => {
         });
     }
 };
+
+
+export const fetchEscortPlan = async (request, response) => {
+    try {
+
+        const userId = request?.user?._id;
+        const {
+            planId
+        } = request?.body;
+
+        return response.status(200).json({
+            message: "Subscribed plan details",
+            success: true,
+            error: false,
+            status: "",
+
+        });
+
+    } catch (error) {
+        console.log("FETCH ESCORT SUBSCRIBED PLAN Transection ERROR:", error?.response?.data?.message || error?.message);
+        console.log("DETAILED ERROR:", JSON.stringify(error?.response?.data, null, 2));
+        return response.status(500).json({
+            message: "Failed to fetch transaction",
+            success: false,
+            error: true,
+            details: error?.response?.data || error?.message
+        });
+    }
+}
