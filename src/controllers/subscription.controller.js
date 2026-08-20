@@ -236,7 +236,11 @@ export const updatePlan = async (req, res) => {
             }),
             ...(isActive !== undefined && {
                 isActive
-            })
+            }),
+
+            // Automatically update according to plan slug
+            permissions,
+            limits
         };
 
         const updatedPlan = await SubscriptionModel.findByIdAndUpdate(
