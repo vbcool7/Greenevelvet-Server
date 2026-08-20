@@ -126,6 +126,85 @@ export const updatePlan = async (req, res) => {
             }
         }
 
+        // Use new slug if provided, otherwise existing slug
+        const planSlug = slug || existingPlan.slug;
+
+        // Plan permissions and limits
+        let permissions = existingPlan.permissions;
+        let limits = existingPlan.limits;
+
+        if (planSlug === "velvet-start") {
+
+            permissions = {
+                messaging: false,
+                reviews: false,
+                analytics: false,
+                prioritySearch: false
+            };
+
+            limits = {
+                photos: 6,
+                baseLocations: 1,
+                manualBoosts: 0,
+                boostCycleDays: 0
+            };
+
+        } else if (planSlug === "velvet-lite") {
+
+            permissions = {
+                messaging: false,
+                reviews: false,
+                analytics: true,
+                prioritySearch: true
+            };
+
+            limits = {
+                photos: 15,
+                baseLocations: 1,
+                manualBoosts: 2,
+                boostCycleDays: 28
+            };
+
+        } else if (planSlug === "velvet-premium") {
+
+            permissions = {
+                messaging: true,
+                reviews: true,
+                analytics: true,
+                prioritySearch: true
+            };
+
+            limits = {
+                photos: 25,
+                baseLocations: 2,
+                manualBoosts: 8,
+                boostCycleDays: 28
+            };
+
+        } else if (planSlug === "velvet-luxe") {
+
+            permissions = {
+                messaging: true,
+                reviews: true,
+                analytics: true,
+                prioritySearch: true
+            };
+
+            limits = {
+                photos: 30,
+                baseLocations: 3,
+                manualBoosts: 16,
+                boostCycleDays: 28
+            };
+
+        } else {
+
+            return res.status(400).json({
+                success: false,
+                message: `Unsupported plan slug: ${planSlug}`
+            });
+        }
+
         // ✅ Update object (only passed fields)
         const updateData = {
             ...(title && {
