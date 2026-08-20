@@ -433,6 +433,9 @@ export const nowPaymentsWebhook = async (request, response) => {
 
                 features: plan.features,
 
+                permissions: plan.permissions,
+                limits: plan.limits,
+
                 currency: "AUD",
 
                 nowPaymentInvoiceId: invoice_id,
@@ -464,6 +467,9 @@ export const nowPaymentsWebhook = async (request, response) => {
             // ========================================
 
             payment.status = payment_status;
+
+            payment.permissions = plan.permissions;
+            payment.limits = plan.limits;
 
             if (invoice_id) {
                 payment.nowPaymentInvoiceId = invoice_id;

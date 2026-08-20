@@ -1,64 +1,101 @@
 import mongoose from "mongoose";
 
-const subscriptionSchema = new mongoose.Schema(
-  {
-    title: {
-      type: String,
-      required: true,
-      index: true
-    },
+const subscriptionSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true,
+    index: true
+  },
 
-    slug: {
-      type: String,
-      required: true,
-      unique: true,
-      index: true
-    },
+  slug: {
+    type: String,
+    required: true,
+    unique: true,
+    index: true
+  },
 
-    duration: {
-      type: String,
-      required: true
-    },
+  duration: {
+    type: String,
+    required: true
+  },
 
-    originalPrice: {
-      type: Number,
-      required: true
-    },
+  originalPrice: {
+    type: Number,
+    required: true
+  },
 
-    discountedPrice: {
-      type: Number,
-      required: true,
-      default: 0
-    },
+  discountedPrice: {
+    type: Number,
+    required: true,
+    default: 0
+  },
 
-    currency: {
-      type: String,
-      default: "AUD"
-    },
+  currency: {
+    type: String,
+    default: "AUD"
+  },
 
-    features: {
-      type: [String],
-      default: []
-    },
+  features: {
+    type: [String],
+    default: []
+  },
 
-    totalSpots: {
-      type: Number,
-      default: 100
-    },
+  totalSpots: {
+    type: Number,
+    default: 100
+  },
 
-    isFeatureHide: {
+  isFeatureHide: {
+    type: Boolean,
+    default: false
+  },
+
+  permissions: {
+    messaging: {
       type: Boolean,
       default: false
     },
-
-    isActive: {
+    reviews: {
       type: Boolean,
-      default: true
-    }
-
+      default: false
+    },
+    analytics: {
+      type: Boolean,
+      default: false
+    },
+    prioritySearch: {
+      type: Boolean,
+      default: false
+    },
   },
-  { timestamps: true }
-);
+
+  limits: {
+    photos: {
+      type: Number,
+      default: 0
+    },
+    baseLocations: {
+      type: Number,
+      default: 0
+    },
+    manualBoosts: {
+      type: Number,
+      default: 0
+    },
+    boostCycleDays: {
+      type: Number,
+      default: 0
+    },
+  },
+
+  isActive: {
+    type: Boolean,
+    default: true
+  }
+
+}, {
+  timestamps: true
+});
 
 const SubscriptionModel = mongoose.model("Subscription", subscriptionSchema);
 export default SubscriptionModel;

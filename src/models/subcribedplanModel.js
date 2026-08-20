@@ -90,6 +90,44 @@ const subcribedplanSchema = new mongoose.Schema({
         type: String,
     },
 
+    permissions: {
+        messaging: {
+            type: Boolean,
+            default: false
+        },
+        reviews: {
+            type: Boolean,
+            default: false
+        },
+        analytics: {
+            type: Boolean,
+            default: false
+        },
+        prioritySearch: {
+            type: Boolean,
+            default: false
+        },
+    },
+
+    limits: {
+        photos: {
+            type: Number,
+            default: 0
+        },
+        baseLocations: {
+            type: Number,
+            default: 0
+        },
+        manualBoosts: {
+            type: Number,
+            default: 0
+        },
+        boostCycleDays: {
+            type: Number,
+            default: 0
+        },
+    },
+
     status: {
         type: String,
         enum: [
@@ -105,7 +143,7 @@ const subcribedplanSchema = new mongoose.Schema({
             "refunded"
         ],
         default: "pending",
-        
+
     },
 
 }, {
