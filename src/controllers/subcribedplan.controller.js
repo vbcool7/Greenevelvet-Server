@@ -118,8 +118,9 @@ export const createTransaction = async (request, response) => {
 
         const orderId = `SUB_${userId}_${plan._id}_${Date.now()}`;
 
-
-        //Free plan direct subscription activation
+        //--------------------------------------------------------------------------------------//
+        //------------------------ Free plan direct subscription activation --------------------//
+        //--------------------------------------------------------------------------------------//
 
         if (Number(plan.discountedPrice) === 0) {
 
@@ -151,6 +152,9 @@ export const createTransaction = async (request, response) => {
                 days * 24 * 60 * 60 * 1000
             );
 
+            let permissions = plan.permissions;
+            let limits = plan.limits;
+
             const freeSubscription = await subcribedModel.create({
                 userId,
                 planId: plan._id,
@@ -166,7 +170,10 @@ export const createTransaction = async (request, response) => {
                 isActive: true,
                 status: "finished",
                 subscriptionStart,
-                subscriptionExpiry
+                subscriptionExpiry,
+                permissions,
+                limits,
+
             });
 
             await EscortModel.findByIdAndUpdate(userId, {
@@ -431,6 +438,9 @@ export const nowPaymentsWebhook = async (request, response) => {
         // 8. CREATE TRANSACTION IF NOT EXISTS
         // ============================================
 
+        let permissions = plan.permissions;
+        let limits = plan.limits;
+
         const invoiceUrl =
             `https://nowpayments.io/payment?iid=${invoice_id}`;
 
@@ -468,7 +478,10 @@ export const nowPaymentsWebhook = async (request, response) => {
                 subscriptionStart: null,
                 subscriptionExpiry: null,
 
-                isActive: false
+                isActive: false,
+
+                permissions,
+                limits,
             });
 
             console.log(
