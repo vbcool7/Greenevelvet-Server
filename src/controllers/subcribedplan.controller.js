@@ -131,13 +131,13 @@ export const createTransaction = async (request, response) => {
                 if (match) {
                     const value = parseInt(match[0]);
 
-                    if (duration.includes("DAY")) {
+                    if (plan.duration.includes("DAY")) {
                         days = value;
-                    } else if (duration.includes("WEEK")) {
+                    } else if (plan.duration.includes("WEEK")) {
                         days = value * 7;
-                    } else if (duration.includes("MONTH")) {
+                    } else if (plan.duration.includes("MONTH")) {
                         days = value * 30;
-                    } else if (duration.includes("YEAR")) {
+                    } else if (plan.duration.includes("YEAR")) {
                         days = value * 365;
                     }
                 }
@@ -533,13 +533,13 @@ export const nowPaymentsWebhook = async (request, response) => {
                 if (match) {
                     const value = parseInt(match[0]);
 
-                    if (duration.includes("DAY")) {
+                    if (plan.duration.includes("DAY")) {
                         days = value;
-                    } else if (duration.includes("WEEK")) {
+                    } else if (plan.duration.includes("WEEK")) {
                         days = value * 7;
-                    } else if (duration.includes("MONTH")) {
+                    } else if (plan.duration.includes("MONTH")) {
                         days = value * 30;
-                    } else if (duration.includes("YEAR")) {
+                    } else if (plan.duration.includes("YEAR")) {
                         days = value * 365;
                     }
                 }
