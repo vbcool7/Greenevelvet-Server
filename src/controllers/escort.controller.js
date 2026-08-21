@@ -799,7 +799,7 @@ export async function resendEmailVerification(request, response) {
         return response.status(500).json({
             success: false,
             error: true,
-            message:"Resend Email Verification failed!"
+            message: "Resend Email Verification failed!"
         });
     }
 }
@@ -4131,7 +4131,7 @@ export const createBlog = async (request, response) => {
             media: mediaUploads
         });
 
-        await EscortModel.findOneAndUpdate({
+        const updatedEscort = await EscortModel.findOneAndUpdate({
             escortId
         }, {
             $push: {
@@ -4178,7 +4178,7 @@ export const createBlog = async (request, response) => {
 
 
         return response.status(500).json({
-            message: error.message || "Server Error",
+            message: "Blog creation failed!" || "Server Error",
             success: false,
             error: true
         });
@@ -4276,6 +4276,22 @@ export const updateBlog = async (request, response) => {
             }
         );
 
+        const admin = await AdminModel.findOne();
+        if (!admin) {
+            console.error("❌ Notification skipped: No Admin found in database.");
+        } else {
+            const load = await createAndSendNotification(request.app, {
+                recipientId: admin._id,
+                recipientModel: "Admin",
+                senderId: updatedPost._id,
+                senderModel: "Escort",
+                type: "UPDATED BLOG",
+                title: "Updated blog published",
+                message: `${updatedPost.name} has published a updated blog. Click to review.`,
+                link: `/dashboard/blog-moderation`
+            });
+        }
+
         return response.status(200).json({
             message: "Post updated successfully",
             success: true,
@@ -4288,7 +4304,7 @@ export const updateBlog = async (request, response) => {
         console.log("update blog error:", error);
 
         return response.status(500).json({
-            message: error.message || "server error",
+            message: "Blog updation failed!" || "server error",
             success: false,
             error: true
         });
@@ -4367,7 +4383,7 @@ export const deleteBlog = async (request, response) => {
         console.log("deleteNewsTourController error:", error);
 
         return response.status(500).json({
-            message: error.message || "Server error",
+            message: "bolg delete failed!" || "Server error",
             success: false,
             error: true
         });
@@ -4420,7 +4436,7 @@ export const blockBlogComments = async (request, response) => {
         console.log("deleteNewsTourController error:", error);
 
         return response.status(500).json({
-            message: error.message || "Server error",
+            message: "comments blocked/unblocked action failed!" || "Server error",
             success: false,
             error: true
         });
@@ -4484,7 +4500,7 @@ export const fetchAllBlogs = async (request, response) => {
     } catch (error) {
 
         return response.status(500).json({
-            message: error.message || "Server error",
+            message: "Somethig wrong while fetching data!" || "Server error",
             success: false,
             error: true
         });
@@ -4543,7 +4559,7 @@ export const fetchSelectBlog = async (request, response) => {
         console.error("fetchSelectBlog error:", error);
 
         return response.status(500).json({
-            message: error.message || "Server error",
+            message: "Something went wrong while fetching data!" || "Server error",
             success: false,
             error: true
         });
@@ -4594,7 +4610,7 @@ export const fetchEscortBlog = async (request, response) => {
 
     } catch (error) {
         return response.status(500).json({
-            message: error.message || "Server Error",
+            message: "Something went wrong while fetching data!" || "Server Error",
             success: false,
             error: true
         })
@@ -4697,7 +4713,7 @@ export const toggleBlogLike = async (request, response) => {
         console.log("like error: ", error);
 
         response.status(500).json({
-            message: error.message || "Server error",
+            message: "Something went wrong while post liked!" || "Server error",
             success: false,
             error: true
         });
@@ -4797,7 +4813,7 @@ export const addBlogComment = async (request, response) => {
     } catch (error) {
 
         return response.status(500).json({
-            message: error.message || "Server error",
+            message: "Something went wrong while add coments" || "Server error",
             success: false,
             error: true
         });
@@ -4841,7 +4857,7 @@ export const fetchSelectedBlogComments = async (request, response) => {
 
     } catch (error) {
         return response.status(500).json({
-            message: error.message || "Server error",
+            message: "Something went wrong while fetching data!" || "Server error",
             success: false,
             error: true,
         });
@@ -5389,16 +5405,11 @@ export const addBooking = async (request, response) => {
 
     } catch (error) {
 
-        console.log(
-            "create booking error",
-            error
-        );
+        console.log("create booking error", error);
 
         return response.status(500).json({
 
-            message: error.message ||
-                "Server error",
-
+            message: "Something went wrong while aad booking" || "Server error",
             success: false,
             error: true
 
@@ -6160,7 +6171,7 @@ export const addTour = async (request, response) => {
         console.error("Add Tour Error:", error);
 
         return response.status(500).json({
-            message: error.message || "Internal server error",
+            message: "Something went wrong while add tour" || "Internal server error",
             success: false,
             error: true,
         });
@@ -6216,7 +6227,7 @@ export const getToursByDate = async (request, response) => {
         console.error("Get Tours By Date Error:", error);
 
         return response.status(500).json({
-            message: error.message || "Internal server error",
+            message: "Something went wrong while fetching data " || "Internal server error",
             success: false,
             error: true,
         });
@@ -6321,7 +6332,7 @@ export const updateTour = async (request, response) => {
         console.error("Update Tour Error:", error);
 
         return response.status(500).json({
-            message: error.message || "Internal server error",
+            message: "Something went wrong while update tour" || "Internal server error",
             success: false,
             error: true,
         });
@@ -6388,7 +6399,7 @@ export const deleteTour = async (request, response) => {
         console.error("Delete Tour Error:", error);
 
         return response.status(500).json({
-            message: error.message || "Internal server error",
+            message: "Something went wrong while delete tour" || "Internal server error",
             success: false,
             error: true,
         });
