@@ -11,5 +11,8 @@ subcribedRouter.post("/nowpayments-webhook", express.raw({ type: "application/js
 
 subcribedRouter.get("/check-subcription", checkSubscription);
 
+subcribedRouter.get("/escort-current-plan", );
+
+
 
 export default subcribedRouter;

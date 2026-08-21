@@ -222,6 +222,12 @@ const EscortSchema = new mongoose.Schema({
         default: false
     },
 
+    currentSubscription: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "subcribedplans",
+        default: null
+    },
+
     subscriptionStatus: {
         type: String,
         default: "inactive"
@@ -231,6 +237,7 @@ const EscortSchema = new mongoose.Schema({
         type: mongoose.Schema.ObjectId,
         ref: "subcribedplans"
     }],
+
     subscriptionplanexpiry: {
         type: Date,
         default: null

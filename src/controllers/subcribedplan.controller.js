@@ -129,8 +129,19 @@ export const createTransaction = async (request, response) => {
                 const match = plan.duration.match(/\d+/);
 
                 if (match) {
-                    days = parseInt(match[0]);
+                    const value = parseInt(match[0]);
+
+                    if (duration.includes("DAY")) {
+                        days = value;
+                    } else if (duration.includes("WEEK")) {
+                        days = value * 7;
+                    } else if (duration.includes("MONTH")) {
+                        days = value * 30;
+                    } else if (duration.includes("YEAR")) {
+                        days = value * 365;
+                    }
                 }
+
             }
 
             const subscriptionStart = new Date();
@@ -162,6 +173,7 @@ export const createTransaction = async (request, response) => {
                 subscriptionActive: true,
                 subscriptionStatus: "active",
                 subscriptionplanexpiry: subscriptionExpiry,
+                currentSubscription: freeSubscription._id,
                 $addToSet: {
                     subscribedplans: freeSubscription._id
                 }
@@ -519,7 +531,17 @@ export const nowPaymentsWebhook = async (request, response) => {
                 const match = plan.duration.match(/\d+/);
 
                 if (match) {
-                    days = parseInt(match[0], 10);
+                    const value = parseInt(match[0]);
+
+                    if (duration.includes("DAY")) {
+                        days = value;
+                    } else if (duration.includes("WEEK")) {
+                        days = value * 7;
+                    } else if (duration.includes("MONTH")) {
+                        days = value * 30;
+                    } else if (duration.includes("YEAR")) {
+                        days = value * 365;
+                    }
                 }
             }
 
@@ -545,7 +567,7 @@ export const nowPaymentsWebhook = async (request, response) => {
                     subscriptionActive: true,
                     subscriptionStatus: "active",
                     subscriptionplanexpiry: subscriptionExpiry,
-
+                    currentSubscription: freeSubscription._id,
                     $addToSet: {
                         subscribedplans: payment._id
                     }
@@ -703,30 +725,67 @@ export const checkSubscription = async (request, response, next) => {
 };
 
 
-export const fetchEscortPlan = async (request, response) => {
+// Escort current plan details
+export const fetchEscortCurrentPlan = async (request, response) => {
     try {
-
         const userId = request?.user?._id;
-        const {
-            planId
-        } = request?.body;
+
+        if (!userId) {
+            return response.status(401).json({
+                message: "User not authenticated",
+                success: false,
+                error: true
+            });
+        }
+
+        const escort = await EscortModel
+            .findById(userId)
+            .populate("currentSubscription");
+
+        if (!escort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+        if (!escort.currentSubscription) {
+            return response.status(200).json({
+                message: "No current subscription found",
+                success: true,
+                error: false,
+                status: "no_subscription",
+                data: null
+            });
+        }
+
+        const currentPlan = escort.currentSubscription;
 
         return response.status(200).json({
-            message: "Subscribed plan details",
+            message: "Current subscribed plan details",
             success: true,
             error: false,
-            status: "",
-
+            status: "active",
+            data: currentPlan
         });
 
     } catch (error) {
-        console.log("FETCH ESCORT SUBSCRIBED PLAN Transection ERROR:", error?.response?.data?.message || error?.message);
-        console.log("DETAILED ERROR:", JSON.stringify(error?.response?.data, null, 2));
+        console.log(
+            "FETCH ESCORT CURRENT PLAN ERROR:",
+            error?.response?.data?.message || error?.message
+        );
+
+        console.log(
+            "DETAILED ERROR:",
+            JSON.stringify(error?.response?.data, null, 2)
+        );
+
         return response.status(500).json({
-            message: "Failed to fetch transaction",
+            message: "Failed to fetch current subscription",
             success: false,
             error: true,
             details: error?.response?.data || error?.message
         });
     }
-}
+};
