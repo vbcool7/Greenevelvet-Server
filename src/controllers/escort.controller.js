@@ -52,6 +52,7 @@ import {
 import AdminModel from "../models/adminModel.js";
 import NotificationModel from "../models/notificationModel.js";
 import PendingEscortModel from "../models/PendingEscortModel.js";
+import subcribedModel from "../models/subcribedplanModel.js";
 
 // change password
 export const escortChangePassword = async (request, response) => {
@@ -2090,6 +2091,7 @@ export async function uploadImagescontroller(request, response) {
             deletedImages
         } = request.body;
 
+        //------------------------< Escort id and account check >----------------------------//
         if (!escortId) {
             return response.status(400).json({
                 message: "escortId required",
@@ -2098,36 +2100,126 @@ export async function uploadImagescontroller(request, response) {
             });
         }
 
+        const escort = await EscortModel.findOne({
+            escortId
+        });
+
+        if (!escort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+        //------------------------< Check subscription and check status  >----------------------------//
+
+
+        const subscription = await subcribedModel.findOne({
+            _id: escort.currentSubscription,
+            userId: escort._id
+        });
+
+        if (!subscription) {
+            return response.status(403).json({
+                message: "No active subscription found",
+                success: false,
+                error: true
+            });
+        }
+
+        if (subscription.status !== "finished" || !subscription.isActive) {
+            return response.status(403).json({
+                message: "Your subscription is not active",
+                success: false,
+                error: true
+            });
+        }
+
+        if (subscription.subscriptionExpiry && new Date(subscription.subscriptionExpiry) <= new Date()) {
+            return response.status(403).json({
+                message: "Your subscription has expired",
+                success: false,
+                error: true
+            });
+        }
+
+
+        //------------------------< Check max photos limit and calculate count delete images  >----------------------------//
+
+        const photoLimit = subscription.limits?.photos || 6;
+
+
         const deletedArr = deletedImages ? JSON.parse(deletedImages) : [];
 
-        // 1️⃣ Delete images from Cloudinary & DB
-        if (deletedArr.length > 0) {
-            const escort = await EscortModel.findOne({
-                escortId
-            });
-            if (escort) {
-                // Cloudinary delete
-                for (let item of deletedArr) {
-                    if (item.public_id) {
-                        await deleteImageCloudinary(item.public_id);
-                    }
-                }
 
-                // DB delete by URL
-                const urlsToDelete = deletedArr.map(item => item.url).filter(Boolean);
-                if (urlsToDelete.length > 0) {
-                    await EscortModel.updateOne({
-                        escortId
-                    }, {
-                        $pull: {
-                            "gallery.photos": {
-                                url: {
-                                    $in: urlsToDelete
-                                }
+        const currentPhotoCount = escort.gallery?.photos?.length || 0;
+
+        const deletedUrls = deletedArr
+            .map(item => item.url)
+            .filter(Boolean);
+
+        const deletedPhotoCount = escort.gallery?.photos?.filter(
+            photo => deletedUrls.includes(photo.url)
+        ).length || 0;
+
+        const newPhotoCount = request.files?.length || 0;
+
+        const finalPhotoCount =
+            currentPhotoCount -
+            deletedPhotoCount +
+            newPhotoCount;
+
+
+        if (finalPhotoCount > photoLimit) {
+            return response.status(400).json({
+                message: `You can upload maximum ${photoLimit} photos with your current subscription plan.`,
+                success: false,
+                error: true,
+                data: {
+                    currentPhotos: currentPhotoCount,
+                    newPhotos: newPhotoCount,
+                    deletedPhotos: deletedPhotoCount,
+                    photoLimit,
+                    remainingSlots: Math.max(
+                        0,
+                        photoLimit - (currentPhotoCount - deletedPhotoCount)
+                    )
+                }
+            });
+        }
+
+
+
+
+
+
+        // 1️⃣ Delete images from Cloudinary & DB
+
+        if (deletedArr.length > 0) {
+
+            // Cloudinary delete
+            for (let item of deletedArr) {
+                if (item.public_id) {
+                    await deleteImageCloudinary(item.public_id);
+                }
+            }
+
+            // DB delete by URL
+            const urlsToDelete = deletedArr.map(item => item.url).filter(Boolean);
+
+            if (urlsToDelete.length > 0) {
+                await EscortModel.updateOne({
+                    escortId
+                }, {
+                    $pull: {
+                        "gallery.photos": {
+                            url: {
+                                $in: urlsToDelete
                             }
                         }
-                    });
-                }
+                    }
+                });
             }
         }
 
@@ -2164,14 +2256,14 @@ export async function uploadImagescontroller(request, response) {
         }).lean();
 
         // 4️⃣ Keep only last 6 images in DB
-        const last6Images = updatedEscort.gallery.photos.slice(-6);
-        await EscortModel.updateOne({
-            escortId
-        }, {
-            $set: {
-                "gallery.photos": last6Images
-            }
-        });
+        // const last6Images = updatedEscort.gallery.photos.slice(-6);
+        // await EscortModel.updateOne({
+        //     escortId
+        // }, {
+        //     $set: {
+        //         "gallery.photos": last6Images
+        //     }
+        // });
 
         const admin = await AdminModel.findOne();
         if (!admin) {
@@ -2197,7 +2289,6 @@ export async function uploadImagescontroller(request, response) {
                 ...updatedEscort,
                 gallery: {
                     ...updatedEscort.gallery,
-                    photos: last6Images
                 }
             }
         });
@@ -2205,7 +2296,7 @@ export async function uploadImagescontroller(request, response) {
     } catch (error) {
         console.error(error);
         return response.status(500).json({
-            message: error.message || error,
+            message: "Upload gallery photos failed!",
             success: false,
             error: true
         });
@@ -2345,7 +2436,6 @@ export async function uploadVideoscontroller(request, response) {
 }
 
 
-
 // fetch all verified escorts
 export async function verifiedEscortcontroller(request, response) {
     try {
@@ -2392,6 +2482,8 @@ export async function verifiedEscortcontroller(request, response) {
         })
     }
 }
+
+
 
 // ------------------x-x-x-x-x-< Not completed >-x-x-x-x-x--------------------
 export async function updateEscortcontroller(request, response) {
