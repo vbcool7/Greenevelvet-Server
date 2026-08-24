@@ -638,6 +638,9 @@ export async function verifyEmailcontroller(request, response) {
             }
         }).select("+password");
 
+        console.log("Pending Escort Data:", pendingEscort.toObject());
+        console.log("Pending Mobile:", pendingEscort.mobile);
+
 
         if (!pendingEscort) {
 
@@ -682,6 +685,8 @@ export async function verifyEmailcontroller(request, response) {
                 _id: pendingEscort._id
             });
 
+
+
             return response.status(409).json({
                 message: "This email is already registered as Client",
                 success: false,
@@ -705,6 +710,8 @@ export async function verifyEmailcontroller(request, response) {
         const escortId = await generatedescortId();
 
         escortData.escortId = escortId;
+
+        console.log("Escort Data Before Create:", escortData);
 
         // Create Escort
         const escort = await EscortModel.create(escortData);

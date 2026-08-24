@@ -1,7 +1,4 @@
 import mongoose from "mongoose";
-import {
-    type
-} from "os";
 
 const EscortSchema = new mongoose.Schema({
 

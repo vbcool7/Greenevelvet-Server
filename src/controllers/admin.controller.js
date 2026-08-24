@@ -1282,7 +1282,7 @@ export async function deleteEscortcontroller(request, response) {
             message: "Escort account and its related details deleted successfull",
             success: true,
             error: false,
-            data: deletedEscort
+            data: escortDeleted
         })
 
     } catch (error) {
