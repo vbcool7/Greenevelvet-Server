@@ -562,83 +562,67 @@ export const activateExtraPlan = async ({
     plan
 }) => {
 
-    //------------- AVAILABILITY -----------//
+    // =========================================================
+    // AVAILABILITY
+    // =========================================================
 
     if (plan.planType === "availability") {
 
         extraPayment.totalCredits = plan.totalSlots;
-
         extraPayment.remainingCredits = plan.totalSlots;
 
-        extraPayment.isActive = true;
-
-        await extraPayment.save();
-
-        await EscortModel.findByIdAndUpdate(
-            extraPayment.userId, {
-                $addToSet: {
-                    extraPlanSubscriptions: extraPayment._id
-                }
-            }
-        );
-        return;
-    }
-
-    //--------------- BOOST PROFILE -------------//
-
-    if (plan.planType === "boost-profile") {
-
-        const start = new Date();
-
-        const expiry = new Date(start);
-
-        expiry.setDate(expiry.getDate() + 30);
-
-        extraPayment.subscriptionStart = start;
-
-        extraPayment.subscriptionExpiry = expiry;
-
+        extraPayment.subscriptionStart = null;
+        extraPayment.subscriptionExpiry = null;
         extraPayment.isActive = true;
     }
 
+    // =========================================================
+    // BOOST PROFILE
+    // =========================================================
+    else if (plan.planType === "boost-profile") {
 
-    //------------- WEEKLY ELITE -------------//
-    else if (
-        plan.planType === "weekly-elite"
-    ) {
+        extraPayment.totalCredits = plan.totalSlots;
+        extraPayment.remainingCredits = plan.totalSlots;
 
-        const start = new Date();
+        // No expiry
+        extraPayment.subscriptionStart = null;
+        extraPayment.subscriptionExpiry = null;
+        extraPayment.isActive = true;
+    }
 
-        const expiry = new Date(start);
+    // =========================================================
+    // WEEKLY ELITE
+    // =========================================================
+    else if (plan.planType === "weekly-elite") {
 
-        expiry.setDate(expiry.getDate() + 7);
+        // Purchased but NOT started yet
+        extraPayment.totalCredits = plan.totalSlots;
+        extraPayment.remainingCredits = plan.totalSlots;
 
-        extraPayment.subscriptionStart = start;
-
-        extraPayment.subscriptionExpiry = expiry;
+        extraPayment.subscriptionStart = null;
+        extraPayment.subscriptionExpiry = null;
 
         extraPayment.isActive = true;
     }
 
-    //------------- MONTHLY ELITE -------------//
-    else if (
-        plan.planType === "monthly-elite"
-    ) {
+    // =========================================================
+    // MONTHLY ELITE
+    // =========================================================
+    else if (plan.planType === "monthly-elite") {
 
-        const start = new Date();
+        // Purchased but NOT started yet
+        extraPayment.totalCredits = plan.totalSlots;
+        extraPayment.remainingCredits = plan.totalSlots;
 
-        const expiry = new Date(start);
-
-        expiry.setDate(expiry.getDate() + 30);
-
-        extraPayment.subscriptionStart = start;
-
-        extraPayment.subscriptionExpiry = expiry;
+        extraPayment.subscriptionStart = null;
+        extraPayment.subscriptionExpiry = null;
 
         extraPayment.isActive = true;
     }
 
-    //------------- ATTACH TO ESCORT -------------//
+    // =========================================================
+    // ATTACH TO ESCORT
+    // =========================================================
 
     await extraPayment.save();
 
@@ -904,5 +888,139 @@ export const extranowPaymentsWebhook = async (request, response) => {
         console.log(error?.response?.data || error?.message);
 
         return response.sendStatus(500);
+    }
+};
+
+
+// Fetch escort's active/usable purchased extra plans
+export const fetchEscortExtraPurchasePlan = async (request, response) => {
+    try {
+        const userId = request?.user?._id;
+
+        // ===================== AUTH CHECK =====================
+
+        if (!userId) {
+            return response.status(401).json({
+                message: "User not authenticated",
+                success: false,
+                error: true
+            });
+        }
+
+        // ===================== FETCH ESCORT =====================
+
+        const escort = await EscortModel
+            .findById(userId)
+            .populate("extraPlanSubscriptions");
+
+        if (!escort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+        const extraPlans = escort.extraPlanSubscriptions || [];
+
+        const now = new Date();
+
+        // ===================== FILTER ACTIVE PLANS =====================
+
+        const activeExtraPlans = extraPlans.filter((plan) => {
+
+            if (!plan.isActive) {
+                return false;
+            }
+
+            if ((plan.remainingCredits || 0) <= 0) {
+                return false;
+            }
+
+            // ================= BOOST =================
+
+            if (plan.planType === "boost-profile") {
+                return true;
+            }
+
+            // ================= AVAILABILITY =================
+
+            if (plan.planType === "availability") {
+                return true;
+            }
+
+            // ================= WEEKLY ELITE =================
+
+            if (plan.planType === "weekly-elite") {
+
+                // subscriptionStart null hai
+                if (!plan.subscriptionStart) {
+                    return true;
+                }
+
+                if (
+                    plan.subscriptionExpiry &&
+                    new Date(plan.subscriptionExpiry) <= now
+                ) {
+                    return false;
+                }
+
+                return true;
+            }
+
+            // ================= MONTHLY ELITE =================
+
+            if (plan.planType === "monthly-elite") {
+
+                if (!plan.subscriptionStart) {
+                    return true;
+                }
+
+                if (
+                    plan.subscriptionExpiry &&
+                    new Date(plan.subscriptionExpiry) <= now
+                ) {
+                    return false;
+                }
+
+                return true;
+            }
+
+            return false;
+        });
+
+        // ===================== NO ACTIVE PLAN =====================
+
+        if (activeExtraPlans.length === 0) {
+            return response.status(200).json({
+                message: "No active extra plans found",
+                success: true,
+                error: false,
+                status: "no_active_extra_subscription",
+                data: []
+            });
+        }
+
+        // ===================== SUCCESS =====================
+
+        return response.status(200).json({
+            message: "Active extra plans fetched successfully",
+            success: true,
+            error: false,
+            data: activeExtraPlans
+        });
+
+    } catch (error) {
+
+        console.error(
+            "FETCH ESCORT ACTIVE EXTRA PLAN ERROR:",
+            error?.message
+        );
+
+        return response.status(500).json({
+            message: "Failed to fetch active extra plan subscriptions",
+            success: false,
+            error: true
+        });
     }
 };

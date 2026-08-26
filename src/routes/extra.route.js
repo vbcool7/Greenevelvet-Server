@@ -7,6 +7,7 @@ import {
     createExtraPlan,
     createExtraPlanTransaction,
     extranowPaymentsWebhook,
+    fetchEscortExtraPurchasePlan,
     getAllActiveExtraPlans,
     getAllExtraPlans,
     getSelectExtraPlan,
@@ -32,5 +33,7 @@ extraRouter.post("/create-extra-plan-transaction", protect(["Escort"]), createEx
 extraRouter.post("/extra-nowpayments-webhook", express.raw({
     type: "application/json"
 }), extranowPaymentsWebhook);
+
+extraRouter.get("/fetch-escort-extra-purchase-plan", protect(["Escort"]), fetchEscortExtraPurchasePlan);
 
 export default extraRouter;
