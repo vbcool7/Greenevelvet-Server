@@ -2153,43 +2153,50 @@ export async function uploadImagescontroller(request, response) {
         const deletedArr = deletedImages ? JSON.parse(deletedImages) : [];
 
 
-        const currentPhotoCount = escort.gallery?.photos?.length || 0;
+
+        const allPhotos = escort.gallery?.photos || [];
+
+        // Current plan ke according sirf latest photos accessible hain
+        const visiblePhotos = allPhotos.slice(-photoLimit);
 
         const deletedUrls = deletedArr
             .map(item => item.url)
             .filter(Boolean);
 
-        const deletedPhotoCount = escort.gallery?.photos?.filter(
+        // Sirf wahi deleted photos count hongi jo current plan ke visible
+        // photos mein hain.
+        const deletedVisiblePhotoCount = visiblePhotos.filter(
             photo => deletedUrls.includes(photo.url)
-        ).length || 0;
+        ).length;
+
+        const currentVisiblePhotoCount = visiblePhotos.length;
 
         const newPhotoCount = request.files?.length || 0;
 
-        const finalPhotoCount =
-            currentPhotoCount -
-            deletedPhotoCount +
+        const finalVisiblePhotoCount =
+            currentVisiblePhotoCount -
+            deletedVisiblePhotoCount +
             newPhotoCount;
 
 
-        if (finalPhotoCount > photoLimit) {
+        if (finalVisiblePhotoCount > photoLimit) {
             return response.status(400).json({
                 message: `You can upload maximum ${photoLimit} photos with your current subscription plan.`,
                 success: false,
                 error: true,
                 data: {
-                    currentPhotos: currentPhotoCount,
+                    currentPhotos: currentVisiblePhotoCount,
                     newPhotos: newPhotoCount,
-                    deletedPhotos: deletedPhotoCount,
+                    deletedPhotos: deletedVisiblePhotoCount,
                     photoLimit,
                     remainingSlots: Math.max(
                         0,
-                        photoLimit - (currentPhotoCount - deletedPhotoCount)
+                        photoLimit -
+                        (currentVisiblePhotoCount - deletedVisiblePhotoCount)
                     )
                 }
             });
         }
-
-
 
 
 
@@ -2255,6 +2262,9 @@ export async function uploadImagescontroller(request, response) {
             escortId
         }).lean();
 
+        const visibleUpdatedPhotos =
+            updatedEscort.gallery?.photos?.slice(-photoLimit) || [];
+
         // 4️⃣ Keep only last 6 images in DB
         // const last6Images = updatedEscort.gallery.photos.slice(-6);
         // await EscortModel.updateOne({
@@ -2289,6 +2299,7 @@ export async function uploadImagescontroller(request, response) {
                 ...updatedEscort,
                 gallery: {
                     ...updatedEscort.gallery,
+                    photos: visibleUpdatedPhotos,
                 }
             }
         });
@@ -7076,19 +7087,4 @@ export async function editEscortProfileDetails(request, response) {
             error: true
         });
     }
-}
-
-
-
-export async function escortSubscription(request, response) {
-    try {
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || "Internal server error",
-            success: false,
-            error: true
-        });
-    }
-
 }
