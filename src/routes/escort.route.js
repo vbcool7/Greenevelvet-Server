@@ -149,7 +149,7 @@ escortRouter.patch("/upload-avatar", upload.fields([{
 }]), uploadAvatarcontroller);
 
 escortRouter.patch("/blur-avatar-face", protect(["Escort"]), toggleFaceBlur)
-escortRouter.post("/upload-gallery-images", upload.array("photos", 6), uploadImagescontroller)
+escortRouter.post("/upload-gallery-images", upload.array("photos", 30), uploadImagescontroller)
 escortRouter.post("/upload-gallery-videos", upload.array("videos", 6), uploadVideoscontroller)
 escortRouter.patch("/update-highlights", updateHighlightscontroller)
 
