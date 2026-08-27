@@ -4,6 +4,7 @@ import {
     Router
 } from "express";
 import {
+    boostProfile,
     createExtraPlan,
     createExtraPlanTransaction,
     extranowPaymentsWebhook,
@@ -35,5 +36,7 @@ extraRouter.post("/extra-nowpayments-webhook", express.raw({
 }), extranowPaymentsWebhook);
 
 extraRouter.get("/fetch-escort-extra-purchase-plan", protect(["Escort"]), fetchEscortExtraPurchasePlan);
+
+extraRouter.post("/boost-profile", protect(["Escort"]), boostProfile);
 
 export default extraRouter;

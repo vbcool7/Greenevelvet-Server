@@ -1024,3 +1024,146 @@ export const fetchEscortExtraPurchasePlan = async (request, response) => {
         });
     }
 };
+
+
+
+export const ReUsableController = async (request, response) => {
+    try {
+        const userId = request?.user?._id;
+
+        if (!userId) {
+            return response.status(401).json({
+                message: "User not authenticated",
+                success: false,
+                error: true
+            });
+        }
+        const escort = await EscortModel
+            .findById(userId)
+            .populate("currentSubscription")
+            .populate("extraPlanSubscriptions");
+
+        if (!escort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+
+    } catch (error) {
+        console.error(
+            "PROFILE BOOST ERROR:",
+            error?.message
+        );
+
+        return response.status(500).json({
+            message: "Failed to bbost your profile",
+            success: false,
+            error: true
+        });
+    }
+}
+
+// Boost profile
+export const boostProfile = async (request, response) => {
+    try {
+        const userId = request?.user?._id;
+
+        if (!userId) {
+            return response.status(401).json({
+                message: "User not authenticated",
+                success: false,
+                error: true
+            });
+        }
+
+        const escort = await EscortModel
+            .findById(userId)
+            .populate("currentSubscription")
+            .populate("extraPlanSubscriptions");
+
+        if (!escort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+        const currentPlan = escort.currentSubscription;
+
+        const extraBoostPlan = escort.extraPlanSubscriptions?.find(
+            (plan) => plan.planType === "boost-profile"
+        );
+
+        // =====================================================
+        // 1. CHECK CURRENT SUBSCRIPTION BOOST
+        // =====================================================
+
+        const currentBoosts =
+            currentPlan?.limits?.manualBoosts || 0;
+
+        if (currentBoosts > 0) {
+
+            currentPlan.limits.manualBoosts =
+                currentBoosts - 1;
+
+            await currentPlan.save();
+
+            return response.status(200).json({
+                message: "Profile boosted successfully",
+                success: true,
+                error: false,
+                boostSource: "subscription",
+                remainingBoosts: currentPlan.limits.manualBoosts
+            });
+        }
+
+        // =====================================================
+        // 2. CHECK PURCHASED / EXTRA BOOST
+        // =====================================================
+
+        const extraBoosts =
+            extraBoostPlan?.remainingCredits || 0;
+
+        if (extraBoosts > 0) {
+
+            extraBoostPlan.remainingCredits =
+                extraBoosts - 1;
+
+            await extraBoostPlan.save();
+
+            return response.status(200).json({
+                message: "Profile boosted successfully",
+                success: true,
+                error: false,
+                boostSource: "extra",
+                remainingBoosts: extraBoostPlan.remainingCredits
+            });
+        }
+
+        // =====================================================
+        // 3. NO BOOST AVAILABLE
+        // =====================================================
+
+        return response.status(400).json({
+            message: "No boosts available. Please purchase a boost.",
+            success: false,
+            error: true
+        });
+
+    } catch (error) {
+        console.error(
+            "PROFILE BOOST ERROR:",
+            error?.message
+        );
+
+        return response.status(500).json({
+            message: "Failed to boost your profile",
+            success: false,
+            error: true
+        });
+    }
+};
