@@ -128,6 +128,7 @@ const extraPlanSubscriptionSchema = new mongoose.Schema({
         type: String,
         enum: [
             "pending",
+            "active",
             "waiting",
             "confirming",
             "confirmed",
