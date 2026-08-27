@@ -145,6 +145,8 @@ export const createTransaction = async (request, response) => {
 
             }
 
+
+
             const subscriptionStart = new Date();
 
             const subscriptionExpiry = new Date(
@@ -152,8 +154,29 @@ export const createTransaction = async (request, response) => {
                 days * 24 * 60 * 60 * 1000
             );
 
-            let permissions = plan.permissions;
-            let limits = plan.limits;
+            const permissions = plan.permissions || {};
+
+            const planLimits = plan.limits || {};
+
+            const manualBoosts = Number(planLimits.manualBoosts || 0);
+            const boostCycleDays = Number(planLimits.boostCycleDays || 28);
+
+            const boostExpiry = new Date(
+                subscriptionStart.getTime() +
+                boostCycleDays * 24 * 60 * 60 * 1000
+            );
+
+            const limits = {
+                ...planLimits,
+                manualBoosts,
+                remainingBoosts: manualBoosts,
+                boostExpiry: manualBoosts > 0 ? boostExpiry : null,
+                boostCycleDays
+            };
+
+
+
+
 
             const freeSubscription = await subcribedModel.create({
                 userId,
@@ -439,7 +462,26 @@ export const nowPaymentsWebhook = async (request, response) => {
         // ============================================
 
         let permissions = plan.permissions;
-        let limits = plan.limits;
+
+        const planLimits = plan.limits || {};
+
+        const manualBoosts = Number(planLimits.manualBoosts || 0);
+        const boostCycleDays = Number(planLimits.boostCycleDays || 28);
+
+        const boostExpiry = new Date(
+            subscriptionStart.getTime() +
+            boostCycleDays * 24 * 60 * 60 * 1000
+        );
+
+        const limits = {
+            ...planLimits,
+            manualBoosts,
+            remainingBoosts: manualBoosts,
+            boostExpiry: manualBoosts > 0 ? boostExpiry : null,
+            boostCycleDays
+        };
+
+
 
         const invoiceUrl =
             `https://nowpayments.io/payment?iid=${invoice_id}`;

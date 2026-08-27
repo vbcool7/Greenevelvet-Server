@@ -1066,7 +1066,7 @@ export const ReUsableController = async (request, response) => {
     }
 }
 
-// Boost profile
+// Boost profile (next isko escort profile ko update karna h )
 export const boostProfile = async (request, response) => {
     try {
         const userId = request?.user?._id;
@@ -1094,53 +1094,101 @@ export const boostProfile = async (request, response) => {
 
         const currentPlan = escort.currentSubscription;
 
-        const extraBoostPlan = escort.extraPlanSubscriptions?.find(
-            (plan) => plan.planType === "boost-profile"
+        const extraBoostPlan =
+            escort.extraPlanSubscriptions?.find(
+                (plan) => plan.planType === "boost-profile"
+            );
+
+        const now = new Date();
+
+        // =====================================================
+        // PROFILE BOOST DURATION
+        // =====================================================
+
+        const PROFILE_BOOST_DURATION =
+            24 * 60 * 60 * 1000; // 24 Hours
+
+        const profileBoostExpiry = new Date(
+            now.getTime() + PROFILE_BOOST_DURATION
         );
 
         // =====================================================
-        // 1. CHECK CURRENT SUBSCRIPTION BOOST
+        // 1. SUBSCRIPTION BOOST
         // =====================================================
 
-        const currentBoosts =
-            currentPlan?.limits?.manualBoosts || 0;
+        const subscriptionRemainingBoosts =
+            Number(
+                currentPlan?.limits?.remainingBoosts || 0
+            );
 
-        if (currentBoosts > 0) {
+        const subscriptionBoostExpiry =
+            currentPlan?.limits?.boostExpiry;
 
-            currentPlan.limits.manualBoosts =
-                currentBoosts - 1;
+        const hasValidSubscriptionBoost =
+            subscriptionRemainingBoosts > 0 &&
+            subscriptionBoostExpiry &&
+            new Date(subscriptionBoostExpiry) > now;
+
+        if (hasValidSubscriptionBoost) {
+
+            currentPlan.limits.remainingBoosts =
+                subscriptionRemainingBoosts - 1;
 
             await currentPlan.save();
+
+            escort.boostSource = "subscription";
+            escort.isBoosted = true;
+            escort.boostedAt = now;
+            escort.boostExpiry = profileBoostExpiry;
+
+            await escort.save();
 
             return response.status(200).json({
                 message: "Profile boosted successfully",
                 success: true,
                 error: false,
+
                 boostSource: "subscription",
-                remainingBoosts: currentPlan.limits.manualBoosts
+
+                remainingBoosts: currentPlan.limits.remainingBoosts,
+
+                boostExpiry: profileBoostExpiry
             });
         }
 
         // =====================================================
-        // 2. CHECK PURCHASED / EXTRA BOOST
+        // 2. PURCHASED / EXTRA BOOST
         // =====================================================
 
-        const extraBoosts =
-            extraBoostPlan?.remainingCredits || 0;
+        const extraRemainingBoosts =
+            Number(
+                extraBoostPlan?.remainingCredits || 0
+            );
 
-        if (extraBoosts > 0) {
+        if (extraRemainingBoosts > 0) {
 
             extraBoostPlan.remainingCredits =
-                extraBoosts - 1;
+                extraRemainingBoosts - 1;
 
             await extraBoostPlan.save();
+
+            escort.boostSource = "extra";
+            escort.isBoosted = true;
+            escort.boostedAt = now;
+            escort.boostExpiry = profileBoostExpiry;
+
+            await escort.save();
 
             return response.status(200).json({
                 message: "Profile boosted successfully",
                 success: true,
                 error: false,
+
                 boostSource: "extra",
-                remainingBoosts: extraBoostPlan.remainingCredits
+
+                remainingBoosts: extraBoostPlan.remainingCredits,
+
+                boostExpiry: profileBoostExpiry
             });
         }
 
@@ -1155,6 +1203,7 @@ export const boostProfile = async (request, response) => {
         });
 
     } catch (error) {
+
         console.error(
             "PROFILE BOOST ERROR:",
             error?.message

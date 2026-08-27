@@ -256,6 +256,25 @@ const EscortSchema = new mongoose.Schema({
         ref: "ExtraPlanSubscription"
     }],
 
+    boostSource: {
+        type: String,
+    },
+
+    isBoosted: {
+        type: Boolean,
+        default: false
+    },
+
+    boostedAt: {
+        type: Date,
+        default: null,
+    },
+
+    boostExpiry: {
+        type: Date,
+        default: null,
+    },
+
     /* ================= PASSWORD & OTP ================= */
     forgot_password: {
         type: String,

@@ -122,6 +122,14 @@ const subcribedplanSchema = new mongoose.Schema({
             type: Number,
             default: 0
         },
+        remainingBoosts: {
+            type: Number,
+            default: 0
+        },
+        boostExpiry: {
+            type: Date,
+            default: null
+        },
         boostCycleDays: {
             type: Number,
             default: 0

@@ -3108,6 +3108,10 @@ export async function fetchFiltercityescortscontroller(request, response) {
 
         // 🔹 Fetch escorts (NO populate)
         const escortList = await EscortModel.find(query)
+            .sort({
+                isBoosted: -1,
+                boostedAt: -1
+            })
             .populate("bookings");
 
 
@@ -3201,6 +3205,10 @@ export async function fetchFilterHomescortscontroller(request, response) {
 
         const escortList = await EscortModel.find(query)
             .skip(skip)
+            .sort({
+                isBoosted: -1,
+                boostedAt: -1
+            })
             .limit(parseInt(limit))
             .select("escortId name age city country gender account_type adverties_category highlights avatar rateFrom isFaceBlurred")
             .lean();
@@ -3378,7 +3386,11 @@ export const advanceSearchController = async (request, response) => {
             },
         });
 
-        const escorts = await EscortModel.aggregate(pipeline);
+        const escorts = await EscortModel.aggregate(pipeline)
+            .sort({
+                isBoosted: -1,
+                boostedAt: -1
+            });
 
         return response.json({
             message: "Escort found",
