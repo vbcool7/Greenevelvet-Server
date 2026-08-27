@@ -149,8 +149,8 @@ export const escortChangePassword = async (request, response) => {
     }
 };
 
-// forgot password send otp
 
+// fargot password , send otp
 export const escortForgotPassword = async (request, response) => {
     try {
         const {
@@ -312,7 +312,7 @@ export const escortForgotPassword = async (request, response) => {
     }
 };
 
-// verify otp
+// Verify OTP
 export const escortVerifyOtp = async (request, response) => {
     try {
 
@@ -419,6 +419,7 @@ export const escortVerifyOtp = async (request, response) => {
     }
 };
 
+
 // reset password
 export const escortResetPassword = async (request, response) => {
     try {
@@ -515,9 +516,6 @@ export const escortResetPassword = async (request, response) => {
 };
 
 
-
-
-
 // Escort Register controll step-1
 export async function registerEscortcontroller(request, response) {
     try {
@@ -599,7 +597,7 @@ export async function registerEscortcontroller(request, response) {
         console.log("pendingEscort ", pendingEscort);
 
 
-        const verifyLink = `https://greenvelvet-api.onrender.com/escort/verify-email?token=${token}`
+        const verifyLink = `https://greenevelvet-server.onrender.com/escort/verify-email?token=${token}`
 
         await sendVerificationEmail(normalizedEmail, verifyLink);
 
@@ -788,7 +786,7 @@ export async function resendEmailVerification(request, response) {
 
         await pendingEscort.save();
 
-        const verifyLink = `https://greenvelvet-api.onrender.com/escort/verify-email?token=${token}&id=${pendingEscort._id}`;
+        const verifyLink = `https://greenevelvet-server.onrender.com/escort/verify-email?token=${token}&id=${pendingEscort._id}`;
 
         await sendVerificationEmail(
             pendingEscort.email,
