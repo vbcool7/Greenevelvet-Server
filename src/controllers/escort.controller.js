@@ -164,27 +164,51 @@ export const escortForgotPassword = async (request, response) => {
                 error: true
             });
         }
+        // ===================================================== 
+        // 1. FIRST CHECK ESCORT 
+        // ===================================================== 
 
-        const escort = await EscortModel.findOne({
+        let user = await EscortModel.findOne({
             email
         });
+        let userModel = EscortModel;
+        let userType = "Escort";
 
-        if (!escort) {
+        // ===================================================== 
+        // 2. IF ESCORT NOT FOUND → CHECK CLIENT 
+        // ===================================================== 
+        if (!user) {
+            user = await ClientModel.findOne({
+                email
+            });
+            userModel = ClientModel;
+            userType = "Client";
+        }
+        // =====================================================
+        //  3. USER NOT FOUND
+        // ===================================================== 
+        if (!user) {
             return response.status(200).json({
                 message: "If account exists, OTP sent",
                 success: true,
                 error: false
             });
         }
+        // ===================================================== 
+        // 4. COOLDOWN CHECK 
+        // ===================================================== 
 
-        // cooldown check (30 sec)
-        if (escort.otpResendTime && escort.otpResendTime > Date.now()) {
+        if (user.otpResendTime && user.otpResendTime > Date.now()) {
             return response.status(429).json({
                 message: "Please wait before requesting a new OTP",
                 success: false,
                 error: true
             });
         }
+
+        // =====================================================
+        // 5. GENERATE OTP 
+        // =====================================================
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const hashedOtp = await bcryptjs.hash(otp, 10);
@@ -193,8 +217,12 @@ export const escortForgotPassword = async (request, response) => {
 
         console.log("otp", otp);
 
-        const updated = await EscortModel.findOneAndUpdate({
-            email,
+        // ===================================================== 
+        // 6. UPDATE OTP 
+        // ===================================================== 
+
+        const updated = await userModel.findOneAndUpdate({
+            email
         }, {
             resetOtp: hashedOtp,
             otpExpiry: expiry,
@@ -212,6 +240,9 @@ export const escortForgotPassword = async (request, response) => {
             });
         }
 
+        // ===================================================== 
+        // // 7. SEND EMAIL
+        //  =====================================================
         const subject = "Password Reset OTP";
 
         const html = `
@@ -278,12 +309,18 @@ export const escortForgotPassword = async (request, response) => {
 </body>
 </html>
 `;
+
+        // ===================================================== 
+        // 8. SEND EMAIL 
+        // =====================================================
+
+
         try {
             await sendMail(email, subject, html);
         } catch (err) {
             console.log("email send error", err);
 
-            await EscortModel.findByIdAndUpdate(escort._id, {
+            await userModel.findByIdAndUpdate(user._id, {
                 resetOtp: null,
                 otpExpiry: null
             });
@@ -294,6 +331,10 @@ export const escortForgotPassword = async (request, response) => {
                 error: true
             });
         }
+
+        // ===================================================== 
+        // 9. SUCCESS 
+        // =====================================================
 
         return response.status(200).json({
             message: "OTP sent check email",
@@ -324,7 +365,7 @@ export const escortVerifyOtp = async (request, response) => {
         if (email == '' || otp == '') {
             return response.status(400).json({
                 success: false,
-                message: "Email and OTP required 1",
+                message: "Email and OTP required!",
                 error: true
             });
         }
@@ -336,14 +377,22 @@ export const escortVerifyOtp = async (request, response) => {
                 error: true
             });
         }
+        // 2. find user
 
-        // 2. find admin
-        const escort = await EscortModel.findOne({
+        let user = await EscortModel.findOne({
             email
         });
 
+        let userModel = EscortModel;
 
-        if (!escort || !escort.resetOtp) {
+        if (!user) {
+            user = await ClientModel.findOne({
+                email
+            });
+            userModel = ClientModel;
+        }
+
+        if (!user || !user.resetOtp) {
             return response.status(400).json({
                 success: false,
                 message: "Invalid request",
@@ -351,8 +400,10 @@ export const escortVerifyOtp = async (request, response) => {
             });
         }
 
+
+
         // 3. expiry check (safe)
-        if (!escort.otpExpiry || escort.otpExpiry < Date.now()) {
+        if (!user.otpExpiry || user.otpExpiry < Date.now()) {
             return response.status(400).json({
                 success: false,
                 message: "OTP expired",
@@ -361,7 +412,7 @@ export const escortVerifyOtp = async (request, response) => {
         }
 
         // 4. attempts limit check
-        if (escort.otpAttempts >= 5) {
+        if (user.otpAttempts >= 5) {
             return response.status(429).json({
                 success: false,
                 message: "Too many attempts. Try again later",
@@ -370,11 +421,11 @@ export const escortVerifyOtp = async (request, response) => {
         }
 
         // 5. OTP match
-        const isMatch = await bcryptjs.compare(otp, escort.resetOtp);
+        const isMatch = await bcryptjs.compare(otp, user.resetOtp);
 
         // ❌ WRONG OTP
         if (!isMatch) {
-            await EscortModel.updateOne({
+            await userModel.updateOne({
                 email
             }, {
                 $inc: {
@@ -390,7 +441,7 @@ export const escortVerifyOtp = async (request, response) => {
         }
 
         // 6. SUCCESS → clear OTP (NO save used)
-        await EscortModel.updateOne({
+        await userModel.updateOne({
             email
         }, {
             $unset: {
@@ -413,14 +464,14 @@ export const escortVerifyOtp = async (request, response) => {
 
         return response.status(500).json({
             success: false,
-            message: "Something went wrong",
+            message: "OTP Verification failed!",
             error: true
         });
     }
 };
 
 
-// reset password
+// Reset Password
 export const escortResetPassword = async (request, response) => {
     try {
         const {
@@ -456,13 +507,20 @@ export const escortResetPassword = async (request, response) => {
             });
         }
 
-
-        // 4. find admin
-        const escort = await EscortModel.findOne({
+        // 4. check valid user 
+        let user = await EscortModel.findOne({
             email
         });
+        let userModel = EscortModel;
 
-        if (!escort) {
+        if (!user) {
+            user = await ClientModel.findOne({
+                email
+            });
+            userModel = ClientModel;
+        }
+
+        if (!user) {
             return response.status(400).json({
                 message: "Invalid request",
                 success: false,
@@ -471,7 +529,7 @@ export const escortResetPassword = async (request, response) => {
         }
 
         // 5. security check → OTP must be verified already
-        if (escort.resetOtp || escort.otpExpiry) {
+        if (user.resetOtp || user.otpExpiry) {
             return response.status(403).json({
                 message: "OTP not verified",
                 success: false,
@@ -483,7 +541,7 @@ export const escortResetPassword = async (request, response) => {
         const hashedPassword = await bcryptjs.hash(newPassword, 10);
 
         // 7. update password + clear any leftover fields (NO save)
-        await EscortModel.updateOne({
+        await userModel.updateOne({
             email
         }, {
             $set: {
@@ -514,6 +572,7 @@ export const escortResetPassword = async (request, response) => {
         });
     }
 };
+
 
 
 // Escort Register controll step-1
