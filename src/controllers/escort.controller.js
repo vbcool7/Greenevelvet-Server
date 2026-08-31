@@ -566,8 +566,8 @@ export const escortResetPassword = async (request, response) => {
         console.error("Reset Password Error:", error);
 
         return response.status(500).json({
+            message: "Reset pawwsord failed!",
             success: false,
-            message: "Something went wrong",
             error: true
         });
     }

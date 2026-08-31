@@ -2,17 +2,30 @@ import bcryptjs from "bcryptjs";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import ClientModel from "../models/clientModel.js";
-import { generatedclientId } from "../utils/generatedId.js";
+import {
+    generatedclientId
+} from "../utils/generatedId.js";
 import uploadImageCloudinary from "../utils/uploadImageCloudinary.js";
 import EscortModel from "../models/escortModel.js";
-import { sendVerificationEmail } from "../utils/emailService.js";
-import { sendRegistrationNotification } from "../utils/sendRegistrationNotification.js";
-import { encrypt } from "../utils/crypto.js";
+import {
+    sendVerificationEmail
+} from "../utils/emailService.js";
+import {
+    sendRegistrationNotification
+} from "../utils/sendRegistrationNotification.js";
+import {
+    encrypt
+} from "../utils/crypto.js";
 
 // client register controll
 export async function registerClientcontroller(request, response) {
     try {
-        const { name, email, password, mobile } = request.body
+        const {
+            name,
+            email,
+            password,
+            mobile
+        } = request.body
 
         if (!name || !email || !password || !mobile) {
             return response.status(400).json({
@@ -25,7 +38,9 @@ export async function registerClientcontroller(request, response) {
         const normalizedEmail = email.trim().toLowerCase();
 
 
-        const exstingEmail = await EscortModel.findOne({ email: normalizedEmail })
+        const exstingEmail = await EscortModel.findOne({
+            email: normalizedEmail
+        })
 
         if (exstingEmail) {
             return response.status(401).json({
@@ -35,7 +50,9 @@ export async function registerClientcontroller(request, response) {
             })
         }
 
-        const client = await ClientModel.findOne({ email: normalizedEmail })
+        const client = await ClientModel.findOne({
+            email: normalizedEmail
+        })
 
         if (client) {
             return response.status(401).json({
@@ -60,23 +77,26 @@ export async function registerClientcontroller(request, response) {
             mobile,
             emailVerifyToken: token,
             emailVerifyExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            isEmailVerified: false,
         };
 
         const newClient = new ClientModel(payload);
         const save = await newClient.save();
 
-        const verifyLink = `https://greenvelvet-api.onrender.com/client/verify-email?token=${token}`;
+        const verifyLink = `https://greenevelvet-server.onrender.com/client/verify-email?token=${token}`;
 
         await sendVerificationEmail(normalizedEmail, verifyLink, clientId);
 
-        await sendRegistrationNotification({ email: process.env.ADMIN_RECEIVER_EMAIL, modelName: name });
+        await sendRegistrationNotification({
+            email: process.env.ADMIN_RECEIVER_EMAIL,
+            modelName: name
+        });
 
 
         return response.status(200).json({
             message: "Registration successful! Please check your email and verify your email address to activate your account.",
             error: false,
             success: true,
-            data: save
         })
 
     } catch (error) {
@@ -93,16 +113,35 @@ export async function registerClientcontroller(request, response) {
 // Client verify email controll
 export async function clientVerifyEmail(request, response) {
     try {
-        const { token } = request.query;
+        const {
+            token
+        } = request.query;
 
         const client = await ClientModel.findOne({
             emailVerifyToken: token,
-            emailVerifyExpiry: { $gt: Date.now() },
-        });
+            emailVerifyExpiry: {
+                $gt: Date.now()
+            },
+        }).select("+password");
+
 
         if (!client) {
-            return response.redirect("https://www.greenevelvet.com/link-expired");
+
+            const expiredClient = await ClientModel.findOne({
+                emailVerifyToken: token
+            });
+
+            if (expiredClient) {
+                return response.redirect(
+                    `https://www.greenevelvet.com/link-expired/${expiredClient._id || ""}`
+                );
+            }
+
+            return response.redirect(
+                "https://www.greenevelvet.com/link-expired"
+            );
         }
+
 
         client.isEmailVerified = true;
         client.emailVerifyToken = null;
@@ -110,13 +149,6 @@ export async function clientVerifyEmail(request, response) {
 
         await client.save();
 
-        if (!client || !client.clientId) {
-            return response.status(404).json({
-                message: "Invalid client data",
-                error: true,
-                success: false
-            });
-        }
 
         response.redirect(`https://www.greenevelvet.com/login`);
 
@@ -135,7 +167,10 @@ export async function clientVerifyEmail(request, response) {
 // client logout controll
 export async function logoutClientcontroller(request, response) {
     try {
-        const { clientId, role } = request.body;
+        const {
+            clientId,
+            role
+        } = request.body;
 
         if (!clientId || !role) {
             return response.status(400).json({
@@ -145,7 +180,9 @@ export async function logoutClientcontroller(request, response) {
             });
         }
 
-        const client = await ClientModel.findOne({ clientId: clientId });
+        const client = await ClientModel.findOne({
+            clientId: clientId
+        });
 
         if (!client) {
             return response.status(404).json({
@@ -177,7 +214,9 @@ export async function logoutClientcontroller(request, response) {
 // fetch client details
 export async function fetchClientcontroller(request, response) {
     try {
-        const { clientId } = request.query;
+        const {
+            clientId
+        } = request.query;
 
         if (!clientId) {
             return response.status(400).json({
@@ -187,7 +226,9 @@ export async function fetchClientcontroller(request, response) {
             })
         }
 
-        const clientDetails = await ClientModel.findOne({ clientId }).select("-password");
+        const clientDetails = await ClientModel.findOne({
+            clientId
+        }).select("-password");
 
         if (clientDetails.length === 0) {
             return response.status(400).json({
@@ -217,7 +258,9 @@ export async function fetchClientcontroller(request, response) {
 // upload Avatar
 export async function uploadAvatarcontroller(request, response) {
     try {
-        const { clientId } = request.body;
+        const {
+            clientId
+        } = request.body;
 
         if (!clientId) {
             return response.status(400).json({
@@ -237,14 +280,14 @@ export async function uploadAvatarcontroller(request, response) {
 
         const avatarUpload = await uploadImageCloudinary(request.files.avatar[0], "profileImg/avatar");
 
-        const uploadClient = await ClientModel.findOneAndUpdate(
-            { clientId },
-            {
-                avatar: avatarUpload.secure_url,
+        const uploadClient = await ClientModel.findOneAndUpdate({
+            clientId
+        }, {
+            avatar: avatarUpload.secure_url,
 
-            },
-            { new: true }
-        );
+        }, {
+            new: true
+        });
 
         if (!uploadClient) {
             return response.status(404).json({
@@ -277,7 +320,12 @@ export async function uploadAvatarcontroller(request, response) {
 // edit and update Client account details 
 export async function updateClientProfile(request, response) {
     try {
-        const { _id, onlineStatus, contactVisible, muteNotifications } = request.body;
+        const {
+            _id,
+            onlineStatus,
+            contactVisible,
+            muteNotifications
+        } = request.body;
 
         if (!_id) {
             return response.status(400).json({
@@ -294,9 +342,12 @@ export async function updateClientProfile(request, response) {
         if (muteNotifications !== undefined) updateData.muteNotifications = muteNotifications;
 
         const updatedClient = await ClientModel.findByIdAndUpdate(
-            _id,
-            { $set: updateData },
-            { new: true, runValidators: true }
+            _id, {
+                $set: updateData
+            }, {
+                new: true,
+                runValidators: true
+            }
         );
 
         if (!updatedClient) {
@@ -328,7 +379,9 @@ export async function updateClientProfile(request, response) {
 //  permanent delete Client profile
 export async function deleteClientProfile(request, response) {
     try {
-        const { _id } = request.body;
+        const {
+            _id
+        } = request.body;
 
         if (!_id) {
             return response.status(400).json({
@@ -394,9 +447,11 @@ export async function editClientProfileDetails(request, response) {
 
         // ✅ UPDATE USER
         const updatedClient = await ClientModel.findByIdAndUpdate(
-            _id,
-            { $set: updateData },
-            { new: true }
+            _id, {
+                $set: updateData
+            }, {
+                new: true
+            }
         );
 
         if (!updatedClient) {
@@ -426,7 +481,11 @@ export async function editClientProfileDetails(request, response) {
 // change mobile
 export async function clientChangeMobile(request, response) {
     try {
-        const { clientId, mobile, countryCode } = request.body;
+        const {
+            clientId,
+            mobile,
+            countryCode
+        } = request.body;
 
         if (!clientId || !mobile) {
             return response.status(400).json({
@@ -436,14 +495,13 @@ export async function clientChangeMobile(request, response) {
             })
         }
 
-        const updateMobile = await ClientModel.findOneAndUpdate(
-            { clientId },
-            {
-                mobile: mobile,
-                isMobileVerified: false,
-                countryCode: countryCode,
-            }
-        )
+        const updateMobile = await ClientModel.findOneAndUpdate({
+            clientId
+        }, {
+            mobile: mobile,
+            isMobileVerified: false,
+            countryCode: countryCode,
+        })
 
         if (!updateMobile) {
             return response.status(404).json({
@@ -477,7 +535,11 @@ export const clientChangePassword = async (request, response) => {
     try {
         const userId = request.user?._id;
 
-        const { currentPassword, newPassword, confirmPassword } = request.body;
+        const {
+            currentPassword,
+            newPassword,
+            confirmPassword
+        } = request.body;
 
         // 1. Required check
         if (!currentPassword || !newPassword || !confirmPassword) {
@@ -569,7 +631,9 @@ export async function toggleFavoriteEscort(request, response) {
     try {
         const _id = request.user?._id;
 
-        const { escortId } = request.body;
+        const {
+            escortId
+        } = request.body;
 
         if (!escortId) {
             return response.status(400).json({
@@ -604,14 +668,13 @@ export async function toggleFavoriteEscort(request, response) {
         );
 
         if (alreadyFavorite) {
-            await ClientModel.updateOne(
-                { _id },
-                {
-                    $pull: {
-                        favorites: escortId
-                    }
+            await ClientModel.updateOne({
+                _id
+            }, {
+                $pull: {
+                    favorites: escortId
                 }
-            );
+            });
 
             return response.status(200).json({
                 message: "Escort removed from favorites",
@@ -621,14 +684,13 @@ export async function toggleFavoriteEscort(request, response) {
             });
         }
 
-        await ClientModel.updateOne(
-            { _id },
-            {
-                $addToSet: {
-                    favorites: escortId
-                }
+        await ClientModel.updateOne({
+            _id
+        }, {
+            $addToSet: {
+                favorites: escortId
             }
-        );
+        });
 
         return response.status(200).json({
             message: "Escort added to favorites",
@@ -651,7 +713,9 @@ export async function toggleFavoriteEscort(request, response) {
 // fetch favorites escort 
 export async function getFavoriteEscorts(request, response) {
     try {
-        const { _id } = request.user?._id;
+        const {
+            _id
+        } = request.user?._id;
 
         if (!_id) {
             return response.status(400).json({
@@ -661,7 +725,9 @@ export async function getFavoriteEscorts(request, response) {
             });
         }
 
-        const client = await ClientModel.findOne({ _id })
+        const client = await ClientModel.findOne({
+                _id
+            })
             .populate({
                 path: "favorites",
                 select: `
@@ -704,4 +770,3 @@ export async function getFavoriteEscorts(request, response) {
         });
     }
 }
-
