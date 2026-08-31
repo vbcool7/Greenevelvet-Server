@@ -97,13 +97,17 @@ export async function registerClientcontroller(request, response) {
             message: "Registration successful! Please check your email and verify your email address to activate your account.",
             error: false,
             success: true,
+            data: {
+                email: save.email,
+                id: save._id
+            }
         })
 
     } catch (error) {
         console.log("client registration error", error);
 
         return response.status(500).json({
-            message: error.message || error,
+            message: "As client registration failed!",
             error: true,
             success: false
         })
@@ -157,7 +161,7 @@ export async function clientVerifyEmail(request, response) {
         console.log("email verification error :", error);
 
         return response.status(500).json({
-            message: error.message || error,
+            message: "Email verification failed!",
             success: false,
             error: true,
         })
