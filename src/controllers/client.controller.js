@@ -94,7 +94,7 @@ export async function registerClientcontroller(request, response) {
 
 
         return response.status(200).json({
-            message: "Registration successful! Please check your email and verify your email address to activate your account.",
+            message: "Your account has been created successfully. Please check your email and click the verification link to activate your account.",
             error: false,
             success: true,
             data: {
