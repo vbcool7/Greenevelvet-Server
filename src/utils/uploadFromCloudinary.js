@@ -5,10 +5,29 @@ import sharp from "sharp";
 export const uploadFromCloudinary = async (fileBuffer) => {
     try {
         if (!fileBuffer) throw new Error("File buffer is required");
-        
+
         const metadata = await sharp(fileBuffer).metadata();
 
-        const imageWidth = metadata.width || 1000;
+        if (metadata.width && metadata.height) {
+            const megapixels = (metadata.width * metadata.height) / 1_000_000;
+
+            if (megapixels > 24) {
+                const scale = Math.sqrt(24 / megapixels);
+
+                const newWidth = Math.floor(metadata.width * scale);
+                const newHeight = Math.floor(metadata.height * scale);
+
+                fileBuffer = await sharp(fileBuffer)
+                    .resize(newWidth, newHeight, {
+                        fit: "inside",
+                        withoutEnlargement: true,
+                    })
+                    .toBuffer();
+            }
+        }
+
+        const imageWidth = (await sharp(fileBuffer).metadata()).width || 1000;
+
 
         // Dynamic font size
         const dynamicFontSize = Math.round(imageWidth * 0.05);
@@ -17,12 +36,13 @@ export const uploadFromCloudinary = async (fileBuffer) => {
         const fontSize = Math.max(30, Math.min(dynamicFontSize, 80));
 
         return await new Promise((resolve, reject) => {
-            cloudinary.uploader.upload_stream(
-                {
+            cloudinary.uploader.upload_stream({
                     folder: "uploads",
                     resource_type: "image",
-                    transformation: [
-                        { quality: "auto", fetch_format: "auto" },
+                    transformation: [{
+                            quality: "auto",
+                            fetch_format: "auto"
+                        },
 
                         {
                             overlay: {
@@ -53,6 +73,3 @@ export const uploadFromCloudinary = async (fileBuffer) => {
         throw new Error("Image upload failed");
     }
 };
-
-
-
