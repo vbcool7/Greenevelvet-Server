@@ -230,6 +230,7 @@ export async function loginUsercontroller(request, response) {
                 escortId: role === "Escort" ? user.escortId : null,
                 clientId: role === "Client" ? user.clientId : null,
                 role: role,
+                name: user.name,
                 token: token,
                 redirectTo,
             }
