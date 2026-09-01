@@ -4,11 +4,17 @@ import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import settingsModel from "../models/settingsModel.js";
 import PendingEscortModel from "../models/PendingEscortModel.js";
+import {
+    sendVerificationEmail
+} from "../utils/emailService.js";
 
 // Escort and Client login control
 export async function loginUsercontroller(request, response) {
     try {
-        const { email, password } = request.body;
+        const {
+            email,
+            password
+        } = request.body;
 
         if (!email || !password) {
             return response.status(400).json({
@@ -32,17 +38,23 @@ export async function loginUsercontroller(request, response) {
         // 🔍 First check Escort
 
 
-        let user = await PendingEscortModel.findOne({ email }).select("+password");
+        let user = await PendingEscortModel.findOne({
+            email
+        }).select("+password");
         let role = "Escort";
 
         if (!user) {
-            user = await EscortModel.findOne({ email }).select("+password");
+            user = await EscortModel.findOne({
+                email
+            }).select("+password");
             role = "Escort";
         }
 
         // 🔍 If not Escort → check Client
         if (!user) {
-            user = await ClientModel.findOne({ email }).select("+password");
+            user = await ClientModel.findOne({
+                email
+            }).select("+password");
             role = "Client";
         }
 
@@ -111,6 +123,53 @@ export async function loginUsercontroller(request, response) {
         }
 
 
+        if (!user.isEmailVerified && user.role === "Client") {
+
+            const registrationSteps = {
+                1: "/signupclient",
+                2: "/welcometogreenvelvet"
+            }
+
+
+            const nextStep = user.lastCompletedStep + 1;
+
+            let redirectUrl;
+
+            if (user.lastCompletedStep === 1) {
+                redirectUrl = `${registrationSteps[nextStep]}/${user._id}`;
+            }
+
+
+            const token = crypto.randomBytes(32).toString("hex");
+
+            user.emailVerifyToken = token;
+
+            user.emailVerifyExpiry =
+                new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+            await user.save();
+
+            const verifyLink =
+                `https://greenevelvet-server.onrender.com/client/verify-email?token=${token}`;
+
+            await sendVerificationEmail(
+                user.email,
+                verifyLink,
+                user.clientId
+            );
+
+            return response.status(403).json({
+                message: "Please Complete your registration",
+                success: false,
+                error: true,
+                registrationCompleted: false,
+                clientId: user.clientId,
+                lastCompletedStep: user.lastCompletedStep,
+                nextStep,
+                redirectUrl
+            });
+        }
+
 
         // ⚠️ Status check 
         if (user.status !== "Active") {
@@ -140,8 +199,9 @@ export async function loginUsercontroller(request, response) {
         // Generate token
         const token = jwt.sign(
             payload,
-            process.env.JWT_SECRET,
-            { expiresIn: "7d" }
+            process.env.JWT_SECRET, {
+                expiresIn: "7d"
+            }
         );
 
         user.refresh_token = token;
@@ -175,11 +235,9 @@ export async function loginUsercontroller(request, response) {
 
     } catch (error) {
         return response.status(500).json({
-            message: error.message || "Server error",
+            message: "Login failed! , Server Error",
             success: false,
             error: true
         });
     }
 }
-
-

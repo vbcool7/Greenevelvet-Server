@@ -26,92 +26,232 @@ export async function registerClientcontroller(request, response) {
             email,
             password,
             mobile
-        } = request.body
+        } = request.body;
 
         if (!name || !email || !password || !mobile) {
             return response.status(400).json({
                 message: "Provide name, email, password, mobile",
                 error: true,
                 success: false
-            })
+            });
         }
 
         const normalizedEmail = email.trim().toLowerCase();
+        const normalizedMobile = mobile.trim();
 
+        // =====================================================
+        // 1. CHECK EMAIL IN ESCORT
+        // =====================================================
 
-        const exstingEmail = await EscortModel.findOne({
+        const existingEscortEmail = await EscortModel.findOne({
             email: normalizedEmail
-        })
+        });
 
-        if (exstingEmail) {
-            return response.status(401).json({
-                message: "This email is already registered as Escort, You cannot register as Client with",
-                success: false,
-                error: true
-            })
-        }
-
-        const client = await ClientModel.findOne({
-            email: normalizedEmail
-        })
-
-        if (client) {
-            return response.status(401).json({
-                message: "Already register email",
+        if (existingEscortEmail) {
+            return response.status(409).json({
+                message: "This email is already registered as an Escort. You cannot register as a Client with this email.",
                 error: true,
                 success: false
-            })
+            });
         }
 
-        const clientId = await generatedclientId()
+        // =====================================================
+        // 2. CHECK EXISTING CLIENT BY EMAIL
+        // =====================================================
 
-        const token = crypto.randomBytes(32).toString("hex")
+        const existingClient = await ClientModel.findOne({
+            email: normalizedEmail
+        });
 
-        const salt = await bcryptjs.genSalt(10)
-        const hashPassword = await bcryptjs.hash(password, salt)
+        // =====================================================
+        // EXISTING CLIENT
+        // =====================================================
+
+        if (existingClient) {
+
+            // -------------------------------------------------
+            // STEP 2 ALREADY COMPLETED
+            // -------------------------------------------------
+
+            if (
+                existingClient.lastCompletedStep === 2 ||
+                existingClient.isEmailVerified === true
+            ) {
+                return response.status(409).json({
+                    message: "This email is already registered.",
+                    error: true,
+                    success: false
+                });
+            }
+
+            // -------------------------------------------------
+            // STEP 1 COMPLETED, EMAIL VERIFICATION PENDING
+            // -------------------------------------------------
+
+            if (
+                existingClient.lastCompletedStep === 1 &&
+                existingClient.isEmailVerified === false
+            ) {
+
+                const token = crypto.randomBytes(32).toString("hex");
+
+                existingClient.emailVerifyToken = token;
+
+                existingClient.emailVerifyExpiry =
+                    new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+                await existingClient.save();
+
+                const verifyLink =
+                    `https://greenevelvet-server.onrender.com/client/verify-email?token=${token}`;
+
+                await sendVerificationEmail(
+                    existingClient.email,
+                    verifyLink,
+                    existingClient.clientId
+                );
+
+                return response.status(200).json({
+                    message: "Your registration is already submitted. A new email verification link has been sent to your email.",
+                    error: false,
+                    success: true,
+                    data: {
+                        email: existingClient.email,
+                        id: existingClient._id,
+                        lastCompletedStep: 1,
+                        verificationPending: true
+                    }
+                });
+            }
+
+            // -------------------------------------------------
+            // SAFETY FALLBACK
+            // -------------------------------------------------
+
+            return response.status(409).json({
+                message: "This email is already registered.",
+                error: true,
+                success: false
+            });
+        }
+
+        // =====================================================
+        // 3. CHECK MOBILE IN ESCORT
+        // =====================================================
+
+        const mobileEncrypted = "enc:" + encrypt(normalizedMobile);
+
+        const existingEscortMobile = await EscortModel.findOne({
+            mobile: mobileEncrypted
+        });
+
+        if (existingEscortMobile) {
+            return response.status(409).json({
+                message: "This mobile number is already registered.",
+                error: true,
+                success: false
+            });
+        }
+
+        // =====================================================
+        // 4. CHECK MOBILE IN CLIENT
+        // =====================================================
+
+        const existingClientMobile = await ClientModel.findOne({
+            mobile: normalizedMobile
+        });
+
+        if (existingClientMobile) {
+            return response.status(409).json({
+                message: "This mobile number is already registered.",
+                error: true,
+                success: false
+            });
+        }
+
+        // =====================================================
+        // 5. CREATE NEW CLIENT
+        // =====================================================
+
+        const clientId = await generatedclientId();
+
+        const token = crypto.randomBytes(32).toString("hex");
+
+        const salt = await bcryptjs.genSalt(10);
+
+        const hashPassword = await bcryptjs.hash(
+            password,
+            salt
+        );
 
         const payload = {
             clientId,
             name,
             email: normalizedEmail,
             password: hashPassword,
-            mobile,
+            mobile: normalizedMobile,
+
             emailVerifyToken: token,
+
             emailVerifyExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
+
             isEmailVerified: false,
+
+            // STEP 1 COMPLETED
+            lastCompletedStep: 1
         };
 
         const newClient = new ClientModel(payload);
+
         const save = await newClient.save();
 
-        const verifyLink = `https://greenevelvet-server.onrender.com/client/verify-email?token=${token}`;
+        // =====================================================
+        // 6. SEND VERIFICATION EMAIL
+        // =====================================================
 
-        await sendVerificationEmail(normalizedEmail, verifyLink, clientId);
+        const verifyLink =
+            `https://greenevelvet-server.onrender.com/client/verify-email?token=${token}`;
+
+        await sendVerificationEmail(
+            normalizedEmail,
+            verifyLink,
+            clientId
+        );
+
+        // =====================================================
+        // 7. ADMIN NOTIFICATION
+        // =====================================================
 
         await sendClientRegistrationNotification({
             email: process.env.ADMIN_RECEIVER_EMAIL,
             modelName: name
         });
 
+        // =====================================================
+        // 8. SUCCESS
+        // =====================================================
 
         return response.status(200).json({
-            message: "Your account has been created successfully. Please check your email and click the verification link to activate your account.",
+            message: "Your details have been submitted successfully. Please check your email and click the verification link.",
             error: false,
             success: true,
             data: {
                 email: save.email,
-                id: save._id
+                id: save._id,
+                lastCompletedStep: 1,
+                verificationPending: true
             }
-        })
+        });
 
     } catch (error) {
+
         console.log("client registration error", error);
 
         return response.status(500).json({
-            message: "As client registration failed!",
+            message: "Client registration failed!",
             error: true,
             success: false
-        })
+        });
     }
 }
 
@@ -151,6 +291,7 @@ export async function clientVerifyEmail(request, response) {
         client.isEmailVerified = true;
         client.emailVerifyToken = null;
         client.emailVerifyExpiry = null;
+        client.lastCompletedStep = 2;
 
         await client.save();
 

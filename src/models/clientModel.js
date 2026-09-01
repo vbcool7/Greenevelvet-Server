@@ -47,18 +47,14 @@ const ClientSchema = new mongoose.Schema({
     },
 
     /* ================= DOCUMENT VERIFICATION ================= */
-    address_details: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: 'Address'
-        }
-    ],
-    profile_details: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: 'Profile'
-        }
-    ],
+    address_details: [{
+        type: mongoose.Schema.ObjectId,
+        ref: 'Address'
+    }],
+    profile_details: [{
+        type: mongoose.Schema.ObjectId,
+        ref: 'Profile'
+    }],
 
     /* ================= STATUS ================= */
     status: {
@@ -83,7 +79,7 @@ const ClientSchema = new mongoose.Schema({
         type: Date,
         default: "",
     },
-    
+
     isOnline: {
         type: Boolean,
         default: false
@@ -98,12 +94,10 @@ const ClientSchema = new mongoose.Schema({
     },
 
     /* ================= payment ================= */
-    payment_history: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "Payment"
-        }
-    ],
+    payment_history: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "Payment"
+    }],
 
     /* ================= PASSWORD & OTP ================= */
     resetOtp: {
@@ -127,49 +121,35 @@ const ClientSchema = new mongoose.Schema({
     },
 
     /* ================= RELATIONS (REFERENCES) ================= */
-    favorites: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "Escort"
-        }
-    ],
-    bookings: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "Bookings"
-        }
-    ],
-    messages: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "Messages"
-        }
-    ],
+    favorites: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "Escort"
+    }],
+    bookings: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "Bookings"
+    }],
+    messages: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "Messages"
+    }],
 
-    escorts: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "escort"
-        }
-    ],
-    blogs: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "Blogs"
-        }
-    ],
-    newsTours: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "NewsTours"
-        }
-    ],
-    notifications: [
-        {
-            type: mongoose.Schema.ObjectId,
-            ref: "Notifications"
-        }
-    ],
+    escorts: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "escort"
+    }],
+    blogs: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "Blogs"
+    }],
+    newsTours: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "NewsTours"
+    }],
+    notifications: [{
+        type: mongoose.Schema.ObjectId,
+        ref: "Notifications"
+    }],
     muteNotifications: {
         type: Boolean,
         default: false
@@ -195,15 +175,19 @@ const ClientSchema = new mongoose.Schema({
         default: 0,
         min: 0 // Balance negative mein nahi jana chahiye
     },
-    favorites: [
-        {
+    favorites: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Escort'
+    }],
+    recentViews: [{
+        escortId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Escort'
+        },
+        viewedAt: {
+            type: Date,
+            default: Date.now
         }
-    ],
-    recentViews: [{
-        escortId: { type: mongoose.Schema.Types.ObjectId, ref: 'Escort' },
-        viewedAt: { type: Date, default: Date.now }
     }],
 
     emailVerifyToken: {
@@ -221,6 +205,10 @@ const ClientSchema = new mongoose.Schema({
     contactVisible: {
         type: Boolean,
         default: false
+    },
+    lastCompletedStep: {
+        type: Number,
+        default: 0
     },
 
 }, {
