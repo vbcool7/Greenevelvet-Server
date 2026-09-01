@@ -11,6 +11,7 @@ import {
     sendVerificationEmail
 } from "../utils/emailService.js";
 import {
+    sendClientRegistrationNotification,
     sendRegistrationNotification
 } from "../utils/sendRegistrationNotification.js";
 import {
@@ -87,7 +88,7 @@ export async function registerClientcontroller(request, response) {
 
         await sendVerificationEmail(normalizedEmail, verifyLink, clientId);
 
-        await sendRegistrationNotification({
+        await sendClientRegistrationNotification({
             email: process.env.ADMIN_RECEIVER_EMAIL,
             modelName: name
         });
