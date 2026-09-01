@@ -234,6 +234,9 @@ export async function loginUsercontroller(request, response) {
         });
 
     } catch (error) {
+        console.log("Login Error : ", error);
+        console.log("Login error message: ", error.response?.data?.message);
+
         return response.status(500).json({
             message: "Login failed! , Server Error",
             success: false,
