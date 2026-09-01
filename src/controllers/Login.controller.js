@@ -2,6 +2,8 @@ import ClientModel from "../models/clientModel.js";
 import EscortModel from "../models/escortModel.js";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
+
 import settingsModel from "../models/settingsModel.js";
 import PendingEscortModel from "../models/PendingEscortModel.js";
 import {
