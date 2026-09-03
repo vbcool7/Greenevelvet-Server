@@ -3219,7 +3219,7 @@ export async function fetchFiltercityescortscontroller(request, response) {
         return response.status(200).json({
             message: "Filtered escorts fetched",
             data: formattedEscortList,
-            count:formattedEscortList.length,
+            count: formattedEscortList.length,
             success: true,
             error: false,
         });
@@ -6800,7 +6800,29 @@ export async function fetchCitySliderEscorts(request, response) {
         // }
 
 
-        if (city) filter.city = city;
+        // if (city) filter.city = city;
+
+        if (city) {
+            const selectedCity = city
+                .trim()
+                .replace(/\s+/g, " ");
+
+            filter.$or = [{
+                    city: {
+                        $regex: `^${selectedCity}$`,
+                        $options: "i"
+                    }
+                },
+                {
+                    additionalCities: {
+                        $regex: `^${selectedCity}$`,
+                        $options: "i"
+                    }
+                }
+            ];
+        }
+
+
         filter.country = country;
 
         if (isVerified !== undefined)
@@ -6820,11 +6842,17 @@ export async function fetchCitySliderEscorts(request, response) {
 
         const escorts = await EscortModel.find(filter);
 
+        const formattedEscorts = escorts.map((escort) => ({
+            ...escort.toObject(),
+            city: city?.trim().replace(/\s+/g, " ") || escort.city
+        }));
+
         return response.status(200).json({
             message: "Escort list fetched",
             error: false,
             success: true,
-            data: escorts
+            data: formattedEscorts,
+            counts: formattedEscorts.length,
         });
 
     } catch (error) {
