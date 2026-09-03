@@ -3197,8 +3197,10 @@ export async function fetchFiltercityescortscontroller(request, response) {
         });
 
     } catch (error) {
+        console.log("City filtered escort fetch error", error);
+
         return response.status(500).json({
-            message: error.message || error,
+            message: "Something went wrong! Fetching City Escorts",
             success: false,
             error: true,
         });
@@ -3223,7 +3225,9 @@ export async function fetchFilterHomescortscontroller(request, response) {
             limit = 15,
         } = request.query; // query params se filter lenge
 
-        const query = {};
+        const query = {
+            $and: []
+        };
 
         if (role) query.role = role;
         if (isVerified) query.isVerified = isVerified === "true"; // query params are strings
@@ -3233,16 +3237,19 @@ export async function fetchFilterHomescortscontroller(request, response) {
         // if (city) query.city = city.toUpperCase();
 
         // City + Additional Cities
-        if (city) {
-            const selectedCity = city.toUpperCase();
 
-            query.$or = [{
-                    city: selectedCity
-                },
-                {
-                    additionalCities: selectedCity
-                }
-            ];
+        const selectedCity = city?.trim().toUpperCase();
+
+        if (selectedCity) {
+            query.$and.push({
+                $or: [{
+                        city: selectedCity
+                    },
+                    {
+                        additionalCities: selectedCity
+                    }
+                ]
+            });
         }
 
 
@@ -3328,8 +3335,9 @@ export async function fetchFilterHomescortscontroller(request, response) {
             error: false,
         });
     } catch (error) {
+        console.log("Fetch home escort error : ", error);
         return response.status(500).json({
-            message: error.message || error,
+            message: "Fetching escorts profile failed!",
             success: false,
             error: true,
         });
@@ -3493,8 +3501,10 @@ export const advanceSearchController = async (request, response) => {
         });
 
     } catch (error) {
+        console.log("Fetch advanced search escort error : ", error);
+
         response.status(500).json({
-            message: "Advance search failed",
+            message: "Something went wrong! Advance search failed",
             success: false,
             error: true,
         });
@@ -3623,7 +3633,7 @@ export const createNewsTourcontroller = async (request, response) => {
     } catch (error) {
 
         return response.status(500).json({
-            message: error.message || "Server Error",
+            message: "Something went wrong! Newsand Tour creation failed",
             success: false,
             error: true
         });
@@ -3666,8 +3676,9 @@ export const fetchEscortNewsTourcontroller = async (request, response) => {
         });
 
     } catch (error) {
+        console.log("NewsandTour Post fetch error", error);
         return response.status(500).json({
-            message: error.message || "Server Error",
+            message: "Something went wrong! post fetching failed",
             success: false,
             error: true
         })
