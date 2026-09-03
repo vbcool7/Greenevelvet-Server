@@ -3243,13 +3243,13 @@ export async function fetchFilterHomescortscontroller(request, response) {
             query.$and.push({
                 $or: [{
                         city: {
-                            $regex: selectedCity,
+                            $regex: `^${selectedCity}$`,
                             $options: "i"
                         }
                     },
                     {
                         additionalCities: {
-                            $regex: selectedCity,
+                            $regex: `^${selectedCity}$`,
                             $options: "i"
                         }
                     }
