@@ -3217,7 +3217,6 @@ export async function fetchFilterHomescortscontroller(request, response) {
             country,
             city,
             name,
-            keyword,
             gender,
             account_type,
             adverties_category,
@@ -3259,35 +3258,7 @@ export async function fetchFilterHomescortscontroller(request, response) {
         if (account_type && account_type !== "All") query.account_type = account_type;
         if (adverties_category && adverties_category !== "Any") query.adverties_category = adverties_category;
         // keyword search on name or highlights
-        if (keyword) {
-            query.$and.push({
-                $or: [{
-                        name: {
-                            $regex: keyword,
-                            $options: "i"
-                        }
-                    },
-                    {
-                        city: {
-                            $regex: keyword,
-                            $options: "i"
-                        }
-                    },
-                    {
-                        additionalCities: {
-                            $regex: keyword,
-                            $options: "i"
-                        }
-                    },
-                    {
-                        highlights: {
-                            $regex: keyword,
-                            $options: "i"
-                        }
-                    }
-                ]
-            });
-        }
+        
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
         // Only escorts with avatar
