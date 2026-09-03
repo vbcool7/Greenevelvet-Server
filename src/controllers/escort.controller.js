@@ -3090,7 +3090,29 @@ export async function fetchFiltercityescortscontroller(request, response) {
 
         query.status = "Active";
 
-        if (filters.city) query.city = filters.city;
+        // if (filters.city) query.city = filters.city;
+
+        if (filters.city) {
+            const selectedCity = filters.city
+                .trim()
+                .replace(/\s+/g, " ");
+
+            query.$or = [{
+                    city: {
+                        $regex: `^${selectedCity}$`,
+                        $options: "i"
+                    }
+                },
+                {
+                    additionalCities: {
+                        $regex: `^${selectedCity}$`,
+                        $options: "i"
+                    }
+                }
+            ];
+        }
+
+
         if (filters.country) query.country = filters.country;
 
         if (filters.name) {
@@ -3189,9 +3211,15 @@ export async function fetchFiltercityescortscontroller(request, response) {
             });
         }
 
+        const formattedEscortList = escortList.map((escort) => ({
+            ...escort.toObject(),
+            city: filters.city?.trim().replace(/\s+/g, " ") || escort.city
+        }));
+
         return response.status(200).json({
             message: "Filtered escorts fetched",
-            data: escortList,
+            data: formattedEscortList,
+            count:formattedEscortList.length,
             success: true,
             error: false,
         });
