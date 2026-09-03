@@ -573,7 +573,9 @@ export const escortResetPassword = async (request, response) => {
     }
 };
 
-
+//===================================================================================================//
+//                      Registration Controllers
+//===================================================================================================//
 
 // Escort Register controll step-1
 export async function registerEscortcontroller(request, response) {
@@ -1311,6 +1313,110 @@ export async function escortUploadverification(request, response) {
 
 }
 
+// upload Avatar step-6
+export async function uploadAvatarcontroller(request, response) {
+    try {
+        const {
+            escortId
+        } = request.body;
+
+        if (!escortId) {
+            return response.status(400).json({
+                message: "escort Id required",
+                success: false,
+                error: true
+            })
+        }
+
+        if (!request.files?.avatar) {
+            return response.status(400).json({
+                message: "profile image required",
+                success: false,
+                error: true
+            })
+        }
+
+        const existingEscort = await EscortModel.findOne({
+            escortId
+        });
+
+        if (!existingEscort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+        if (existingEscort?.avatar?.public_id) {
+
+            await deleteFromCloudinary(existingEscort.avatar.public_id);
+
+        }
+
+        const avatarUpload = await uploadImageCloudinary(request.files.avatar[0], "profileImg/avatar");
+
+        const uploadEscort = await EscortModel.findOneAndUpdate({
+            escortId
+        }, {
+            avatar: {
+                url: avatarUpload.secure_url,
+                public_id: avatarUpload.public_id,
+                status: "Pending"
+            },
+            hasAcceptedAvatarOwnership: true,
+            avatarOwnershipAcceptedAt: new Date(),
+            lastCompletedStep: 6,
+        }, {
+            new: true
+        });
+
+        if (!uploadEscort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+        const admin = await AdminModel.findOne();
+        if (!admin) {
+            console.error("❌ Notification skipped: No Admin found in database.");
+        } else {
+            if (uploadEscort.status === "Active") {
+                const load = await createAndSendNotification(request.app, {
+                    recipientId: admin._id,
+                    recipientModel: "Admin",
+                    senderId: uploadEscort._id,
+                    senderModel: "Escort",
+                    type: "VERIFICATION",
+                    title: "New Profile image upload",
+                    message: `${uploadEscort.name} has upload new profile image and is waiting for approval.`,
+                    link: `/viewescortprofile/${uploadEscort._id}`
+                });
+            }
+        }
+
+
+        return response.status(200).json({
+            message: "profile image uploaded successfully",
+            success: true,
+            error: false,
+            data: {
+                avatar: avatarUpload.secure_url,
+            },
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || error,
+            error: true,
+            success: false
+        })
+    }
+
+}
+
 // registration process upload gallery images  step-7
 export async function registerGalleryController(request, response) {
     try {
@@ -1782,6 +1888,9 @@ export async function registrationResubmit(request, response) {
     }
 }
 
+//===================================================================================================//
+
+
 // Subcribe plan controll
 export async function subcribePlans(request, response) {
     try {
@@ -1992,110 +2101,7 @@ export async function logoutEscortcontroller(request, response) {
     }
 }
 
-// upload Avatar step-6
-export async function uploadAvatarcontroller(request, response) {
-    try {
-        const {
-            escortId
-        } = request.body;
-
-        if (!escortId) {
-            return response.status(400).json({
-                message: "escort Id required",
-                success: false,
-                error: true
-            })
-        }
-
-        if (!request.files?.avatar) {
-            return response.status(400).json({
-                message: "profile image required",
-                success: false,
-                error: true
-            })
-        }
-
-        const existingEscort = await EscortModel.findOne({
-            escortId
-        });
-
-        if (!existingEscort) {
-            return response.status(404).json({
-                message: "Escort not found",
-                success: false,
-                error: true
-            });
-        }
-
-        if (existingEscort?.avatar?.public_id) {
-
-            await deleteFromCloudinary(existingEscort.avatar.public_id);
-
-        }
-
-        const avatarUpload = await uploadImageCloudinary(request.files.avatar[0], "profileImg/avatar");
-
-        const uploadEscort = await EscortModel.findOneAndUpdate({
-            escortId
-        }, {
-            avatar: {
-                url: avatarUpload.secure_url,
-                public_id: avatarUpload.public_id,
-                status: "Pending"
-            },
-            hasAcceptedAvatarOwnership: true,
-            avatarOwnershipAcceptedAt: new Date(),
-            lastCompletedStep: 6,
-        }, {
-            new: true
-        });
-
-        if (!uploadEscort) {
-            return response.status(404).json({
-                message: "Escort not found",
-                success: false,
-                error: true
-            });
-        }
-
-        const admin = await AdminModel.findOne();
-        if (!admin) {
-            console.error("❌ Notification skipped: No Admin found in database.");
-        } else {
-            if (uploadEscort.status === "Active") {
-                const load = await createAndSendNotification(request.app, {
-                    recipientId: admin._id,
-                    recipientModel: "Admin",
-                    senderId: uploadEscort._id,
-                    senderModel: "Escort",
-                    type: "VERIFICATION",
-                    title: "New Profile image upload",
-                    message: `${uploadEscort.name} has upload new profile image and is waiting for approval.`,
-                    link: `/viewescortprofile/${uploadEscort._id}`
-                });
-            }
-        }
-
-
-        return response.status(200).json({
-            message: "profile image uploaded successfully",
-            success: true,
-            error: false,
-            data: {
-                avatar: avatarUpload.secure_url,
-            },
-        });
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || error,
-            error: true,
-            success: false
-        })
-    }
-
-}
-
+// toggle face blur
 export async function toggleFaceBlur(request, response) {
     try {
         const userId = request.user?._id;
@@ -2822,8 +2828,7 @@ export async function DeleteService(request, response) {
 }
 
 
-
-// escort rates
+// escort add rates
 export async function escortRatescontroller(request, response) {
     try {
         const {
@@ -3050,6 +3055,8 @@ export async function fetchescortServicescontroller(request, response) {
     }
 }
 
+// ===================================================< Fetch Home, City and Advanced Search controlls >============================================================
+
 // filter city escorts
 export async function fetchFiltercityescortscontroller(request, response) {
     try {
@@ -3223,7 +3230,22 @@ export async function fetchFilterHomescortscontroller(request, response) {
         if (isVisible) query.isVisible = isVisible === "true";
 
         if (country) query.country = country.toUpperCase();
-        if (city) query.city = city.toUpperCase();
+        // if (city) query.city = city.toUpperCase();
+
+        // City + Additional Cities
+        if (city) {
+            const selectedCity = city.toUpperCase();
+
+            query.$or = [{
+                    city: selectedCity
+                },
+                {
+                    additionalCities: selectedCity
+                }
+            ];
+        }
+
+
         if (name) query.name = name;
 
         if (gender && gender !== "All") query.gender = gender;
@@ -3239,6 +3261,12 @@ export async function fetchFilterHomescortscontroller(request, response) {
                 },
                 {
                     city: {
+                        $regex: keyword,
+                        $options: "i"
+                    }
+                },
+                {
+                    additionalCities: {
                         $regex: keyword,
                         $options: "i"
                     }
