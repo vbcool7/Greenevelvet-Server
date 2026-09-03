@@ -3242,23 +3242,34 @@ export async function fetchFilterHomescortscontroller(request, response) {
         if (selectedCity) {
             query.$and.push({
                 $or: [{
-                        city: selectedCity
+                        city: {
+                            $regex: `^${selectedCity}$`,
+                            $options: "i"
+                        }
                     },
                     {
-                        additionalCities: selectedCity
+                        additionalCities: {
+                            $regex: `^${selectedCity}$`,
+                            $options: "i"
+                        }
                     }
                 ]
             });
         }
 
 
-        if (name) query.name = name;
+        if (name?.trim()) {
+            query.name = {
+                $regex: `^${name.trim()}$`,
+                $options: "i"
+            };
+        }
 
         if (gender && gender !== "All") query.gender = gender;
         if (account_type && account_type !== "All") query.account_type = account_type;
         if (adverties_category && adverties_category !== "Any") query.adverties_category = adverties_category;
         // keyword search on name or highlights
-        
+
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
         // Only escorts with avatar
