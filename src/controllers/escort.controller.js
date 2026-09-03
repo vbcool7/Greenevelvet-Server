@@ -3260,31 +3260,33 @@ export async function fetchFilterHomescortscontroller(request, response) {
         if (adverties_category && adverties_category !== "Any") query.adverties_category = adverties_category;
         // keyword search on name or highlights
         if (keyword) {
-            query.$or = [{
-                    name: {
-                        $regex: keyword,
-                        $options: "i"
+            query.$and.push({
+                $or: [{
+                        name: {
+                            $regex: keyword,
+                            $options: "i"
+                        }
+                    },
+                    {
+                        city: {
+                            $regex: keyword,
+                            $options: "i"
+                        }
+                    },
+                    {
+                        additionalCities: {
+                            $regex: keyword,
+                            $options: "i"
+                        }
+                    },
+                    {
+                        highlights: {
+                            $regex: keyword,
+                            $options: "i"
+                        }
                     }
-                },
-                {
-                    city: {
-                        $regex: keyword,
-                        $options: "i"
-                    }
-                },
-                {
-                    additionalCities: {
-                        $regex: keyword,
-                        $options: "i"
-                    }
-                },
-                {
-                    highlights: {
-                        $regex: keyword,
-                        $options: "i"
-                    }
-                },
-            ];
+                ]
+            });
         }
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
