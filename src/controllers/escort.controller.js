@@ -7082,7 +7082,8 @@ export async function editEscortProfileDetails(request, response) {
             preferData,
             about,
             country,
-            city
+            city,
+            additionalCities,
         } = request.body;
 
         // ✅ REQUIRED CHECK
@@ -7124,6 +7125,8 @@ export async function editEscortProfileDetails(request, response) {
 
         if (country !== undefined) updateData.country = country;
         if (city !== undefined) updateData.city = city;
+
+        if (Array.isArray(additionalCities)) updateData.additionalCities = additionalCities;
 
         // ✅ UPDATE USER
         const updatedEscort = await EscortModel.findByIdAndUpdate(

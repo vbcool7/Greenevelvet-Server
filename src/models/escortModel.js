@@ -37,6 +37,10 @@ const EscortSchema = new mongoose.Schema({
     city: {
         type: String,
     },
+    additionalCities: {
+        type: [String],
+        default: []
+    },
     account_classification: {
         type: String,
     },
