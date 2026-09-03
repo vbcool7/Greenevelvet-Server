@@ -3313,9 +3313,14 @@ export async function fetchFilterHomescortscontroller(request, response) {
             });
         }
 
+        const formattedEscortList = escortList.map((escort) => ({
+            ...escort,
+            city: selectedCity || escort.city
+        }));
+
         return response.status(200).json({
             message: "Filtered escorts fetched",
-            data: escortList,
+            data: formattedEscortList,
             total,
             page: parseInt(page),
             limit: parseInt(limit),
