@@ -3092,7 +3092,7 @@ export async function fetchFiltercityescortscontroller(request, response) {
 
         // if (filters.city) query.city = filters.city;
 
-        const selectedCity = city?.trim().replace(/\s+/g, " ");
+        const selectedCity = filters?.city?.trim().replace(/\s+/g, " ");
 
         if (selectedCity) {
             query.$and.push({
@@ -3381,7 +3381,7 @@ export const advanceSearchController = async (request, response) => {
         // ---------- location (CAPITAL match) ----------
         if (filters.country) query.country = filters.country;
 
-        const selectedCity = city?.trim().replace(/\s+/g, " ");
+        const selectedCity = filters?.city?.trim().replace(/\s+/g, " ");
 
         if (selectedCity) {
             query.$and.push({
