@@ -3237,7 +3237,7 @@ export async function fetchFilterHomescortscontroller(request, response) {
 
         // City + Additional Cities
 
-        const selectedCity = city?.trim().toUpperCase();
+        const selectedCity = city?.trim().replace(/\s+/g, " ");
 
         if (selectedCity) {
             query.$and.push({
@@ -3259,8 +3259,10 @@ export async function fetchFilterHomescortscontroller(request, response) {
 
 
         if (name?.trim()) {
+            const searchName = name.trim().replace(/\s+/g, " ");
+
             query.name = {
-                $regex: `^${name.trim()}$`,
+                $regex: searchName,
                 $options: "i"
             };
         }
