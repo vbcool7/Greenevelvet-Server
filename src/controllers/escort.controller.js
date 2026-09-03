@@ -3090,7 +3090,31 @@ export async function fetchFiltercityescortscontroller(request, response) {
 
         query.status = "Active";
 
-        if (filters.city) query.city = filters.city;
+        // if (filters.city) query.city = filters.city;
+
+        const selectedCity = city?.trim().replace(/\s+/g, " ");
+
+        if (selectedCity) {
+            query.$and.push({
+                $or: [{
+                        city: {
+                            $regex: `^${selectedCity}$`,
+                            $options: "i"
+                        }
+                    },
+                    {
+                        additionalCities: {
+                            $regex: `^${selectedCity}$`,
+                            $options: "i"
+                        }
+                    }
+                ]
+            });
+        }
+
+
+
+
         if (filters.country) query.country = filters.country;
 
         if (filters.name) {
@@ -3189,9 +3213,15 @@ export async function fetchFiltercityescortscontroller(request, response) {
             });
         }
 
+        const formattedEscortList = escortList.map((escort) => ({
+            ...escort,
+            city: selectedCity || escort.city
+        }));
+
         return response.status(200).json({
             message: "Filtered escorts fetched",
-            data: escortList,
+            data: formattedEscortList,
+            count: escortList.length,
             success: true,
             error: false,
         });
@@ -3350,7 +3380,26 @@ export const advanceSearchController = async (request, response) => {
 
         // ---------- location (CAPITAL match) ----------
         if (filters.country) query.country = filters.country;
-        if (filters.city) query.city = filters.city;
+
+        const selectedCity = city?.trim().replace(/\s+/g, " ");
+
+        if (selectedCity) {
+            query.$and.push({
+                $or: [{
+                        city: {
+                            $regex: `^${selectedCity}$`,
+                            $options: "i"
+                        }
+                    },
+                    {
+                        additionalCities: {
+                            $regex: `^${selectedCity}$`,
+                            $options: "i"
+                        }
+                    }
+                ]
+            });
+        }
 
         // ---------- strings ----------
         if (filters.day) query.day = filters.day;
@@ -3478,12 +3527,17 @@ export const advanceSearchController = async (request, response) => {
                 boostedAt: -1
             });
 
+        const formattedEscortList = escorts.map((escort) => ({
+            ...escort,
+            city: selectedCity || escort.city
+        }));
+
         return response.json({
             message: "Escort found",
             success: true,
             error: false,
             count: escorts.length,
-            data: escorts,
+            data: formattedEscortList,
         });
 
     } catch (error) {
