@@ -3368,7 +3368,14 @@ export const advanceSearchController = async (request, response) => {
         if (filters.infmty === "true") query.infmty = true;
 
         // ---------- location (CAPITAL match) ----------
-        if (filters.country) query.country = filters.country;
+        // if (filters.country) query.country = filters.country;
+
+        if (filters.country) {
+            query.country = {
+                $regex: `^${filters.country.trim()}$`,
+                $options: "i"
+            };
+        }
 
         // if (filters.city) query.city = filters.city;
 
@@ -3519,7 +3526,7 @@ export const advanceSearchController = async (request, response) => {
             });
 
         const formattedEscortList = escorts?.map((escort) => ({
-            ...escort.toObject(),
+            ...escort,
             city: filters.city?.trim().replace(/\s+/g, " ") || escort.city
         }));
 
