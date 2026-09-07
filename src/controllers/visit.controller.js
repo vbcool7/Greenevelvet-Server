@@ -1,16 +1,29 @@
 import mongoose from "mongoose";
+import crypto from "crypto";
 import requestIp from "request-ip";
 import VisitsModel from "../models/visitsModel.js";
+
+
+
+
+
+
 
 // Add visit
 export const addVisit = async (request, response) => {
     try {
-        const { escortId, type, city, country, visitorId } = request.body;
+        const {
+            escortId,
+            type,
+            city,
+            country,
+            visitorId
+        } = request.body;
 
-        // ✅ IP detection (library)
+        // ✅ IP detection
         const ip = requestIp.getClientIp(request);
 
-        // ✅ escortId validation
+        // ✅ Validate escortId
         if (!mongoose.Types.ObjectId.isValid(escortId)) {
             return response.status(400).json({
                 message: "Invalid escortId",
@@ -19,17 +32,61 @@ export const addVisit = async (request, response) => {
             });
         }
 
-        // ✅ 5 min duplicate control
-        const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+        const visitType = type || "profile_view";
+
+        // =========================================================
+        // ✅ VISITOR IDENTIFICATION
+        // Logged-in user  -> visitorId
+        // Guest user      -> anonymousVisitorId cookie
+        // =========================================================
+
+        let anonymousVisitorId = null;
+
+        if (!visitorId) {
+            anonymousVisitorId =
+                request.cookies?.anonymousVisitorId;
+
+            // Guest first visit -> create cookie
+            if (!anonymousVisitorId) {
+                anonymousVisitorId = crypto.randomUUID();
+
+                response.cookie("anonymousVisitorId", anonymousVisitorId, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === "production",
+                    sameSite: "lax",
+                    maxAge: 365 * 24 * 60 * 60 * 1000,
+                    path: "/",
+                });
+            }
+        }
+
+        // =========================================================
+        // ✅ VISITOR QUERY
+        // =========================================================
+
+        const visitorQuery = visitorId ?
+            {
+                visitorId
+            } :
+            {
+                anonymousVisitorId
+            };
+
+        // =========================================================
+        // ✅ 5 MINUTE DUPLICATE CONTROL
+        // =========================================================
+
+        const fiveMinAgo = new Date(
+            Date.now() - 5 * 60 * 1000
+        );
 
         const existing = await VisitsModel.findOne({
             escortId,
-            type,
-            $or: [
-                { visitorId },
-                { ip },
-            ],
-            date: { $gte: fiveMinAgo },
+            type: visitType,
+            ...visitorQuery,
+            date: {
+                $gte: fiveMinAgo
+            },
         });
 
         if (existing) {
@@ -40,17 +97,45 @@ export const addVisit = async (request, response) => {
             });
         }
 
-        // ✅ save visit
+        // =========================================================
+        // ✅ CHECK PREVIOUS VISIT
+        // =========================================================
+
+        const previousVisit = await VisitsModel.findOne({
+                escortId,
+                type: visitType,
+                ...visitorQuery,
+            })
+            .sort({
+                date: -1
+            })
+            .lean();
+
+        const isReturning = !!previousVisit;
+
+        // =========================================================
+        // ✅ SAVE VISIT
+        // =========================================================
+
         const visit = await VisitsModel.create({
             escortId,
-            visitorId,
-            type: type || "profile_view",
+
+            // Logged-in user
+            visitorId: visitorId || null,
+
+            // Guest user
+            anonymousVisitorId: anonymousVisitorId || null,
+
+            type: visitType,
+
             city,
             country,
             ip,
+
+            isReturning,
         });
 
-        response.status(201).json({
+        return response.status(201).json({
             message: "Visit added",
             success: true,
             error: false,
@@ -85,7 +170,9 @@ function getISOWeekNumber(date) {
 // fetch visits
 export const getVisitStats = async (request, response) => {
     try {
-        const { type = "week", _id } = request.query;
+        const {
+            type = "week", _id
+        } = request.query;
 
         console.log("request query", request.query);
 
@@ -96,13 +183,11 @@ export const getVisitStats = async (request, response) => {
         if (type === "day") {
             startDate = new Date();
             startDate.setHours(0, 0, 0, 0);
-        }
-        else if (type === "week") {
+        } else if (type === "week") {
             startDate = new Date();
             startDate.setDate(now.getDate() - 27); // ✅ last 4 weeks
             startDate.setHours(0, 0, 0, 0);
-        }
-        else {
+        } else {
             startDate = new Date();
             startDate.setDate(1);
             startDate.setHours(0, 0, 0, 0);
@@ -112,79 +197,136 @@ export const getVisitStats = async (request, response) => {
         let groupId;
 
         if (type === "day") {
-            groupId = { $dayOfWeek: "$date" };
-        }
-        else if (type === "week") {
-            groupId = { $isoWeek: "$date" };   // ✅ correct
-        }
-        else if (type === "month") {
-            groupId = { $month: "$date" };
+            groupId = {
+                $dayOfWeek: "$date"
+            };
+        } else if (type === "week") {
+            groupId = {
+                $isoWeek: "$date"
+            }; // ✅ correct
+        } else if (type === "month") {
+            groupId = {
+                $month: "$date"
+            };
         }
 
-        const data = await VisitsModel.aggregate([
-            {
+        const data = await VisitsModel.aggregate([{
                 $match: {
                     escortId: new mongoose.Types.ObjectId(_id),
-                    date: { $gte: startDate, $lte: now },
+                    date: {
+                        $gte: startDate,
+                        $lte: now
+                    },
                 },
             },
             {
                 $facet: {
-                    chartData: [
-                        { $match: { type: "profile_view" } },
+                    chartData: [{
+                            $match: {
+                                type: "profile_view"
+                            }
+                        },
                         {
                             $group: {
                                 _id: groupId,
-                                visits: { $sum: 1 },
+                                visits: {
+                                    $sum: 1
+                                },
                             },
                         },
-                        { $sort: { _id: 1 } },
-                    ],
-
-                    totalVisitors: [
-                        { $match: { type: "profile_view" } },
-                        { $count: "count" },
-                    ],
-
-                    uniqueVisitors: [
                         {
+                            $sort: {
+                                _id: 1
+                            }
+                        },
+                    ],
+
+                    totalVisitors: [{
+                            $match: {
+                                type: "profile_view"
+                            }
+                        },
+                        {
+                            $count: "count"
+                        },
+                    ],
+
+                    uniqueVisitors: [{
                             $match: {
                                 type: "profile_view",
-                                visitorId: { $ne: null },
+                                visitorId: {
+                                    $ne: null
+                                },
                             },
                         },
-                        { $group: { _id: "$visitorId" } },
-                        { $count: "count" },
+                        {
+                            $group: {
+                                _id: "$visitorId"
+                            }
+                        },
+                        {
+                            $count: "count"
+                        },
                     ],
 
-                    callClicks: [
-                        { $match: { type: "call_click" } },
-                        { $count: "count" },
+                    callClicks: [{
+                            $match: {
+                                type: "call_click"
+                            }
+                        },
+                        {
+                            $count: "count"
+                        },
                     ],
 
-                    whatsappClicks: [
-                        { $match: { type: "whatsapp_click" } },
-                        { $count: "count" },
+                    whatsappClicks: [{
+                            $match: {
+                                type: "whatsapp_click"
+                            }
+                        },
+                        {
+                            $count: "count"
+                        },
                     ],
 
-                    smsClicks: [
-                        { $match: { type: "sms_click" } },
-                        { $count: "count" },
+                    smsClicks: [{
+                            $match: {
+                                type: "sms_click"
+                            }
+                        },
+                        {
+                            $count: "count"
+                        },
                     ],
 
-                    websiteClicks: [
-                        { $match: { type: "website_click" } },
-                        { $count: "count" },
+                    websiteClicks: [{
+                            $match: {
+                                type: "website_click"
+                            }
+                        },
+                        {
+                            $count: "count"
+                        },
                     ],
 
-                    newsandtourClicks: [
-                        { $match: { type: "newsandtour_view" } },
-                        { $count: "count" },
+                    newsandtourClicks: [{
+                            $match: {
+                                type: "newsandtour_view"
+                            }
+                        },
+                        {
+                            $count: "count"
+                        },
                     ],
 
-                    blogClicks: [
-                        { $match: { type: "blog_view" } },
-                        { $count: "count" },
+                    blogClicks: [{
+                            $match: {
+                                type: "blog_view"
+                            }
+                        },
+                        {
+                            $count: "count"
+                        },
                     ],
                 },
             },
@@ -223,11 +365,12 @@ export const getVisitStats = async (request, response) => {
             const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
             finalChart = days.map(day => {
                 const found = formattedChart.find(item => item.name === day);
-                return { name: day, visits: found ? found.visits : 0 };
+                return {
+                    name: day,
+                    visits: found ? found.visits : 0
+                };
             });
-        }
-
-        else if (type === "week") {
+        } else if (type === "week") {
             const currentWeek = getISOWeekNumber(now);
 
             const weeks = [
@@ -246,13 +389,14 @@ export const getVisitStats = async (request, response) => {
                     visits: found ? found.visits : 0
                 };
             });
-        }
-
-        else if (type === "month") {
+        } else if (type === "month") {
             const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
             finalChart = months.map(month => {
                 const found = formattedChart.find(item => item.name === month);
-                return { name: month, visits: found ? found.visits : 0 };
+                return {
+                    name: month,
+                    visits: found ? found.visits : 0
+                };
             });
         }
 
@@ -285,7 +429,9 @@ export const getVisitStats = async (request, response) => {
 //  last 30 days total of all stats 
 export const totalVisitStats = async (request, response) => {
     try {
-        const { _id } = request.query;
+        const {
+            _id
+        } = request.query;
 
         if (!_id || !mongoose.Types.ObjectId.isValid(_id)) {
             return response.status(400).json({
@@ -297,47 +443,96 @@ export const totalVisitStats = async (request, response) => {
         const now = new Date();
         const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-        const data = await VisitsModel.aggregate([
-            {
+        const data = await VisitsModel.aggregate([{
                 $match: {
                     escortId: new mongoose.Types.ObjectId(_id),
-                    date: { $gte: thirtyDaysAgo, $lte: now },
+                    date: {
+                        $gte: thirtyDaysAgo,
+                        $lte: now
+                    },
                 },
             },
             {
                 $facet: {
-                    totalVisitors: [
-                        { $match: { type: "profile_view" } },
-                        { $count: "count" },
+                    totalVisitors: [{
+                            $match: {
+                                type: "profile_view"
+                            }
+                        },
+                        {
+                            $count: "count"
+                        },
                     ],
-                    uniqueVisitors: [
-                        { $match: { type: "profile_view", visitorId: { $ne: null } } },
-                        { $group: { _id: "$visitorId" } },
-                        { $count: "count" },
+                    uniqueVisitors: [{
+                            $match: {
+                                type: "profile_view",
+                                visitorId: {
+                                    $ne: null
+                                }
+                            }
+                        },
+                        {
+                            $group: {
+                                _id: "$visitorId"
+                            }
+                        },
+                        {
+                            $count: "count"
+                        },
                     ],
-                    callClicks: [
-                        { $match: { type: "call_click" } },
-                        { $count: "count" },
+                    callClicks: [{
+                            $match: {
+                                type: "call_click"
+                            }
+                        },
+                        {
+                            $count: "count"
+                        },
                     ],
-                    whatsappClicks: [
-                        { $match: { type: "whatsapp_click" } },
-                        { $count: "count" },
+                    whatsappClicks: [{
+                            $match: {
+                                type: "whatsapp_click"
+                            }
+                        },
+                        {
+                            $count: "count"
+                        },
                     ],
-                    smsClicks: [
-                        { $match: { type: "sms_click" } },
-                        { $count: "count" },
+                    smsClicks: [{
+                            $match: {
+                                type: "sms_click"
+                            }
+                        },
+                        {
+                            $count: "count"
+                        },
                     ],
-                    websiteClicks: [
-                        { $match: { type: "website_click" } },
-                        { $count: "count" },
+                    websiteClicks: [{
+                            $match: {
+                                type: "website_click"
+                            }
+                        },
+                        {
+                            $count: "count"
+                        },
                     ],
-                    newsandtourClicks: [
-                        { $match: { type: "newsandtour_view" } },
-                        { $count: "count" },
+                    newsandtourClicks: [{
+                            $match: {
+                                type: "newsandtour_view"
+                            }
+                        },
+                        {
+                            $count: "count"
+                        },
                     ],
-                    blogClicks: [
-                        { $match: { type: "blog_view" } },
-                        { $count: "count" },
+                    blogClicks: [{
+                            $match: {
+                                type: "blog_view"
+                            }
+                        },
+                        {
+                            $count: "count"
+                        },
                     ],
                 },
             },

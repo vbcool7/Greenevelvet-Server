@@ -1,7 +1,8 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, {
+    Schema
+} from "mongoose";
 
-const visitsSchema = new mongoose.Schema(
-    {
+const visitsSchema = new mongoose.Schema({
         escortId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Escort",
@@ -16,9 +17,45 @@ const visitsSchema = new mongoose.Schema(
             index: true
         },
 
+        anonymousVisitorId: {
+            type: String,
+            default: null,
+            index: true
+        },
+
+        isReturning: {
+            type: Boolean,
+            default: false,
+            index: true
+        },
+
+        source: {
+            type: String,
+            enum: [
+                "search",
+                "city_page",
+                "home_page",
+                "profile",
+                "direct",
+                "advanced_search",
+                "other"
+            ],
+            default: "direct",
+            index: true
+        },
+
         type: {
             type: String,
-            enum: ["profile_view", "call_click", "sms_click", "blog_view", "newsandtour_view", "whatsapp_click", "website_click"],
+            enum: [
+                "profile_view",
+                "gallery_view",
+                "call_click",
+                "sms_click",
+                "blog_view",
+                "newsandtour_view",
+                "whatsapp_click",
+                "website_click"
+            ],
             default: "profile_view",
         },
 
@@ -42,15 +79,29 @@ const visitsSchema = new mongoose.Schema(
             type: String,
             default: null
         },
-    },
-    { timestamps: true }
+    }, {
+        timestamps: true
+    }
 
 );
 
-visitsSchema.index({ escortId: 1, date: 1 });
-visitsSchema.index({ escortId: 1, type: 1, date: 1 });
-visitsSchema.index({ escortId: 1, visitorId: 1 });
-visitsSchema.index({ escortId: 1, ip: 1 });
+visitsSchema.index({
+    escortId: 1,
+    date: 1
+});
+visitsSchema.index({
+    escortId: 1,
+    type: 1,
+    date: 1
+});
+visitsSchema.index({
+    escortId: 1,
+    visitorId: 1
+});
+visitsSchema.index({
+    escortId: 1,
+    ip: 1
+});
 
 
 const VisitsModel = mongoose.model("Visit", visitsSchema);

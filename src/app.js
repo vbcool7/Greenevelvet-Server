@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import escortRouter from "./routes/escort.route.js";
 import clientRouter from "./routes/client.route.js"
 import adminRouter from "./routes/admin.route.js";
@@ -30,8 +31,12 @@ app.use(cors({
     ]
 }))
 
+
+
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
+
+app.use(cookieParser());
 
 /* Health Check */
 app.get("/", (req, res) => {
