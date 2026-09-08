@@ -291,7 +291,7 @@ export const getVisitStats = async (request, response) => {
                         }
                     ],
 
-                    eturningVisitors: [{
+                    returningVisitors: [{
                             $match: {
                                 type: "profile_view",
                                 isReturning: true
