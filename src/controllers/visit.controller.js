@@ -17,7 +17,8 @@ export const addVisit = async (request, response) => {
             type,
             city,
             country,
-            visitorId
+            visitorId,
+            source
         } = request.body;
 
         // ✅ IP detection
@@ -64,13 +65,11 @@ export const addVisit = async (request, response) => {
         // ✅ VISITOR QUERY
         // =========================================================
 
-        const visitorQuery = visitorId ?
-            {
-                visitorId
-            } :
-            {
-                anonymousVisitorId
-            };
+        const visitorQuery = visitorId ? {
+            visitorId
+        } : {
+            anonymousVisitorId
+        };
 
         // =========================================================
         // ✅ 5 MINUTE DUPLICATE CONTROL
@@ -127,6 +126,8 @@ export const addVisit = async (request, response) => {
             anonymousVisitorId: anonymousVisitorId || null,
 
             type: visitType,
+
+            source: source || "direct",
 
             city,
             country,
@@ -254,19 +255,51 @@ export const getVisitStats = async (request, response) => {
                     uniqueVisitors: [{
                             $match: {
                                 type: "profile_view",
-                                visitorId: {
-                                    $ne: null
-                                },
-                            },
+                                $or: [{
+                                        visitorId: {
+                                            $ne: null
+                                        }
+                                    },
+                                    {
+                                        anonymousVisitorId: {
+                                            $ne: null
+                                        }
+                                    }
+                                ]
+                            }
                         },
                         {
                             $group: {
-                                _id: "$visitorId"
+                                _id: {
+                                    $cond: [{
+                                            $ne: ["$visitorId", null]
+                                        },
+                                        {
+                                            $concat: ["client_", {
+                                                $toString: "$visitorId"
+                                            }]
+                                        },
+                                        {
+                                            $concat: ["guest_", "$anonymousVisitorId"]
+                                        }
+                                    ]
+                                }
                             }
                         },
                         {
                             $count: "count"
+                        }
+                    ],
+
+                    eturningVisitors: [{
+                            $match: {
+                                type: "profile_view",
+                                isReturning: true
+                            }
                         },
+                        {
+                            $count: "count"
+                        }
                     ],
 
                     callClicks: [{
@@ -407,6 +440,7 @@ export const getVisitStats = async (request, response) => {
                 chartData: finalChart,
                 totalVisitors: result.totalVisitors[0]?.count || 0,
                 uniqueVisitors: result.uniqueVisitors[0]?.count || 0,
+                returningVisitors: result.returningVisitors[0]?.count || 0,
                 callClicks: result.callClicks[0]?.count || 0,
                 whatsappClicks: result.whatsappClicks[0]?.count || 0,
                 smsClicks: result.smsClicks[0]?.count || 0,
@@ -463,23 +497,57 @@ export const totalVisitStats = async (request, response) => {
                             $count: "count"
                         },
                     ],
+
                     uniqueVisitors: [{
                             $match: {
                                 type: "profile_view",
-                                visitorId: {
-                                    $ne: null
-                                }
+                                $or: [{
+                                        visitorId: {
+                                            $ne: null
+                                        }
+                                    },
+                                    {
+                                        anonymousVisitorId: {
+                                            $ne: null
+                                        }
+                                    }
+                                ]
                             }
                         },
                         {
                             $group: {
-                                _id: "$visitorId"
+                                _id: {
+                                    $cond: [{
+                                            $ne: ["$visitorId", null]
+                                        },
+                                        {
+                                            $concat: ["client_", {
+                                                $toString: "$visitorId"
+                                            }]
+                                        },
+                                        {
+                                            $concat: ["guest_", "$anonymousVisitorId"]
+                                        }
+                                    ]
+                                }
                             }
                         },
                         {
                             $count: "count"
-                        },
+                        }
                     ],
+
+                    returningVisitors: [{
+                            $match: {
+                                type: "profile_view",
+                                isReturning: true
+                            }
+                        },
+                        {
+                            $count: "count"
+                        }
+                    ],
+
                     callClicks: [{
                             $match: {
                                 type: "call_click"
@@ -489,6 +557,7 @@ export const totalVisitStats = async (request, response) => {
                             $count: "count"
                         },
                     ],
+
                     whatsappClicks: [{
                             $match: {
                                 type: "whatsapp_click"
@@ -498,6 +567,7 @@ export const totalVisitStats = async (request, response) => {
                             $count: "count"
                         },
                     ],
+
                     smsClicks: [{
                             $match: {
                                 type: "sms_click"
@@ -507,6 +577,7 @@ export const totalVisitStats = async (request, response) => {
                             $count: "count"
                         },
                     ],
+
                     websiteClicks: [{
                             $match: {
                                 type: "website_click"
@@ -516,6 +587,7 @@ export const totalVisitStats = async (request, response) => {
                             $count: "count"
                         },
                     ],
+
                     newsandtourClicks: [{
                             $match: {
                                 type: "newsandtour_view"
@@ -525,6 +597,7 @@ export const totalVisitStats = async (request, response) => {
                             $count: "count"
                         },
                     ],
+
                     blogClicks: [{
                             $match: {
                                 type: "blog_view"
@@ -545,6 +618,7 @@ export const totalVisitStats = async (request, response) => {
             data: {
                 totalVisitors: result.totalVisitors[0]?.count || 0,
                 uniqueVisitors: result.uniqueVisitors[0]?.count || 0,
+                returningVisitors: result.returningVisitors[0]?.count || 0,
                 callClicks: result.callClicks[0]?.count || 0,
                 whatsappClicks: result.whatsappClicks[0]?.count || 0,
                 smsClicks: result.smsClicks[0]?.count || 0,
@@ -559,6 +633,110 @@ export const totalVisitStats = async (request, response) => {
         response.status(500).json({
             success: false,
             message: "Error fetching total visit stats",
+        });
+    }
+};
+
+
+// Fetch search appearance / visit source stats
+export const getSearchAppearanceStats = async (request, response) => {
+    try {
+        const {
+            type = "month", _id
+        } = request.query;
+
+        if (!_id || !mongoose.Types.ObjectId.isValid(_id)) {
+            return response.status(400).json({
+                success: false,
+                message: "Invalid escort id",
+            });
+        }
+
+        const now = new Date();
+        let startDate;
+
+        // DATE RANGE
+        if (type === "day") {
+            startDate = new Date();
+            startDate.setHours(0, 0, 0, 0);
+
+        } else if (type === "week") {
+            startDate = new Date();
+            startDate.setDate(startDate.getDate() - 27);
+            startDate.setHours(0, 0, 0, 0);
+
+        } else if (type === "month") {
+            startDate = new Date();
+            startDate.setDate(1);
+            startDate.setHours(0, 0, 0, 0);
+
+        } else {
+            return response.status(400).json({
+                success: false,
+                message: "Invalid type",
+            });
+        }
+
+        const data = await VisitsModel.aggregate([{
+                $match: {
+                    escortId: new mongoose.Types.ObjectId(_id),
+                    type: "profile_view",
+                    date: {
+                        $gte: startDate,
+                        $lte: now,
+                    },
+                },
+            },
+
+            {
+                $group: {
+                    _id: "$source",
+                    count: {
+                        $sum: 1,
+                    },
+                },
+            },
+
+            {
+                $sort: {
+                    count: -1,
+                },
+            },
+        ]);
+
+        const searchAppearance = {
+            search: 0,
+            city_page: 0,
+            home_page: 0,
+            profile: 0,
+            direct: 0,
+            advanced_search: 0,
+            other: 0,
+        };
+
+        data.forEach((item) => {
+            const source = item._id || "direct";
+
+            if (Object.prototype.hasOwnProperty.call(searchAppearance, source)) {
+                searchAppearance[source] = item.count;
+            } else {
+                searchAppearance.other += item.count;
+            }
+        });
+
+        response.json({
+            success: true,
+            data: {
+                searchAppearance,
+            },
+        });
+
+    } catch (error) {
+        console.log("search appearance error:", error);
+
+        response.status(500).json({
+            success: false,
+            message: "Error fetching search appearance stats",
         });
     }
 };
