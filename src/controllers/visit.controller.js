@@ -21,6 +21,8 @@ export const addVisit = async (request, response) => {
             source
         } = request.body;
 
+        console.log("🔥 ADD VISIT BODY:", request.body);
+
         // ✅ IP detection
         const ip = requestIp.getClientIp(request);
 
@@ -147,7 +149,7 @@ export const addVisit = async (request, response) => {
         console.log("visit error ", error);
 
         return response.status(500).json({
-            message: error.message || "Error adding visit",
+            message: "Error adding visit",
             success: false,
             error: true,
         });
@@ -636,7 +638,6 @@ export const totalVisitStats = async (request, response) => {
         });
     }
 };
-
 
 // Fetch search appearance / visit source stats
 export const getSearchAppearanceStats = async (request, response) => {
