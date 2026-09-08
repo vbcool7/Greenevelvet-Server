@@ -1,14 +1,20 @@
 import settingsModel from "../models/settingsModel.js";
 import fs from "fs";
-import { uploadFromCloudinary } from "../utils/uploadFromCloudinary.js";
-import { deleteFromCloudinary } from "../utils/deleteFromCloudinary.js";
+import {
+    uploadFromCloudinary
+} from "../utils/uploadFromCloudinary.js";
+import {
+    deleteFromCloudinary
+} from "../utils/deleteFromCloudinary.js";
 
 // fetch settings
 export const getSettings = async (request, response) => {
     try {
         console.log("setting fecth run");
 
-        let settings = await settingsModel.findOne({ singleton: "unique_settings" }).lean();
+        let settings = await settingsModel.findOne({
+            singleton: "unique_settings"
+        }).lean();
 
         // create if not exists
         if (!settings) {
@@ -36,12 +42,19 @@ export const getSettings = async (request, response) => {
 export const updateContactInfo = async (request, response) => {
     try {
 
-        const { email, address } = request.body;
+        const {
+            email,
+            address
+        } = request.body;
 
-        let settings = await settingsModel.findOne({ singleton: "unique_settings" });
+        let settings = await settingsModel.findOne({
+            singleton: "unique_settings"
+        });
 
         if (!settings) {
-            settings = await settingsModel.create({ singleton: "unique_settings" });
+            settings = await settingsModel.create({
+                singleton: "unique_settings"
+            });
         }
 
         let updateData = {};
@@ -63,9 +76,12 @@ export const updateContactInfo = async (request, response) => {
 
 
         const updated = await settingsModel.findByIdAndUpdate(
-            settings._id,
-            { $set: updateData },
-            { new: true, runValidators: true }
+            settings._id, {
+                $set: updateData
+            }, {
+                new: true,
+                runValidators: true
+            }
         );
 
         return response.status(200).json({
@@ -86,55 +102,106 @@ export const updateContactInfo = async (request, response) => {
 };
 
 // update site identity 
-export const updateSiteIdentity = async (request, response) => {
+export const updateSiteIdentity = async (request, response, next) => {
     let uploadedLogo = null;
     let uploadedBanner = null;
     let uploadedMobileBanner = null;
 
     try {
-        let settings = await settingsModel.findOneAndUpdate(
-            { singleton: "unique_settings" },
-            { $setOnInsert: { singleton: "unique_settings" } },
-            { new: true, upsert: true }
-        );
+        let settings = await settingsModel.findOneAndUpdate({
+            singleton: "unique_settings"
+        }, {
+            $setOnInsert: {
+                singleton: "unique_settings"
+            }
+        }, {
+            new: true,
+            upsert: true
+        });
 
         const updateData = {};
 
-        // ===== TEXT FIELDS =====
-        const allowedFields = ["taglineLine1", "taglineLine2"];
+        // ===== 1. TAGLINE LINE 1 (Compulsory/Required) =====
+        if (request.body.taglineLine1 !== undefined) {
+            try {
+                const parsed = typeof request.body.taglineLine1 === "string" ?
+                    JSON.parse(request.body.taglineLine1) :
+                    request.body.taglineLine1;
 
-        allowedFields.forEach((field) => {
-            if (request.body[field] !== undefined) {
-                try {
-                    const parsed = JSON.parse(request.body[field]);
-
-                    // ✅ validation
-                    if (
-                        parsed?.text &&
-                        parsed?.highlight &&
-                        parsed.text.includes(parsed.highlight)
-                    ) {
-                        updateData[field] = {
-                            text: parsed.text.trim(),
-                            highlight: parsed.highlight.trim(),
-                        };
-                    } else {
-                        throw new Error(`${field} invalid format`);
-                    }
-                } catch (err) {
+                if (
+                    parsed?.text &&
+                    parsed?.highlight &&
+                    parsed.text.includes(parsed.highlight)
+                ) {
+                    updateData.taglineLine1 = {
+                        text: parsed.text.trim(),
+                        highlight: parsed.highlight.trim(),
+                    };
+                } else {
                     return response.status(400).json({
                         success: false,
-                        message: `Invalid data for ${field}`,
+                        message: "Invalid format for taglineLine1. Highlight must be within text.",
                     });
                 }
+            } catch (err) {
+                return response.status(400).json({
+                    success: false,
+                    message: "Invalid JSON format for taglineLine1",
+                });
             }
-        });
+        }
 
-        const logoFile = request.files?.logo?.[0];
-        const bannerFile = request.files?.banner?.[0];
-        const mobilebannerFile = request.files?.mobilebanner?.[0];
+        // ===== 2. TAGLINE LINE 2 (Optional) =====
+        if (request.body.taglineLine2 !== undefined) {
+            try {
+                // Client ne empty string ya null bheja h toh field ko reset/empty kar do
+                if (!request.body.taglineLine2 || request.body.taglineLine2 === '""') {
+                    updateData.taglineLine2 = {
+                        text: "",
+                        highlight: ""
+                    };
+                } else {
+                    const parsed = typeof request.body.taglineLine2 === "string" ?
+                        JSON.parse(request.body.taglineLine2) :
+                        request.body.taglineLine2;
 
-        // ===== BUFFER UPLOAD (OPTION 1) =====
+                    // Object me text empty hai
+                    if (!parsed?.text || parsed?.text.trim() === "") {
+                        updateData.taglineLine2 = {
+                            text: "",
+                            highlight: ""
+                        };
+                    }
+                    // Text available hone par highlight validation
+                    else if (parsed?.text) {
+                        const highlight = parsed?.highlight || "";
+
+                        if (highlight && !parsed.text.includes(highlight)) {
+                            return response.status(400).json({
+                                success: false,
+                                message: "taglineLine2 highlight must be present inside text",
+                            });
+                        }
+
+                        updateData.taglineLine2 = {
+                            text: parsed.text.trim(),
+                            highlight: highlight.trim(),
+                        };
+                    }
+                }
+            } catch (err) {
+                return response.status(400).json({
+                    success: false,
+                    message: "Invalid JSON format for taglineLine2",
+                });
+            }
+        }
+
+        // ===== 3. FILES PROCESSING =====
+        const logoFile = request.files?.logo?. [0];
+        const bannerFile = request.files?.banner?. [0];
+        const mobilebannerFile = request.files?.mobilebanner?. [0];
+
         if (logoFile) {
             uploadedLogo = await uploadFromCloudinary(logoFile.buffer);
         }
@@ -147,7 +214,7 @@ export const updateSiteIdentity = async (request, response) => {
             uploadedMobileBanner = await uploadFromCloudinary(mobilebannerFile.buffer);
         }
 
-        // ===== LOGO REPLACE =====
+        // ===== 4. CLOUDINARY LOGO REPLACE =====
         if (uploadedLogo) {
             if (settings.logoPublicId) {
                 await deleteFromCloudinary(settings.logoPublicId);
@@ -157,7 +224,7 @@ export const updateSiteIdentity = async (request, response) => {
             updateData.logoPublicId = uploadedLogo.public_id;
         }
 
-        // ===== BANNER REPLACE =====
+        // ===== 5. CLOUDINARY BANNER REPLACE =====
         if (uploadedBanner) {
             if (settings.bannerPublicId) {
                 await deleteFromCloudinary(settings.bannerPublicId);
@@ -167,7 +234,7 @@ export const updateSiteIdentity = async (request, response) => {
             updateData.bannerPublicId = uploadedBanner.public_id;
         }
 
-        // ===== BANNER REPLACE =====
+        // ===== 6. CLOUDINARY MOBILE BANNER REPLACE =====
         if (uploadedMobileBanner) {
             if (settings.mobilebannerPublicId) {
                 await deleteFromCloudinary(settings.mobilebannerPublicId);
@@ -177,7 +244,7 @@ export const updateSiteIdentity = async (request, response) => {
             updateData.mobilebannerPublicId = uploadedMobileBanner.public_id;
         }
 
-        // ===== VALIDATION =====
+        // ===== 7. VALIDATION CHECK =====
         if (Object.keys(updateData).length === 0) {
             return response.status(400).json({
                 message: "No valid fields provided",
@@ -186,11 +253,14 @@ export const updateSiteIdentity = async (request, response) => {
             });
         }
 
-        // ===== UPDATE =====
+        // ===== 8. UPDATE DATABASE =====
         const updated = await settingsModel.findByIdAndUpdate(
-            settings._id,
-            { $set: updateData },
-            { new: true, runValidators: true }
+            settings._id, {
+                $set: updateData
+            }, {
+                new: true,
+                runValidators: true
+            }
         );
 
         return response.status(200).json({
@@ -203,6 +273,11 @@ export const updateSiteIdentity = async (request, response) => {
     } catch (error) {
         console.log("site identity error:", error);
 
+        // Agar response pehle hi sent ho chuka hai, dubara response bhejkar crash na karein
+        if (response.headersSent) {
+            return next ? next(error) : null;
+        }
+
         return response.status(500).json({
             message: error.message,
             success: false,
@@ -214,7 +289,9 @@ export const updateSiteIdentity = async (request, response) => {
 // update preference
 export const updatePreferences = async (request, response) => {
     try {
-        let settings = await settingsModel.findOne({ singleton: "unique_settings" });
+        let settings = await settingsModel.findOne({
+            singleton: "unique_settings"
+        });
 
         if (!settings) {
             settings = await settingsModel.create({});
@@ -250,9 +327,12 @@ export const updatePreferences = async (request, response) => {
         }
 
         const updated = await settingsModel.findByIdAndUpdate(
-            settings._id,
-            { $set: updateData },
-            { new: true, runValidators: true }
+            settings._id, {
+                $set: updateData
+            }, {
+                new: true,
+                runValidators: true
+            }
         );
 
         return response.status(200).json({
