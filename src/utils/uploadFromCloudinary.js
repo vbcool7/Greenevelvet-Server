@@ -2,7 +2,8 @@ import fs from "fs";
 import cloudinary from "../config/cloudinary.js";
 import sharp from "sharp";
 
-export const uploadFromCloudinary = async (fileBuffer) => {
+// Function signature mein addWatermark (default: true) add kiya hai
+export const uploadFromCloudinary = async (fileBuffer, addWatermark = true) => {
     try {
         if (!fileBuffer) throw new Error("File buffer is required");
 
@@ -28,34 +29,38 @@ export const uploadFromCloudinary = async (fileBuffer) => {
 
         const imageWidth = (await sharp(fileBuffer).metadata()).width || 1000;
 
-
         // Dynamic font size
         const dynamicFontSize = Math.round(imageWidth * 0.05);
 
         // Min / Max control
         const fontSize = Math.max(30, Math.min(dynamicFontSize, 80));
 
+        // Base transformations
+        const transformations = [{
+            quality: "auto",
+            fetch_format: "auto"
+        }];
+
+        // Agar addWatermark true hai tabhi watermark push karein
+        if (addWatermark) {
+            transformations.push({
+                overlay: {
+                    font_family: "Arial",
+                    font_size: fontSize,
+                    font_weight: "bold",
+                    text: "greenevelvet.com"
+                },
+                color: "white",
+                opacity: 35,
+                gravity: "center"
+            });
+        }
+
         return await new Promise((resolve, reject) => {
             cloudinary.uploader.upload_stream({
                     folder: "uploads",
                     resource_type: "image",
-                    transformation: [{
-                            quality: "auto",
-                            fetch_format: "auto"
-                        },
-
-                        {
-                            overlay: {
-                                font_family: "Arial",
-                                font_size: fontSize,
-                                font_weight: "bold",
-                                text: "greenevelvet.com"
-                            },
-                            color: "white",
-                            opacity: 35,
-                            gravity: "center"
-                        }
-                    ]
+                    transformation: transformations
                 },
                 (error, result) => {
                     if (error) return reject(error);

@@ -203,15 +203,15 @@ export const updateSiteIdentity = async (request, response, next) => {
         const mobilebannerFile = request.files?.mobilebanner?. [0];
 
         if (logoFile) {
-            uploadedLogo = await uploadFromCloudinary(logoFile.buffer);
+            uploadedLogo = await uploadFromCloudinary(logoFile.buffer, false);
         }
 
         if (bannerFile) {
-            uploadedBanner = await uploadFromCloudinary(bannerFile.buffer);
+            uploadedBanner = await uploadFromCloudinary(bannerFile.buffer, false);
         }
 
         if (mobilebannerFile) {
-            uploadedMobileBanner = await uploadFromCloudinary(mobilebannerFile.buffer);
+            uploadedMobileBanner = await uploadFromCloudinary(mobilebannerFile.buffer, false);
         }
 
         // ===== 4. CLOUDINARY LOGO REPLACE =====
