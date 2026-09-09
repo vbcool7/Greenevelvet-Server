@@ -3227,6 +3227,129 @@ export async function fetchFiltercityescortscontroller(request, response) {
 }
 
 // filter home escorts
+// export async function fetchFilterHomescortscontroller(request, response) {
+//     try {
+//         const {
+//             isVerified,
+//             isVisible,
+//             role,
+//             country,
+//             city,
+//             name,
+//             gender,
+//             account_type,
+//             adverties_category,
+//             page = 1,
+//             limit = 15,
+//         } = request.query; // query params se filter lenge
+
+//         const query = {
+//             $and: []
+//         };
+
+//         if (role) query.role = role;
+//         if (isVerified) query.isVerified = isVerified === "true"; // query params are strings
+//         if (isVisible) query.isVisible = isVisible === "true";
+
+//         if (country) query.country = country.toUpperCase();
+//         // if (city) query.city = city.toUpperCase();
+
+//         // City + Additional Cities
+
+//         const selectedCity = city?.trim().replace(/\s+/g, " ");
+
+//         if (selectedCity) {
+//             query.$and.push({
+//                 $or: [{
+//                         city: {
+//                             $regex: `^${selectedCity}$`,
+//                             $options: "i"
+//                         }
+//                     },
+//                     {
+//                         additionalCities: {
+//                             $regex: `^${selectedCity}$`,
+//                             $options: "i"
+//                         }
+//                     }
+//                 ]
+//             });
+//         }
+
+
+//         if (name?.trim()) {
+//             const searchName = name.trim().replace(/\s+/g, " ");
+
+//             query.name = {
+//                 $regex: searchName,
+//                 $options: "i"
+//             };
+//         }
+
+//         if (gender && gender !== "All") query.gender = gender;
+//         if (account_type && account_type !== "All") query.account_type = account_type;
+//         if (adverties_category && adverties_category !== "Any") query.adverties_category = adverties_category;
+//         // keyword search on name or highlights
+
+//         const skip = (parseInt(page) - 1) * parseInt(limit);
+
+//         // Only escorts with avatar
+//         query.avatar = {
+//             $exists: true,
+//             $ne: null,
+//             $ne: ""
+//         };
+
+//         query.status = "Active";
+
+//         const escortList = await EscortModel.find(query)
+//             .skip(skip)
+//             .sort({
+//                 isBoosted: -1,
+//                 boostedAt: -1
+//             })
+//             .limit(parseInt(limit))
+//             .select("escortId name age city additionalCities country gender account_type adverties_category highlights avatar rateFrom isFaceBlurred")
+//             .lean();
+
+//         const total = await EscortModel.countDocuments(query);
+
+
+//         if (!escortList || escortList.length === 0) {
+//             return response.status(404).json({
+//                 message: "No escorts found",
+//                 success: false,
+//                 error: true,
+//                 data: [],
+//                 total: 0
+//             });
+//         }
+
+//         const formattedEscortList = escortList.map((escort) => ({
+//             ...escort,
+//             city: selectedCity || escort.city
+//         }));
+
+//         return response.status(200).json({
+//             message: "Filtered escorts fetched",
+//             data: formattedEscortList,
+//             total,
+//             page: parseInt(page),
+//             limit: parseInt(limit),
+//             success: true,
+//             error: false,
+//         });
+//     } catch (error) {
+//         console.log("Fetch home escort error : ", error);
+//         return response.status(500).json({
+//             message: "Fetching escorts profile failed!",
+//             success: false,
+//             error: true,
+//         });
+//     }
+// }
+
+
 export async function fetchFilterHomescortscontroller(request, response) {
     try {
         const {
@@ -3241,21 +3364,27 @@ export async function fetchFilterHomescortscontroller(request, response) {
             adverties_category,
             page = 1,
             limit = 15,
-        } = request.query; // query params se filter lenge
+        } = request.query;
 
         const query = {
             $and: []
         };
 
         if (role) query.role = role;
-        if (isVerified) query.isVerified = isVerified === "true"; // query params are strings
-        if (isVisible) query.isVisible = isVisible === "true";
 
-        if (country) query.country = country.toUpperCase();
-        // if (city) query.city = city.toUpperCase();
+        if (isVerified) {
+            query.isVerified = isVerified === "true";
+        }
+
+        if (isVisible) {
+            query.isVisible = isVisible === "true";
+        }
+
+        if (country) {
+            query.country = country.toUpperCase();
+        }
 
         // City + Additional Cities
-
         const selectedCity = city?.trim().replace(/\s+/g, " ");
 
         if (selectedCity) {
@@ -3276,7 +3405,6 @@ export async function fetchFilterHomescortscontroller(request, response) {
             });
         }
 
-
         if (name?.trim()) {
             const searchName = name.trim().replace(/\s+/g, " ");
 
@@ -3286,12 +3414,23 @@ export async function fetchFilterHomescortscontroller(request, response) {
             };
         }
 
-        if (gender && gender !== "All") query.gender = gender;
-        if (account_type && account_type !== "All") query.account_type = account_type;
-        if (adverties_category && adverties_category !== "Any") query.adverties_category = adverties_category;
-        // keyword search on name or highlights
+        if (gender && gender !== "All") {
+            query.gender = gender;
+        }
 
-        const skip = (parseInt(page) - 1) * parseInt(limit);
+        if (account_type && account_type !== "All") {
+            query.account_type = account_type;
+        }
+
+        if (
+            adverties_category &&
+            adverties_category !== "Any"
+        ) {
+            query.adverties_category = adverties_category;
+        }
+
+        const skip =
+            (parseInt(page) - 1) * parseInt(limit);
 
         // Only escorts with avatar
         query.avatar = {
@@ -3302,16 +3441,104 @@ export async function fetchFilterHomescortscontroller(request, response) {
 
         query.status = "Active";
 
-        const escortList = await EscortModel.find(query)
-            .skip(skip)
-            .sort({
-                isBoosted: -1,
-                boostedAt: -1
-            })
-            .limit(parseInt(limit))
-            .select("escortId name age city additionalCities country gender account_type adverties_category highlights avatar rateFrom isFaceBlurred")
-            .lean();
 
+        // IMPORTANT:
+        // If no city filter was added, remove empty $and.
+        // This does NOT change any existing filtering.
+        if (query.$and.length === 0) {
+            delete query.$and;
+        }
+
+
+        // Fetch escorts
+        const escortList = await EscortModel.aggregate([{
+                $match: query
+            },
+
+            // Current subscription
+            {
+                $lookup: {
+                    from: "subcribedplans",
+                    localField: "currentSubscription",
+                    foreignField: "_id",
+                    as: "currentPlan"
+                }
+            },
+
+            // Check Priority Search permission + expiry
+            {
+                $addFields: {
+                    prioritySearch: {
+                        $cond: [{
+                                $and: [{
+                                        $eq: [{
+                                                $arrayElemAt: [
+                                                    "$currentPlan.permissions.prioritySearch",
+                                                    0
+                                                ]
+                                            },
+                                            true
+                                        ]
+                                    },
+                                    {
+                                        $gt: [{
+                                                $arrayElemAt: [
+                                                    "$currentPlan.subscriptionExpiry",
+                                                    0
+                                                ]
+                                            },
+                                            new Date()
+                                        ]
+                                    }
+                                ]
+                            },
+                            1,
+                            0
+                        ]
+                    }
+                }
+            },
+
+            // Priority → Boost → Normal
+            {
+                $sort: {
+                    prioritySearch: -1,
+                    isBoosted: -1,
+                    boostedAt: -1
+                }
+            },
+
+            // Pagination AFTER sorting
+            {
+                $skip: skip
+            },
+
+            {
+                $limit: parseInt(limit)
+            },
+
+            // Same fields as existing Home controller
+            {
+                $project: {
+                    escortId: 1,
+                    name: 1,
+                    age: 1,
+                    city: 1,
+                    additionalCities: 1,
+                    country: 1,
+                    gender: 1,
+                    account_type: 1,
+                    adverties_category: 1,
+                    highlights: 1,
+                    avatar: 1,
+                    rateFrom: 1,
+                    isFaceBlurred: 1
+                }
+            }
+        ]);
+
+
+        // Total remains based ONLY on existing filters
         const total = await EscortModel.countDocuments(query);
 
 
@@ -3325,10 +3552,12 @@ export async function fetchFilterHomescortscontroller(request, response) {
             });
         }
 
+
         const formattedEscortList = escortList.map((escort) => ({
             ...escort,
             city: selectedCity || escort.city
         }));
+
 
         return response.status(200).json({
             message: "Filtered escorts fetched",
@@ -3339,8 +3568,10 @@ export async function fetchFilterHomescortscontroller(request, response) {
             success: true,
             error: false,
         });
+
     } catch (error) {
         console.log("Fetch home escort error : ", error);
+
         return response.status(500).json({
             message: "Fetching escorts profile failed!",
             success: false,
