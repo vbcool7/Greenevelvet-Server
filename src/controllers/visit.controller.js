@@ -643,7 +643,8 @@ export const totalVisitStats = async (request, response) => {
 export const getSearchAppearanceStats = async (request, response) => {
     try {
         const {
-            type = "month", _id
+            type = "month",
+                _id
         } = request.query;
 
         if (!_id || !mongoose.Types.ObjectId.isValid(_id)) {
@@ -677,6 +678,10 @@ export const getSearchAppearanceStats = async (request, response) => {
                 message: "Invalid type",
             });
         }
+
+        // ==========================================
+        // EXISTING SEARCH APPEARANCE DATA
+        // ==========================================
 
         const data = await VisitsModel.aggregate([{
                 $match: {
@@ -718,17 +723,127 @@ export const getSearchAppearanceStats = async (request, response) => {
         data.forEach((item) => {
             const source = item._id || "direct";
 
-            if (Object.prototype.hasOwnProperty.call(searchAppearance, source)) {
+            if (
+                Object.prototype.hasOwnProperty.call(
+                    searchAppearance,
+                    source
+                )
+            ) {
                 searchAppearance[source] = item.count;
             } else {
                 searchAppearance.other += item.count;
             }
         });
 
+        // ==========================================
+        // LOCATION-WISE PERFORMANCE DATA
+        // ==========================================
+
+        const locationData = await VisitsModel.aggregate([{
+                $match: {
+                    escortId: new mongoose.Types.ObjectId(_id),
+                    date: {
+                        $gte: startDate,
+                        $lte: now,
+                    },
+                    city: {
+                        $ne: null,
+                    },
+                },
+            },
+
+            {
+                $group: {
+                    _id: {
+                        city: "$city",
+                        country: "$country",
+                    },
+
+                    // Profile Views
+                    views: {
+                        $sum: {
+                            $cond: [{
+                                    $eq: [
+                                        "$type",
+                                        "profile_view",
+                                    ],
+                                },
+                                1,
+                                0,
+                            ],
+                        },
+                    },
+
+                    // Contact Clicks
+                    // Call + Message + WhatsApp
+                    contactClicks: {
+                        $sum: {
+                            $cond: [{
+                                    $in: [
+                                        "$type",
+                                        [
+                                            "call_click",
+                                            "sms_click",
+                                            "whatsapp_click",
+                                        ],
+                                    ],
+                                },
+                                1,
+                                0,
+                            ],
+                        },
+                    },
+                },
+            },
+
+            // Highest views first
+            {
+                $sort: {
+                    views: -1,
+                },
+            },
+
+            // Current UI shows top 3 locations
+            {
+                $limit: 3,
+            },
+        ]);
+
+        const locationStats = locationData.map((item) => {
+            const views = item.views || 0;
+            const contactClicks = item.contactClicks || 0;
+
+            const engagement =
+                views > 0 ?
+                Number(
+                    (
+                        (contactClicks / views) *
+                        100
+                    ).toFixed(1)
+                ) :
+                0;
+
+            return {
+                city: item._id.city,
+                country: item._id.country,
+                views,
+                contactClicks,
+                engagement,
+            };
+        });
+
+        // ==========================================
+        // RESPONSE
+        // ==========================================
+
         response.json({
             success: true,
             data: {
+                // Existing data - unchanged
                 searchAppearance,
+
+                // New data
+                locationStats,
             },
         });
 
