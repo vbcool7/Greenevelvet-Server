@@ -747,7 +747,7 @@ export const getSearchAppearanceStats = async (request, response) => {
                         $lte: now,
                     },
                     city: {
-                        $ne: null,
+                        $ne: [null, ""],
                     },
                 },
             },
