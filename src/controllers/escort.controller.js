@@ -3261,7 +3261,7 @@ export async function fetchFiltercityescortscontroller(request, response) {
         });
 
         const formattedEscortList = escortList?.map((escort) => ({
-            ...escort.toObject(),
+            ...escort,
             city: filters.city?.trim().replace(/\s+/g, " ") || escort.city
         }));
 
