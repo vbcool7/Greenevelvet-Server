@@ -3195,63 +3195,12 @@ export async function fetchFiltercityescortscontroller(request, response) {
 
 
         // 🔹 Fetch escorts (NO populate)
-        const escortList = await EscortModel.aggregate([{
-                $match: query
-            },
-
-            // Current subscription
-            {
-                $lookup: {
-                    from: "subcribedplans",
-                    localField: "currentSubscription",
-                    foreignField: "_id",
-                    as: "currentPlan"
-                }
-            },
-
-            // Priority Search
-            {
-                $addFields: {
-                    prioritySearch: {
-                        $cond: [{
-                                $and: [{
-                                        $eq: [{
-                                                $arrayElemAt: [
-                                                    "$currentPlan.permissions.prioritySearch",
-                                                    0
-                                                ]
-                                            },
-                                            true
-                                        ]
-                                    },
-                                    {
-                                        $gt: [{
-                                                $arrayElemAt: [
-                                                    "$currentPlan.subscriptionExpiry",
-                                                    0
-                                                ]
-                                            },
-                                            new Date()
-                                        ]
-                                    }
-                                ]
-                            },
-                            1,
-                            0
-                        ]
-                    }
-                }
-            },
-
-            // Priority → Boost → Normal
-            {
-                $sort: {
-                    prioritySearch: -1,
-                    isBoosted: -1,
-                    boostedAt: -1
-                }
-            }
-        ]);
+        const escortList = await EscortModel.find(query)
+            .sort({
+                isBoosted: -1,
+                boostedAt: -1
+            })
+            .populate("bookings");
 
         const formattedEscortList = escortList?.map((escort) => ({
             ...escort.toObject(),
@@ -3353,89 +3302,15 @@ export async function fetchFilterHomescortscontroller(request, response) {
 
         query.status = "Active";
 
-        const escortList = await EscortModel.aggregate([{
-                $match: query
-            },
-
-            // Current subscription fetch
-            {
-                $lookup: {
-                    from: "subcribedplans",
-                    localField: "currentSubscription",
-                    foreignField: "_id",
-                    as: "currentPlan"
-                }
-            },
-
-            // Priority Search check
-            {
-                $addFields: {
-                    prioritySearch: {
-                        $cond: [{
-                                $and: [{
-                                        $eq: [{
-                                                $arrayElemAt: [
-                                                    "$currentPlan.permissions.prioritySearch",
-                                                    0
-                                                ]
-                                            },
-                                            true
-                                        ]
-                                    },
-                                    {
-                                        $gt: [{
-                                                $arrayElemAt: [
-                                                    "$currentPlan.subscriptionExpiry",
-                                                    0
-                                                ]
-                                            },
-                                            new Date()
-                                        ]
-                                    }
-                                ]
-                            },
-                            1,
-                            0
-                        ]
-                    }
-                }
-            },
-
-            // Priority → Boost → Normal
-            {
-                $sort: {
-                    prioritySearch: -1,
-                    isBoosted: -1,
-                    boostedAt: -1
-                }
-            },
-
-            {
-                $skip: skip
-            },
-
-            {
-                $limit: parseInt(limit)
-            },
-
-            {
-                $project: {
-                    escortId: 1,
-                    name: 1,
-                    age: 1,
-                    city: 1,
-                    additionalCities: 1,
-                    country: 1,
-                    gender: 1,
-                    account_type: 1,
-                    adverties_category: 1,
-                    highlights: 1,
-                    avatar: 1,
-                    rateFrom: 1,
-                    isFaceBlurred: 1
-                }
-            }
-        ]);
+        const escortList = await EscortModel.find(query)
+            .skip(skip)
+            .sort({
+                isBoosted: -1,
+                boostedAt: -1
+            })
+            .limit(parseInt(limit))
+            .select("escortId name age city additionalCities country gender account_type adverties_category highlights avatar rateFrom isFaceBlurred")
+            .lean();
 
         const total = await EscortModel.countDocuments(query);
 
@@ -3597,49 +3472,6 @@ export const advanceSearchController = async (request, response) => {
             },
         ];
 
-        // ---------- current subscription ----------
-        pipeline.push({
-            $lookup: {
-                from: "subcribedplans",
-                localField: "currentSubscription",
-                foreignField: "_id",
-                as: "currentPlan"
-            }
-        });
-
-        pipeline.push({
-            $addFields: {
-                prioritySearch: {
-                    $cond: [{
-                            $and: [{
-                                    $eq: [{
-                                            $arrayElemAt: [
-                                                "$currentPlan.permissions.prioritySearch",
-                                                0
-                                            ]
-                                        },
-                                        true
-                                    ]
-                                },
-                                {
-                                    $gt: [{
-                                            $arrayElemAt: [
-                                                "$currentPlan.subscriptionExpiry",
-                                                0
-                                            ]
-                                        },
-                                        new Date()
-                                    ]
-                                }
-                            ]
-                        },
-                        1,
-                        0
-                    ]
-                }
-            }
-        });
-
         // ---------- service filter (UI: service=massage) ----------
         if (filters.service) {
             pipeline.push({
@@ -3687,15 +3519,11 @@ export const advanceSearchController = async (request, response) => {
             },
         });
 
-        pipeline.push({
-            $sort: {
-                prioritySearch: -1,
+        const escorts = await EscortModel.aggregate(pipeline)
+            .sort({
                 isBoosted: -1,
                 boostedAt: -1
-            }
-        });
-
-        const escorts = await EscortModel.aggregate(pipeline);
+            });
 
         const formattedEscortList = escorts?.map((escort) => ({
             ...escort,
