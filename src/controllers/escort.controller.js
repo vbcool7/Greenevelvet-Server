@@ -6972,8 +6972,9 @@ export const getEscortContact = async (request, response) => {
         });
 
     } catch (error) {
+        console.log("contact click error : ", error);
         return response.status(500).json({
-            message: "Server error",
+            message: "Contact to escort failed!",
             success: false,
             error: true
         });
