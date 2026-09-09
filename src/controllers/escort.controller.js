@@ -3638,6 +3638,60 @@ export const advanceSearchController = async (request, response) => {
             },
         ];
 
+        // ---------- Current subscription ----------
+        pipeline.push({
+            $lookup: {
+                from: "subcribedplans",
+                localField: "currentSubscription",
+                foreignField: "_id",
+                as: "currentPlan"
+            }
+        });
+
+        // ---------- Priority Search ----------
+        pipeline.push({
+            $addFields: {
+                prioritySearch: {
+                    $cond: [{
+                            $and: [{
+                                    $eq: [{
+                                            $arrayElemAt: [
+                                                "$currentPlan.permissions.prioritySearch",
+                                                0
+                                            ]
+                                        },
+                                        true
+                                    ]
+                                },
+                                {
+                                    $gt: [{
+                                            $arrayElemAt: [
+                                                "$currentPlan.subscriptionExpiry",
+                                                0
+                                            ]
+                                        },
+                                        new Date()
+                                    ]
+                                }
+                            ]
+                        },
+                        1,
+                        0
+                    ]
+                }
+            }
+        });
+
+        // ---------- Priority → Boost → Normal ----------
+        pipeline.push({
+            $sort: {
+                prioritySearch: -1,
+                isBoosted: -1,
+                boostedAt: -1
+            }
+        });
+
+
         // ---------- service filter (UI: service=massage) ----------
         if (filters.service) {
             pipeline.push({
@@ -3685,11 +3739,8 @@ export const advanceSearchController = async (request, response) => {
             },
         });
 
-        const escorts = await EscortModel.aggregate(pipeline)
-            .sort({
-                isBoosted: -1,
-                boostedAt: -1
-            });
+        const escorts = await EscortModel.aggregate(pipeline);
+
 
         const formattedEscortList = escorts?.map((escort) => ({
             ...escort,
