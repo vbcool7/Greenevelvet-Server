@@ -3195,12 +3195,70 @@ export async function fetchFiltercityescortscontroller(request, response) {
 
 
         // 🔹 Fetch escorts (NO populate)
-        const escortList = await EscortModel.find(query)
-            .sort({
-                isBoosted: -1,
-                boostedAt: -1
-            })
-            .populate("bookings");
+        const escortList = await EscortModel.aggregate([
+            // 1. Existing filters — unchanged
+            {
+                $match: query
+            },
+
+            // 2. Current subscription fetch
+            {
+                $lookup: {
+                    from: "subcribedplans",
+                    localField: "currentSubscription",
+                    foreignField: "_id",
+                    as: "currentPlan"
+                }
+            },
+
+            // 3. Priority Search eligibility
+            {
+                $addFields: {
+                    prioritySearch: {
+                        $cond: [{
+                                $and: [{
+                                        $eq: [{
+                                                $arrayElemAt: [
+                                                    "$currentPlan.permissions.prioritySearch",
+                                                    0
+                                                ]
+                                            },
+                                            true
+                                        ]
+                                    },
+                                    {
+                                        $gt: [{
+                                                $arrayElemAt: [
+                                                    "$currentPlan.subscriptionExpiry",
+                                                    0
+                                                ]
+                                            },
+                                            new Date()
+                                        ]
+                                    }
+                                ]
+                            },
+                            1,
+                            0
+                        ]
+                    }
+                }
+            },
+
+            // 4. Priority → Boost → Normal
+            {
+                $sort: {
+                    prioritySearch: -1,
+                    isBoosted: -1,
+                    boostedAt: -1
+                }
+            }
+        ]);
+
+        // 5. Existing bookings populate — preserved
+        await EscortModel.populate(escortList, {
+            path: "bookings"
+        });
 
         const formattedEscortList = escortList?.map((escort) => ({
             ...escort.toObject(),
@@ -3227,129 +3285,6 @@ export async function fetchFiltercityescortscontroller(request, response) {
 }
 
 // filter home escorts
-// export async function fetchFilterHomescortscontroller(request, response) {
-//     try {
-//         const {
-//             isVerified,
-//             isVisible,
-//             role,
-//             country,
-//             city,
-//             name,
-//             gender,
-//             account_type,
-//             adverties_category,
-//             page = 1,
-//             limit = 15,
-//         } = request.query; // query params se filter lenge
-
-//         const query = {
-//             $and: []
-//         };
-
-//         if (role) query.role = role;
-//         if (isVerified) query.isVerified = isVerified === "true"; // query params are strings
-//         if (isVisible) query.isVisible = isVisible === "true";
-
-//         if (country) query.country = country.toUpperCase();
-//         // if (city) query.city = city.toUpperCase();
-
-//         // City + Additional Cities
-
-//         const selectedCity = city?.trim().replace(/\s+/g, " ");
-
-//         if (selectedCity) {
-//             query.$and.push({
-//                 $or: [{
-//                         city: {
-//                             $regex: `^${selectedCity}$`,
-//                             $options: "i"
-//                         }
-//                     },
-//                     {
-//                         additionalCities: {
-//                             $regex: `^${selectedCity}$`,
-//                             $options: "i"
-//                         }
-//                     }
-//                 ]
-//             });
-//         }
-
-
-//         if (name?.trim()) {
-//             const searchName = name.trim().replace(/\s+/g, " ");
-
-//             query.name = {
-//                 $regex: searchName,
-//                 $options: "i"
-//             };
-//         }
-
-//         if (gender && gender !== "All") query.gender = gender;
-//         if (account_type && account_type !== "All") query.account_type = account_type;
-//         if (adverties_category && adverties_category !== "Any") query.adverties_category = adverties_category;
-//         // keyword search on name or highlights
-
-//         const skip = (parseInt(page) - 1) * parseInt(limit);
-
-//         // Only escorts with avatar
-//         query.avatar = {
-//             $exists: true,
-//             $ne: null,
-//             $ne: ""
-//         };
-
-//         query.status = "Active";
-
-//         const escortList = await EscortModel.find(query)
-//             .skip(skip)
-//             .sort({
-//                 isBoosted: -1,
-//                 boostedAt: -1
-//             })
-//             .limit(parseInt(limit))
-//             .select("escortId name age city additionalCities country gender account_type adverties_category highlights avatar rateFrom isFaceBlurred")
-//             .lean();
-
-//         const total = await EscortModel.countDocuments(query);
-
-
-//         if (!escortList || escortList.length === 0) {
-//             return response.status(404).json({
-//                 message: "No escorts found",
-//                 success: false,
-//                 error: true,
-//                 data: [],
-//                 total: 0
-//             });
-//         }
-
-//         const formattedEscortList = escortList.map((escort) => ({
-//             ...escort,
-//             city: selectedCity || escort.city
-//         }));
-
-//         return response.status(200).json({
-//             message: "Filtered escorts fetched",
-//             data: formattedEscortList,
-//             total,
-//             page: parseInt(page),
-//             limit: parseInt(limit),
-//             success: true,
-//             error: false,
-//         });
-//     } catch (error) {
-//         console.log("Fetch home escort error : ", error);
-//         return response.status(500).json({
-//             message: "Fetching escorts profile failed!",
-//             success: false,
-//             error: true,
-//         });
-//     }
-// }
-
-
 export async function fetchFilterHomescortscontroller(request, response) {
     try {
         const {
