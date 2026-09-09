@@ -174,44 +174,100 @@ function getISOWeekNumber(date) {
 export const getVisitStats = async (request, response) => {
     try {
         const {
-            type = "week", _id
+            type = "week",
+                _id
         } = request.query;
 
         console.log("request query", request.query);
 
-        const now = new Date();
-        let startDate;
-
-        // ✅ DATE RANGE
-        if (type === "day") {
-            startDate = new Date();
-            startDate.setHours(0, 0, 0, 0);
-        } else if (type === "week") {
-            startDate = new Date();
-            startDate.setDate(now.getDate() - 27); // ✅ last 4 weeks
-            startDate.setHours(0, 0, 0, 0);
-        } else {
-            startDate = new Date();
-            startDate.setDate(1);
-            startDate.setHours(0, 0, 0, 0);
+        if (!_id || !mongoose.Types.ObjectId.isValid(_id)) {
+            return response.status(400).json({
+                success: false,
+                message: "Invalid escort id",
+            });
         }
 
-        // ✅ GROUPING
+        const now = new Date();
+
+        // --------------------------------------------------
+        // DATE HELPERS
+        // --------------------------------------------------
+
+        const startOfDay = (date) => {
+            const d = new Date(date);
+            d.setHours(0, 0, 0, 0);
+            return d;
+        };
+
+        const endOfDay = (date) => {
+            const d = new Date(date);
+            d.setHours(23, 59, 59, 999);
+            return d;
+        };
+
+        const addDays = (date, days) => {
+            const d = new Date(date);
+            d.setDate(d.getDate() + days);
+            return d;
+        };
+
+        // --------------------------------------------------
+        // CHART DATE RANGE
+        // --------------------------------------------------
+
+        let startDate;
+
+        if (type === "day") {
+            // Current day
+            startDate = startOfDay(now);
+
+        } else if (type === "week") {
+            // Last 28 days for existing 4-week chart
+            startDate = startOfDay(
+                addDays(now, -27)
+            );
+
+        } else if (type === "month") {
+            // Current calendar month
+            startDate = new Date(
+                now.getFullYear(),
+                now.getMonth(),
+                1
+            );
+            startDate.setHours(0, 0, 0, 0);
+
+        } else {
+            return response.status(400).json({
+                success: false,
+                message: "Invalid type",
+            });
+        }
+
+        // --------------------------------------------------
+        // CHART GROUPING
+        // --------------------------------------------------
+
         let groupId;
 
         if (type === "day") {
             groupId = {
                 $dayOfWeek: "$date"
             };
+
         } else if (type === "week") {
             groupId = {
                 $isoWeek: "$date"
-            }; // ✅ correct
+            };
+
         } else if (type === "month") {
             groupId = {
                 $month: "$date"
             };
         }
+
+        // --------------------------------------------------
+        // EXISTING CHART + STATS
+        // --------------------------------------------------
 
         const data = await VisitsModel.aggregate([{
                 $match: {
@@ -222,6 +278,7 @@ export const getVisitStats = async (request, response) => {
                     },
                 },
             },
+
             {
                 $facet: {
                     chartData: [{
@@ -274,15 +331,24 @@ export const getVisitStats = async (request, response) => {
                             $group: {
                                 _id: {
                                     $cond: [{
-                                            $ne: ["$visitorId", null]
+                                            $ne: [
+                                                "$visitorId",
+                                                null
+                                            ]
                                         },
                                         {
-                                            $concat: ["client_", {
-                                                $toString: "$visitorId"
-                                            }]
+                                            $concat: [
+                                                "client_",
+                                                {
+                                                    $toString: "$visitorId"
+                                                }
+                                            ]
                                         },
                                         {
-                                            $concat: ["guest_", "$anonymousVisitorId"]
+                                            $concat: [
+                                                "guest_",
+                                                "$anonymousVisitorId"
+                                            ]
                                         }
                                     ]
                                 }
@@ -369,12 +435,24 @@ export const getVisitStats = async (request, response) => {
 
         const result = data[0];
 
-        // ✅ STEP 1: FORMAT LABELS
+        // --------------------------------------------------
+        // FORMAT CHART LABELS
+        // --------------------------------------------------
+
         const formattedChart = result.chartData.map((item) => {
             let name = item._id;
 
             if (type === "day") {
-                const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+                const days = [
+                    "Sun",
+                    "Mon",
+                    "Tue",
+                    "Wed",
+                    "Thu",
+                    "Fri",
+                    "Sat"
+                ];
+
                 name = days[item._id - 1];
             }
 
@@ -383,7 +461,21 @@ export const getVisitStats = async (request, response) => {
             }
 
             if (type === "month") {
-                const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                const months = [
+                    "Jan",
+                    "Feb",
+                    "Mar",
+                    "Apr",
+                    "May",
+                    "Jun",
+                    "Jul",
+                    "Aug",
+                    "Sep",
+                    "Oct",
+                    "Nov",
+                    "Dec"
+                ];
+
                 name = months[item._id - 1];
             }
 
@@ -393,19 +485,39 @@ export const getVisitStats = async (request, response) => {
             };
         });
 
-        // ✅ STEP 2: FINAL CHART
+        // --------------------------------------------------
+        // FINAL CHART
+        // --------------------------------------------------
+
         let finalChart = [];
 
         if (type === "day") {
-            const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-            finalChart = days.map(day => {
-                const found = formattedChart.find(item => item.name === day);
+
+            const days = [
+                "Sun",
+                "Mon",
+                "Tue",
+                "Wed",
+                "Thu",
+                "Fri",
+                "Sat"
+            ];
+
+            finalChart = days.map((day) => {
+
+                const found = formattedChart.find(
+                    (item) => item.name === day
+                );
+
                 return {
                     name: day,
-                    visits: found ? found.visits : 0
+                    visits: found ?
+                        found.visits : 0
                 };
             });
+
         } else if (type === "week") {
+
             const currentWeek = getISOWeekNumber(now);
 
             const weeks = [
@@ -415,29 +527,310 @@ export const getVisitStats = async (request, response) => {
                 currentWeek
             ];
 
-            finalChart = weeks.map(weekNum => {
+            finalChart = weeks.map((weekNum) => {
+
                 const label = `Week ${weekNum}`;
-                const found = formattedChart.find(item => item.name === label);
+
+                const found = formattedChart.find(
+                    (item) => item.name === label
+                );
 
                 return {
                     name: label,
-                    visits: found ? found.visits : 0
+                    visits: found ?
+                        found.visits : 0
                 };
             });
+
         } else if (type === "month") {
-            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            finalChart = months.map(month => {
-                const found = formattedChart.find(item => item.name === month);
+
+            const months = [
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec"
+            ];
+
+            finalChart = months.map((month) => {
+
+                const found = formattedChart.find(
+                    (item) => item.name === month
+                );
+
                 return {
                     name: month,
-                    visits: found ? found.visits : 0
+                    visits: found ?
+                        found.visits : 0
                 };
             });
         }
 
-        // ✅ RESPONSE
+        // ==================================================
+        // PERFORMANCE OVERVIEW
+        // ==================================================
+
+        const todayStart = startOfDay(now);
+        const todayEnd = now;
+
+        const yesterdayDate = addDays(now, -1);
+
+        const yesterdayStart = startOfDay(
+            yesterdayDate
+        );
+
+        const yesterdayEnd = endOfDay(
+            yesterdayDate
+        );
+
+        const dayBeforeDate = addDays(now, -2);
+
+        const dayBeforeStart = startOfDay(
+            dayBeforeDate
+        );
+
+        const dayBeforeEnd = endOfDay(
+            dayBeforeDate
+        );
+
+        // --------------------------------------------------
+        // LAST 7 DAYS
+        // --------------------------------------------------
+
+        const last7Start = startOfDay(
+            addDays(now, -6)
+        );
+
+        const previous7Start = startOfDay(
+            addDays(now, -13)
+        );
+
+        const previous7End = endOfDay(
+            addDays(now, -7)
+        );
+
+        // --------------------------------------------------
+        // LAST 30 DAYS
+        // --------------------------------------------------
+
+        const last30Start = startOfDay(
+            addDays(now, -29)
+        );
+
+        const previous30Start = startOfDay(
+            addDays(now, -59)
+        );
+
+        const previous30End = endOfDay(
+            addDays(now, -30)
+        );
+
+        // --------------------------------------------------
+        // PERFORMANCE AGGREGATION
+        // --------------------------------------------------
+
+        const overviewResult = await VisitsModel.aggregate([{
+                $match: {
+                    escortId: new mongoose.Types.ObjectId(_id),
+                    type: "profile_view",
+                    date: {
+                        $gte: previous30Start,
+                        $lte: now
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+
+                    today: {
+                        $sum: {
+                            $cond: [{
+                                    $and: [{
+                                            $gte: [
+                                                "$date",
+                                                todayStart
+                                            ]
+                                        },
+                                        {
+                                            $lte: [
+                                                "$date",
+                                                todayEnd
+                                            ]
+                                        }
+                                    ]
+                                },
+                                1,
+                                0
+                            ]
+                        }
+                    },
+
+                    yesterday: {
+                        $sum: {
+                            $cond: [{
+                                    $and: [{
+                                            $gte: [
+                                                "$date",
+                                                yesterdayStart
+                                            ]
+                                        },
+                                        {
+                                            $lte: [
+                                                "$date",
+                                                yesterdayEnd
+                                            ]
+                                        }
+                                    ]
+                                },
+                                1,
+                                0
+                            ]
+                        }
+                    },
+
+                    dayBeforeYesterday: {
+                        $sum: {
+                            $cond: [{
+                                    $and: [{
+                                            $gte: [
+                                                "$date",
+                                                dayBeforeStart
+                                            ]
+                                        },
+                                        {
+                                            $lte: [
+                                                "$date",
+                                                dayBeforeEnd
+                                            ]
+                                        }
+                                    ]
+                                },
+                                1,
+                                0
+                            ]
+                        }
+                    },
+
+                    last7Days: {
+                        $sum: {
+                            $cond: [{
+                                    $and: [{
+                                            $gte: [
+                                                "$date",
+                                                last7Start
+                                            ]
+                                        },
+                                        {
+                                            $lte: [
+                                                "$date",
+                                                todayEnd
+                                            ]
+                                        }
+                                    ]
+                                },
+                                1,
+                                0
+                            ]
+                        }
+                    },
+
+                    previous7Days: {
+                        $sum: {
+                            $cond: [{
+                                    $and: [{
+                                            $gte: [
+                                                "$date",
+                                                previous7Start
+                                            ]
+                                        },
+                                        {
+                                            $lte: [
+                                                "$date",
+                                                previous7End
+                                            ]
+                                        }
+                                    ]
+                                },
+                                1,
+                                0
+                            ]
+                        }
+                    },
+
+                    last30Days: {
+                        $sum: {
+                            $cond: [{
+                                    $and: [{
+                                            $gte: [
+                                                "$date",
+                                                last30Start
+                                            ]
+                                        },
+                                        {
+                                            $lte: [
+                                                "$date",
+                                                todayEnd
+                                            ]
+                                        }
+                                    ]
+                                },
+                                1,
+                                0
+                            ]
+                        }
+                    },
+
+                    previous30Days: {
+                        $sum: {
+                            $cond: [{
+                                    $and: [{
+                                            $gte: [
+                                                "$date",
+                                                previous30Start
+                                            ]
+                                        },
+                                        {
+                                            $lte: [
+                                                "$date",
+                                                previous30End
+                                            ]
+                                        }
+                                    ]
+                                },
+                                1,
+                                0
+                            ]
+                        }
+                    }
+                }
+            }
+        ]);
+
+        const overview = overviewResult[0] || {
+            today: 0,
+            yesterday: 0,
+            dayBeforeYesterday: 0,
+            last7Days: 0,
+            previous7Days: 0,
+            last30Days: 0,
+            previous30Days: 0
+        };
+
+        // --------------------------------------------------
+        // RESPONSE
+        // --------------------------------------------------
+
         response.json({
             success: true,
+
             data: {
                 chartData: finalChart,
                 totalVisitors: result.totalVisitors[0]?.count || 0,
@@ -449,6 +842,20 @@ export const getVisitStats = async (request, response) => {
                 websiteClicks: result.websiteClicks[0]?.count || 0,
                 newsandtourClicks: result.newsandtourClicks[0]?.count || 0,
                 blogClicks: result.blogClicks[0]?.count || 0,
+
+                // ------------------------------------------
+                // NEW OVERVIEW DATA
+                // ------------------------------------------
+
+                overview: {
+                    today: overview.today || 0,
+                    yesterday: overview.yesterday || 0,
+                    dayBeforeYesterday: overview.dayBeforeYesterday || 0,
+                    last7Days: overview.last7Days || 0,
+                    previous7Days: overview.previous7Days || 0,
+                    last30Days: overview.last30Days || 0,
+                    previous30Days: overview.previous30Days || 0,
+                }
             },
         });
 
