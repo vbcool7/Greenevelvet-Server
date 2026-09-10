@@ -7585,26 +7585,6 @@ export async function fetchCitySliderEscorts(request, response) {
 
         // if (city) filter.city = city;
 
-        if (city) {
-            const selectedCity = city
-                .trim()
-                .replace(/\s+/g, " ");
-
-            filter.$or = [{
-                    city: {
-                        $regex: `^${selectedCity}$`,
-                        $options: "i"
-                    }
-                },
-                {
-                    additionalCities: {
-                        $regex: `^${selectedCity}$`,
-                        $options: "i"
-                    }
-                }
-            ];
-        }
-
 
         filter.country = country;
 
@@ -7623,11 +7603,80 @@ export async function fetchCitySliderEscorts(request, response) {
 
         filter.status = "Active";
 
-        const escorts = await EscortModel.find(filter);
+
+        const selectedCity = city
+            ?.trim()
+            .replace(/\s+/g, " ");
+
+        const escorts = await EscortModel.aggregate([
+            // 1. Existing filters
+            {
+                $match: {
+                    ...filter
+                }
+            },
+
+            // 2. Current subscription
+            {
+                $lookup: {
+                    from: "subcribedplans",
+                    localField: "currentSubscription",
+                    foreignField: "_id",
+                    as: "currentPlan"
+                }
+            },
+
+            // 3. Plan based city search
+            ...(selectedCity ? [{
+                $match: {
+                    $or: [{
+                            city: {
+                                $regex: `^${selectedCity}$`,
+                                $options: "i"
+                            }
+                        },
+                        {
+                            $expr: {
+                                $in: [
+                                    selectedCity.toUpperCase(),
+                                    {
+                                        $map: {
+                                            input: {
+                                                $slice: [{
+                                                        $ifNull: [
+                                                            "$additionalCities",
+                                                            []
+                                                        ]
+                                                    },
+                                                    {
+                                                        $ifNull: [{
+                                                                $arrayElemAt: [
+                                                                    "$currentPlan.limits.baseLocations",
+                                                                    0
+                                                                ]
+                                                            },
+                                                            0
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            as: "city",
+                                            in: {
+                                                $toUpper: "$$city"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }] : [])
+        ]);
 
         const formattedEscorts = escorts.map((escort) => ({
-            ...escort.toObject(),
-            city: city?.trim().replace(/\s+/g, " ") || escort.city
+            ...escort,
+            city: selectedCity || escort.city
         }));
 
         return response.status(200).json({
@@ -7639,8 +7688,10 @@ export async function fetchCitySliderEscorts(request, response) {
         });
 
     } catch (error) {
+        console.log("City Slider escorts rfetching error ",error);
+
         return response.status(500).json({
-            message: error.message || error,
+            message: `Fetching available ${selectedCity} city escort failed!`,
             error: true,
             success: false
         });
