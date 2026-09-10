@@ -107,6 +107,18 @@ const subcribedplanSchema = new mongoose.Schema({
             type: Boolean,
             default: false
         },
+        prioritySearchPositioning: {
+            type: Number,
+            default: 4
+        },
+        prioritySupport: {
+            type: Boolean,
+            default: false
+        },
+        prioritySupportPositioning: {
+            type: Number,
+            default: 4
+        },
     },
 
     limits: {
