@@ -3322,23 +3322,23 @@ export async function fetchFilterHomescortscontroller(request, response) {
         // City + Additional Cities
         const selectedCity = city?.trim().replace(/\s+/g, " ");
 
-        if (selectedCity) {
-            query.$and.push({
-                $or: [{
-                        city: {
-                            $regex: `^${selectedCity}$`,
-                            $options: "i"
-                        }
-                    },
-                    {
-                        additionalCities: {
-                            $regex: `^${selectedCity}$`,
-                            $options: "i"
-                        }
-                    }
-                ]
-            });
-        }
+        // if (selectedCity) {
+        //     query.$and.push({
+        //         $or: [{
+        //                 city: {
+        //                     $regex: `^${selectedCity}$`,
+        //                     $options: "i"
+        //                 }
+        //             },
+        //             {
+        //                 additionalCities: {
+        //                     $regex: `^${selectedCity}$`,
+        //                     $options: "i"
+        //                 }
+        //             }
+        //         ]
+        //     });
+        // }
 
         if (name?.trim()) {
             const searchName = name.trim().replace(/\s+/g, " ");
@@ -3399,6 +3399,54 @@ export async function fetchFilterHomescortscontroller(request, response) {
                     as: "currentPlan"
                 }
             },
+
+            // Plan based additional city limit
+            // Plan based city search
+            ...(selectedCity ? [{
+                $match: {
+                    $or: [{
+                            city: {
+                                $regex: `^${selectedCity}$`,
+                                $options: "i"
+                            }
+                        },
+                        {
+                            $expr: {
+                                $in: [
+                                    selectedCity.toUpperCase(),
+                                    {
+                                        $map: {
+                                            input: {
+                                                $slice: [{
+                                                        $ifNull: [
+                                                            "$additionalCities",
+                                                            []
+                                                        ]
+                                                    },
+                                                    {
+                                                        $ifNull: [{
+                                                                $arrayElemAt: [
+                                                                    "$currentPlan.baseLocations",
+                                                                    0
+                                                                ]
+                                                            },
+                                                            0
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            as: "city",
+                                            in: {
+                                                $toUpper: "$$city"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }] : []),
 
             // Check Priority Search permission + expiry
             {
