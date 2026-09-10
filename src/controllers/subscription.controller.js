@@ -115,7 +115,7 @@ export const updatePlan = async (req, res) => {
                 $set: {
                     "permissions.prioritySearchPositioning": 1,
                     "permissions.prioritySupportPositioning": 1,
-                    "permissions.prioritySupport": false
+                    "permissions.prioritySupport": true
 
                 }
             });
@@ -125,7 +125,7 @@ export const updatePlan = async (req, res) => {
                 $set: {
                     "permissions.prioritySearchPositioning": 2,
                     "permissions.prioritySupportPositioning": 2,
-                    "permissions.prioritySupport": false
+                    "permissions.prioritySupport": true
                 }
             });
 
