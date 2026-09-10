@@ -4086,26 +4086,6 @@ export const advanceSearchController = async (request, response) => {
 
         // if (filters.city) query.city = filters.city;
 
-        if (filters.city) {
-            const selectedCity = filters.city
-                .trim()
-                .replace(/\s+/g, " ");
-
-            query.$or = [{
-                    city: {
-                        $regex: `^${selectedCity}$`,
-                        $options: "i"
-                    }
-                },
-                {
-                    additionalCities: {
-                        $regex: `^${selectedCity}$`,
-                        $options: "i"
-                    }
-                }
-            ];
-        }
-
         // ---------- strings ----------
         if (filters.day) query.day = filters.day;
         if (filters.adverties_category)
@@ -4189,48 +4169,58 @@ export const advanceSearchController = async (request, response) => {
             }
         });
 
-        // ---------- Priority Search ----------
-        pipeline.push({
-            $addFields: {
-                prioritySearch: {
-                    $cond: [{
-                            $and: [{
-                                    $eq: [{
-                                            $arrayElemAt: [
-                                                "$currentPlan.permissions.prioritySearch",
-                                                0
-                                            ]
-                                        },
-                                        true
-                                    ]
-                                },
-                                {
-                                    $gt: [{
-                                            $arrayElemAt: [
-                                                "$currentPlan.subscriptionExpiry",
-                                                0
-                                            ]
-                                        },
-                                        new Date()
-                                    ]
-                                }
-                            ]
+        // ---------- Plan based city search ----------
+        if (filters.city) {
+            const selectedCity = filters.city
+                .trim()
+                .replace(/\s+/g, " ");
+
+            pipeline.push({
+                $match: {
+                    $or: [{
+                            city: {
+                                $regex: `^${selectedCity}$`,
+                                $options: "i"
+                            }
                         },
-                        1,
-                        0
+                        {
+                            $expr: {
+                                $in: [
+                                    selectedCity.toUpperCase(),
+                                    {
+                                        $map: {
+                                            input: {
+                                                $slice: [{
+                                                        $ifNull: [
+                                                            "$additionalCities",
+                                                            []
+                                                        ]
+                                                    },
+                                                    {
+                                                        $ifNull: [{
+                                                                $arrayElemAt: [
+                                                                    "$currentPlan.limits.baseLocations",
+                                                                    0
+                                                                ]
+                                                            },
+                                                            0
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            as: "city",
+                                            in: {
+                                                $toUpper: "$$city"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
                     ]
                 }
-            }
-        });
-
-        // ---------- Priority → Boost → Normal ----------
-        pipeline.push({
-            $sort: {
-                prioritySearch: -1,
-                isBoosted: -1,
-                boostedAt: -1
-            }
-        });
+            });
+        }
 
 
         // ---------- service filter (UI: service=massage) ----------
@@ -4264,6 +4254,240 @@ export const advanceSearchController = async (request, response) => {
             });
         }
 
+        // ---------- Priority Search + Subscription Status + Positioning ----------
+
+        pipeline.push({
+            $addFields: {
+                subscriptionActive: {
+                    $cond: [{
+                            $gt: [{
+                                    $arrayElemAt: [
+                                        "$currentPlan.subscriptionExpiry",
+                                        0
+                                    ]
+                                },
+                                new Date()
+                            ]
+                        },
+                        1,
+                        0
+                    ]
+                },
+
+                prioritySearch: {
+                    $cond: [{
+                            $and: [{
+                                    $eq: [{
+                                            $arrayElemAt: [
+                                                "$currentPlan.permissions.prioritySearch",
+                                                0
+                                            ]
+                                        },
+                                        true
+                                    ]
+                                },
+                                {
+                                    $gt: [{
+                                            $arrayElemAt: [
+                                                "$currentPlan.subscriptionExpiry",
+                                                0
+                                            ]
+                                        },
+                                        new Date()
+                                    ]
+                                }
+                            ]
+                        },
+                        1,
+                        0
+                    ]
+                },
+
+                prioritySearchPositioning: {
+                    $cond: [{
+                            $and: [{
+                                    $eq: [{
+                                            $arrayElemAt: [
+                                                "$currentPlan.permissions.prioritySearch",
+                                                0
+                                            ]
+                                        },
+                                        true
+                                    ]
+                                },
+                                {
+                                    $gt: [{
+                                            $arrayElemAt: [
+                                                "$currentPlan.subscriptionExpiry",
+                                                0
+                                            ]
+                                        },
+                                        new Date()
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            $ifNull: [{
+                                    $arrayElemAt: [
+                                        "$currentPlan.permissions.prioritySearchPositioning",
+                                        0
+                                    ]
+                                },
+                                4
+                            ]
+                        },
+                        5
+                    ]
+                }
+            }
+        });
+
+        // ---------- Final Priority Search Order ----------
+        pipeline.push({
+            $addFields: {
+                searchPosition: {
+                    $switch: {
+                        branches: [
+                            // 1. LUX + Boost
+                            {
+                                case: {
+                                    $and: [{
+                                            $eq: ["$subscriptionActive", 1]
+                                        },
+                                        {
+                                            $eq: ["$prioritySearchPositioning", 1]
+                                        },
+                                        {
+                                            $eq: ["$isBoosted", true]
+                                        }
+                                    ]
+                                },
+                                then: 1
+                            },
+
+                            // 2. LUX
+                            {
+                                case: {
+                                    $and: [{
+                                            $eq: ["$subscriptionActive", 1]
+                                        },
+                                        {
+                                            $eq: ["$prioritySearchPositioning", 1]
+                                        }
+                                    ]
+                                },
+                                then: 2
+                            },
+
+                            // 3. PREMIUM + Boost
+                            {
+                                case: {
+                                    $and: [{
+                                            $eq: ["$subscriptionActive", 1]
+                                        },
+                                        {
+                                            $eq: ["$prioritySearchPositioning", 2]
+                                        },
+                                        {
+                                            $eq: ["$isBoosted", true]
+                                        }
+                                    ]
+                                },
+                                then: 3
+                            },
+
+                            // 4. LITE + Boost
+                            {
+                                case: {
+                                    $and: [{
+                                            $eq: ["$subscriptionActive", 1]
+                                        },
+                                        {
+                                            $eq: ["$prioritySearchPositioning", 3]
+                                        },
+                                        {
+                                            $eq: ["$isBoosted", true]
+                                        }
+                                    ]
+                                },
+                                then: 4
+                            },
+
+                            // 5. START + Boost
+                            {
+                                case: {
+                                    $and: [{
+                                            $eq: ["$subscriptionActive", 1]
+                                        },
+                                        {
+                                            $eq: ["$prioritySearchPositioning", 4]
+                                        },
+                                        {
+                                            $eq: ["$isBoosted", true]
+                                        }
+                                    ]
+                                },
+                                then: 5
+                            },
+
+                            // 6. PREMIUM
+                            {
+                                case: {
+                                    $and: [{
+                                            $eq: ["$subscriptionActive", 1]
+                                        },
+                                        {
+                                            $eq: ["$prioritySearchPositioning", 2]
+                                        }
+                                    ]
+                                },
+                                then: 6
+                            },
+
+                            // 7. LITE
+                            {
+                                case: {
+                                    $and: [{
+                                            $eq: ["$subscriptionActive", 1]
+                                        },
+                                        {
+                                            $eq: ["$prioritySearchPositioning", 3]
+                                        }
+                                    ]
+                                },
+                                then: 7
+                            },
+
+                            // 8. START
+                            {
+                                case: {
+                                    $and: [{
+                                            $eq: ["$subscriptionActive", 1]
+                                        },
+                                        {
+                                            $eq: ["$prioritySearchPositioning", 4]
+                                        }
+                                    ]
+                                },
+                                then: 8
+                            }
+                        ],
+                        // 9. Expired / no active priority plan
+                        default: 9
+                    }
+                }
+            }
+        });
+
+        // ---------- Final Sort ----------
+        pipeline.push({
+            $sort: {
+                searchPosition: 1,
+                boostedAt: -1
+            }
+        });
+
         // ✅ ---------- REMOVE DUPLICATES ----------
         pipeline.push({
             $group: {
@@ -4281,7 +4505,6 @@ export const advanceSearchController = async (request, response) => {
         });
 
         const escorts = await EscortModel.aggregate(pipeline);
-
 
         const formattedEscortList = escorts?.map((escort) => ({
             ...escort,
@@ -7688,7 +7911,7 @@ export async function fetchCitySliderEscorts(request, response) {
         });
 
     } catch (error) {
-        console.log("City Slider escorts rfetching error ",error);
+        console.log("City Slider escorts rfetching error ", error);
 
         return response.status(500).json({
             message: `Fetching available ${selectedCity} city escort failed!`,
