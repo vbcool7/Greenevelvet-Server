@@ -2014,6 +2014,7 @@ export async function fetchEscortdetailscontroller(request, response) {
             .populate("services")
             .populate("rates")
             .populate("bookings")
+            .populate("currentSubscription");
 
         if (!escortDetails) {
             return response.status(400).json({
