@@ -109,44 +109,6 @@ export const updatePlan = async (req, res) => {
             });
         }
 
-        // TEMP: One-time migration for positioning fields
-        if (existingPlan.slug === "velvet-luxe") {
-            await SubscriptionModel.findByIdAndUpdate(id, {
-                $set: {
-                    "permissions.prioritySearchPositioning": 1,
-                    "permissions.prioritySupportPositioning": 1,
-                    "permissions.prioritySupport": true
-
-                }
-            });
-
-        } else if (existingPlan.slug === "velvet-premium") {
-            await SubscriptionModel.findByIdAndUpdate(id, {
-                $set: {
-                    "permissions.prioritySearchPositioning": 2,
-                    "permissions.prioritySupportPositioning": 2,
-                    "permissions.prioritySupport": true
-                }
-            });
-
-        } else if (existingPlan.slug === "velvet-lite") {
-            await SubscriptionModel.findByIdAndUpdate(id, {
-                $set: {
-                    "permissions.prioritySearchPositioning": 3,
-                    "permissions.prioritySupportPositioning": 3,
-                    "permissions.prioritySupport": false
-                }
-            });
-
-        } else if (existingPlan.slug === "velvet-start") {
-            await SubscriptionModel.findByIdAndUpdate(id, {
-                $set: {
-                    "permissions.prioritySearchPositioning": 4,
-                    "permissions.prioritySupportPositioning": 4,
-                    "permissions.prioritySupport": false
-                }
-            });
-        }
 
         // ✅ Slug duplicate check (excluding current)
         if (slug) {
