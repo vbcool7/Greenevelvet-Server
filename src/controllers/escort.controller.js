@@ -3216,7 +3216,7 @@ export async function fetchFiltercityescortscontroller(request, response) {
                                                     {
                                                         $ifNull: [{
                                                                 $arrayElemAt: [
-                                                                    "$currentPlan.baseLocations",
+                                                                    "$currentPlan.limits.baseLocations",
                                                                     0
                                                                 ]
                                                             },
@@ -3653,7 +3653,7 @@ export async function fetchFilterHomescortscontroller(request, response) {
                                                     {
                                                         $ifNull: [{
                                                                 $arrayElemAt: [
-                                                                    "$currentPlan.baseLocations",
+                                                                    "$currentPlan.limits.baseLocations",
                                                                     0
                                                                 ]
                                                             },
