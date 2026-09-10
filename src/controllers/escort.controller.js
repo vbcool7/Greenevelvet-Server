@@ -4480,15 +4480,16 @@ export const advanceSearchController = async (request, response) => {
             }
         });
 
-        // ---------- Final Sort ----------
+        // ---------- Priority Sort Before Group ----------
         pipeline.push({
             $sort: {
                 searchPosition: 1,
-                boostedAt: -1
+                boostedAt: -1,
+                _id: 1
             }
         });
 
-        // ✅ ---------- REMOVE DUPLICATES ----------
+        // ---------- REMOVE DUPLICATES ----------
         pipeline.push({
             $group: {
                 _id: "$_id",
@@ -4502,6 +4503,15 @@ export const advanceSearchController = async (request, response) => {
             $replaceRoot: {
                 newRoot: "$doc"
             },
+        });
+
+        // ---------- FINAL SORT AFTER GROUP ----------
+        pipeline.push({
+            $sort: {
+                searchPosition: 1,
+                boostedAt: -1,
+                _id: 1
+            }
         });
 
         const escorts = await EscortModel.aggregate(pipeline);
