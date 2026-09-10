@@ -3216,7 +3216,7 @@ export async function fetchFiltercityescortscontroller(request, response) {
                                                     {
                                                         $ifNull: [{
                                                                 $arrayElemAt: [
-                                                                    "$currentPlan.limits.baseLocations",
+                                                                    "$currentPlan.baseLocations",
                                                                     0
                                                                 ]
                                                             },
