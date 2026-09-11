@@ -1,5 +1,6 @@
 import EscortModel from "../models/escortModel.js";
 import PrioritySupportModel from "../models/prioritySupportModel.js";
+import { decrypt } from "../utils/crypto.js";
 import {
     sendMail
 } from "../utils/sendMail.js";
