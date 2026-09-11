@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { protect } from "../middleware/auth.js";
-import { createPrioritySupportTicket, deletePrioritySupportTicket, getAllPrioritySupportTickets, getPrioritySupportTickets, replyToPrioritySupportTicket, updatePrioritySupportTicketStatus } from "../controllers/prioritySupport.controller";
+import { createPrioritySupportTicket, deletePrioritySupportTicket, getAllPrioritySupportTickets, getPrioritySupportTickets, replyToPrioritySupportTicket, updatePrioritySupportTicketStatus } from "../controllers/prioritySupport.controller.js";
 
 
 const prioritySupportRouter = Router();
