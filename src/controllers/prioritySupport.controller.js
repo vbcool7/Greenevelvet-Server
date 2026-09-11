@@ -60,7 +60,7 @@ export const createPrioritySupportTicket = async (request, response) => {
             });
         }
 
-        let encryptedMobile = escort.mobile;
+        let mobile = escort.mobile;
 
         try {
             if (mobile?.startsWith("enc:")) {
@@ -76,7 +76,7 @@ export const createPrioritySupportTicket = async (request, response) => {
         const ticket = await PrioritySupportModel.create({
             escortId: userId,
             fullname: escort.name,
-            mobile: encryptedMobile,
+            mobile: mobile,
             email: escort.email,
 
             subject,
