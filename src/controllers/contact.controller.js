@@ -1,6 +1,8 @@
 import ContactModel from "../models/contactModel.js";
 import mongoose from "mongoose";
-import { sendMail } from "../utils/sendMail.js";
+import {
+    sendMail
+} from "../utils/sendMail.js";
 import EscortModel from "../models/escortModel.js";
 import ClientModel from "../models/clientModel.js";
 
@@ -29,8 +31,12 @@ export const createContact = async (request, response) => {
 
         // ✅ parallel queries (fast)
         const [escort, client] = await Promise.all([
-            EscortModel.findOne({ email: normalizedEmail }).lean(),
-            ClientModel.findOne({ email: normalizedEmail }).lean()
+            EscortModel.findOne({
+                email: normalizedEmail
+            }).lean(),
+            ClientModel.findOne({
+                email: normalizedEmail
+            }).lean()
         ]);
 
         let role = "Visitor";
@@ -67,8 +73,10 @@ export const createContact = async (request, response) => {
         });
 
     } catch (error) {
+        console.log("Your inquiry has been submitted error ", error);
+
         return response.status(500).json({
-            message: error.message,
+            message: "Your inquiry has been submitted failed!",
             success: false,
             error: true
 
@@ -80,7 +88,9 @@ export const createContact = async (request, response) => {
 export const getAllContacts = async (request, response) => {
     try {
         const contacts = await ContactModel.find()
-            .sort({ createdAt: -1 })
+            .sort({
+                createdAt: -1
+            })
             .lean();
 
         return response.status(200).json({
@@ -103,8 +113,14 @@ export const getAllContacts = async (request, response) => {
 // send reply by email
 export const replyContact = async (request, response) => {
     try {
-        const { id } = request.params;
-        const { text, status } = request.body;
+        const {
+            id
+        } = request.params;
+        
+        const {
+            text,
+            status
+        } = request.body;
 
         if (!text || !text.trim()) {
             return response.status(400).json({
@@ -135,8 +151,7 @@ export const replyContact = async (request, response) => {
 
         // ✅ Update reply
         const contact = await ContactModel.findByIdAndUpdate(
-            id,
-            {
+            id, {
                 $push: {
                     adminReply: {
                         text,
@@ -146,8 +161,9 @@ export const replyContact = async (request, response) => {
                 },
                 repliedAt: new Date(),
                 status
-            },
-            { new: true }
+            }, {
+                new: true
+            }
         );
 
         console.log("contact details: ", contact);
@@ -183,8 +199,12 @@ export const replyContact = async (request, response) => {
 // update status
 export const updateContactStatus = async (request, response) => {
     try {
-        const { id } = request.params;
-        const { status } = request.body;
+        const {
+            id
+        } = request.params;
+        const {
+            status
+        } = request.body;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return response.status(400).json({
@@ -204,9 +224,11 @@ export const updateContactStatus = async (request, response) => {
         }
 
         const contact = await ContactModel.findByIdAndUpdate(
-            id,
-            { status },
-            { new: true }
+            id, {
+                status
+            }, {
+                new: true
+            }
         );
 
         if (!contact) {
@@ -236,7 +258,9 @@ export const updateContactStatus = async (request, response) => {
 // delete 
 export const deleteContact = async (request, response) => {
     try {
-        const { id } = request.params;
+        const {
+            id
+        } = request.params;
 
         // ✅ Validate ID
         if (!mongoose.Types.ObjectId.isValid(id)) {

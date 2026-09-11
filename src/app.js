@@ -17,6 +17,7 @@ import extraRouter from "./routes/extra.route.js";
 import dashboardRouter from "./routes/dashboard.route.js";
 import notificationRouter from "./routes/notification.route.js";
 import chatRouter from "./routes/chatRoutes.js";
+import prioritySupportRouter from "./routes/prioritySupport.route.js";
 
 const app = express();
 
@@ -74,6 +75,7 @@ app.use('/uglymugs', uglymugsRouter);
 app.use('/extra', extraRouter);
 app.use('/notification', notificationRouter);
 app.use('/chat', chatRouter);
+app.use('/support', prioritySupportRouter);
 
 
 /* Global Error Handler */
