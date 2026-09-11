@@ -60,11 +60,23 @@ export const createPrioritySupportTicket = async (request, response) => {
             });
         }
 
+        let encryptedMobile = escort.mobile;
+
+        try {
+            if (mobile?.startsWith("enc:")) {
+                mobile = decrypt(mobile.replace("enc:", ""));
+            } else {
+                mobile = decrypt(mobile);
+            }
+        } catch {
+            mobile = "";
+        }
+
         // Create Priority Support Ticket
         const ticket = await PrioritySupportModel.create({
             escortId: userId,
-            fullname: escort.fullname,
-            mobile: escort.mobile,
+            fullname: escort.name,
+            mobile: encryptedMobile,
             email: escort.email,
 
             subject,

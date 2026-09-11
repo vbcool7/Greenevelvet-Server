@@ -2,10 +2,6 @@ import axios from "axios";
 import subcribedModel from "../models/subcribedplanModel.js";
 import EscortModel from "../models/escortModel.js";
 import SubscriptionModel from "../models/subscriptionModel.js";
-import {
-    request,
-    response
-} from "express";
 
 
 const activePaymentStatuses = [
