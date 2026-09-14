@@ -676,7 +676,7 @@ export async function registerEscortcontroller(request, response) {
 
                     user.emailVerifyToken = token;
                     user.emailVerifyExpiry = new Date(
-                        Date.now() + 1 * 60 * 1000 // 24 hours
+                        Date.now() + 24 * 60 * 60 * 1000 // 24 hours
                     );
 
                     await user.save();
@@ -689,10 +689,10 @@ export async function registerEscortcontroller(request, response) {
                     );
 
                     message = "Please verify your email before logging in.";
-                    
+
                 } else {
                     redirectUrl = `${registrationSteps[nextStep]}/${user.escortId}`;
-                    message= "Please Complete your registration";
+                    message = "Please Complete your registration";
                 }
 
                 return response.status(403).json({
@@ -728,7 +728,7 @@ export async function registerEscortcontroller(request, response) {
             account_type,
             adverties_category,
             emailVerifyToken: token,
-            emailVerifyExpiry: new Date(Date.now() + 1 * 60 * 1000),
+            emailVerifyExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hour
             lastCompletedStep: 1,
         }
 
@@ -764,7 +764,6 @@ export async function registerEscortcontroller(request, response) {
         })
     }
 }
-
 
 
 // Escort verify email controll step-2
@@ -922,7 +921,7 @@ export async function resendEmailVerification(request, response) {
 
         pendingEscort.emailVerifyToken = token;
         pendingEscort.emailVerifyExpiry = new Date(
-            Date.now() + 1 * 60 * 1000 // 24 hours
+            Date.now() + 24 * 60 * 60 * 1000 // 24 hours
         );
 
         await pendingEscort.save();

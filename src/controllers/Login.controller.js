@@ -106,7 +106,7 @@ export async function loginUsercontroller(request, response) {
 
                 user.emailVerifyToken = token;
                 user.emailVerifyExpiry = new Date(
-                    Date.now() + 1 * 60 * 1000 // 24 hours
+                    Date.now() + 24 * 60 * 60 * 1000 // 24 hours
                 );
 
                 await user.save();
