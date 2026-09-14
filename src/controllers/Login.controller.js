@@ -109,7 +109,7 @@ export async function loginUsercontroller(request, response) {
 
                 await user.save();
 
-                const verifyLink = `https://greenevelvet-server.onrender.com/escort/verify-email?token=${token}&id=${pendingEscort._id}`;
+                const verifyLink = `https://greenevelvet-server.onrender.com/escort/verify-email?token=${token}&id=${user._id}`;
 
                 await sendVerificationEmail(
                     user.email,
