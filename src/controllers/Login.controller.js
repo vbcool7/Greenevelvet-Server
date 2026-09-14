@@ -98,6 +98,24 @@ export async function loginUsercontroller(request, response) {
 
             if (user.lastCompletedStep === 1) {
                 redirectUrl = `${registrationSteps[nextStep]}/${user._id}`;
+
+                // Generate new verification token
+                const token = crypto.randomBytes(32).toString("hex");
+
+                user.emailVerifyToken = token;
+                user.emailVerifyExpiry = new Date(
+                    Date.now() + 1 * 60 * 1000 // 24 hours
+                );
+
+                await user.save();
+
+                const verifyLink = `https://greenevelvet-server.onrender.com/escort/verify-email?token=${token}&id=${pendingEscort._id}`;
+
+                await sendVerificationEmail(
+                    user.email,
+                    verifyLink,
+                );
+
             } else {
                 redirectUrl = `${registrationSteps[nextStep]}/${user.escortId}`;
             }

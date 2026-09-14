@@ -574,7 +574,7 @@ export const escortResetPassword = async (request, response) => {
 };
 
 //===================================================================================================//
-//                      Registration Controllers
+//                   Escort Registration Controllers
 //===================================================================================================//
 
 // Escort Register controll step-1
@@ -611,7 +611,7 @@ export async function registerEscortcontroller(request, response) {
 
         if (exstingEmail) {
             return response.status(409).json({
-                message: "This email is already registered as Client, You cannot register as Escort with",
+                message: "This email is already registered as Client, You can not register as Escort with",
                 success: false,
                 error: true
             })
@@ -628,6 +628,80 @@ export async function registerEscortcontroller(request, response) {
                 success: false
             })
         }
+
+        //-----------------------------------------------------//
+        //                 Pending Escort Check                //
+        //-----------------------------------------------------//
+
+        let user = await PendingEscortModel.findOne({
+            email
+        }).select("+password");
+
+        let role = "Escort";
+        let _id = user?._id;
+
+        if (user) {
+            if (user?.status === "Pending" && user?.role === "Escort") {
+
+                const registrationSteps = {
+                    1: "/signupadvertiser",
+                    2: "/welcometogreenvelvet",
+                    3: "/confirmmobilenumber",
+                    4: "/profiledetails",
+                    5: "/identityverification",
+                    6: "/uploadprofileimage",
+                    7: "/uploadprofilegalleryphotos"
+                };
+
+                if (user?.lastCompletedStep >= 7) {
+                    return response.status(200).json({
+                        success: true,
+                        message: "Your profile is under review. Please wait for admin approval.",
+                        registrationCompleted: true,
+                        verificationStatus: "Pending",
+                    });
+                }
+
+                const nextStep = user.lastCompletedStep + 1;
+
+                let redirectUrl;
+
+                if (user.lastCompletedStep === 1) {
+                    redirectUrl = `${registrationSteps[nextStep]}/${user._id}`;
+
+                    // Generate new verification token
+                    const token = crypto.randomBytes(32).toString("hex");
+
+                    user.emailVerifyToken = token;
+                    user.emailVerifyExpiry = new Date(
+                        Date.now() + 1 * 60 * 1000 // 24 hours
+                    );
+
+                    await user.save();
+
+                    const verifyLink = `https://greenevelvet-server.onrender.com/escort/verify-email?token=${token}&id=${pendingEscort._id}`;
+
+                    await sendVerificationEmail(
+                        user.email,
+                        verifyLink,
+                    );
+                } else {
+                    redirectUrl = `${registrationSteps[nextStep]}/${user.escortId}`;
+                }
+
+                return response.status(403).json({
+                    message: "Please Complete your registration",
+                    success: false,
+                    error: true,
+                    registrationCompleted: false,
+                    escortId: user.escortId,
+                    lastCompletedStep: user.lastCompletedStep,
+                    nextStep,
+                    redirectUrl
+                });
+            }
+        }
+
 
         // const escortId = await generatedescortId()
 
@@ -683,6 +757,8 @@ export async function registerEscortcontroller(request, response) {
         })
     }
 }
+
+
 
 // Escort verify email controll step-2
 export async function verifyEmailcontroller(request, response) {
@@ -839,7 +915,7 @@ export async function resendEmailVerification(request, response) {
 
         pendingEscort.emailVerifyToken = token;
         pendingEscort.emailVerifyExpiry = new Date(
-            Date.now() + 24 * 60 * 60 * 1000 // 24 hours
+            Date.now() + 1 * 60 * 1000 // 24 hours
         );
 
         await pendingEscort.save();
