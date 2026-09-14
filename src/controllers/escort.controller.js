@@ -647,7 +647,7 @@ export async function registerEscortcontroller(request, response) {
             account_type,
             adverties_category,
             emailVerifyToken: token,
-            emailVerifyExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            emailVerifyExpiry: new Date(Date.now() + 1 * 60 * 1000),
             lastCompletedStep: 1,
         }
 
