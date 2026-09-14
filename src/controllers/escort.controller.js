@@ -698,9 +698,6 @@ export async function verifyEmailcontroller(request, response) {
             }
         }).select("+password");
 
-        console.log("Pending Escort Data:", pendingEscort.toObject());
-        console.log("Pending Mobile:", pendingEscort.mobile);
-
 
         if (!pendingEscort) {
 
