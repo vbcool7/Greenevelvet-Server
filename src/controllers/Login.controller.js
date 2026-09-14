@@ -68,16 +68,6 @@ export async function loginUsercontroller(request, response) {
             });
         }
 
-        // 🔐 Password check
-        const checkPassword = await bcryptjs.compare(password, user.password);
-        if (!checkPassword) {
-            return response.status(401).json({
-                message: "Check your password",
-                success: false,
-                error: true
-            });
-        }
-
         let _id = user?._id;
 
 
@@ -169,6 +159,17 @@ export async function loginUsercontroller(request, response) {
                 lastCompletedStep: user.lastCompletedStep,
                 nextStep,
                 redirectUrl
+            });
+        }
+
+
+        // 🔐 Password check
+        const checkPassword = await bcryptjs.compare(password, user.password);
+        if (!checkPassword) {
+            return response.status(401).json({
+                message: "Check your password",
+                success: false,
+                error: true
             });
         }
 
