@@ -695,6 +695,7 @@ export async function registerEscortcontroller(request, response) {
                     error: true,
                     registrationCompleted: false,
                     escortId: user.escortId,
+                    id: user._id,
                     lastCompletedStep: user.lastCompletedStep,
                     nextStep,
                     redirectUrl
@@ -748,10 +749,10 @@ export async function registerEscortcontroller(request, response) {
         })
 
     } catch (error) {
-        console.log("Reg error", error);
+        console.log("Reg submit error", error);
 
         return response.status(500).json({
-            message: "Submit registration failed",
+            message: "Registration submission failed!",
             error: true,
             success: false
         })
