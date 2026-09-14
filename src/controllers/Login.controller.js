@@ -96,6 +96,8 @@ export async function loginUsercontroller(request, response) {
 
             let redirectUrl;
 
+            let message;
+
             if (user.lastCompletedStep === 1) {
                 redirectUrl = `${registrationSteps[nextStep]}/${user._id}`;
 
@@ -116,8 +118,12 @@ export async function loginUsercontroller(request, response) {
                     verifyLink,
                 );
 
+                message = "Please verify your email before logging in.";
+
+
             } else {
                 redirectUrl = `${registrationSteps[nextStep]}/${user.escortId}`;
+                message = "Please Complete your registration";
             }
 
             return response.status(403).json({
