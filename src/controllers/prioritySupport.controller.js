@@ -294,7 +294,7 @@ export const replyToPrioritySupportTicket = async (request, response) => {
                 senderModel: "Admin",
                 type: "SUPPORT_REPLY", // Support response ke liye specific type
                 title: "Support Ticket Reply Received",
-                message: `Admin has replied to your ticket "${ticket.subject}": "${ticket.adminReply.text}"`,
+                message: `Admin has replied to your ticket "${ticket.subject}": "${ticket?.adminReply?.length > 0 ? ticket.adminReply[ticket.adminReply.length - 1].text : "..."}"`,
                 link: `/modeldashboard/support`
             });
         }
