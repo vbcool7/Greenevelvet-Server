@@ -1,3 +1,4 @@
+import AdminModel from "../models/adminModel.js";
 import EscortModel from "../models/escortModel.js";
 import PrioritySupportModel from "../models/prioritySupportModel.js";
 import {
@@ -92,6 +93,24 @@ export const createPrioritySupportTicket = async (request, response) => {
             prioritySupport: prioritySupport ?? false,
             prioritySupportPositioning: prioritySupportPositioning ?? 4
         });
+
+
+
+        const admin = await AdminModel.findOne();
+        if (!admin) {
+            console.error("❌ Notification skipped: No Admin found in database.");
+        } else {
+            const load = await createAndSendNotification(request.app, {
+                recipientId: admin._id,
+                recipientModel: "Admin",
+                senderId: ticket.escortId,
+                senderModel: "Escort",
+                type: "NEW_SUPPORT_TICKET", // Naye ticket creation ke liye specific type
+                title: `New Ticket: ${ticket.subject}`,
+                message: `${ticket.fullname || 'An Advertiser'} created a new ticket under "${ticket.planName || 'Support'}": "${ticket.message}"`,
+                link: `/dashboard/support-tickets`
+            });
+        }
 
 
         return response.status(201).json({
