@@ -95,7 +95,6 @@ export const createPrioritySupportTicket = async (request, response) => {
         });
 
 
-
         const admin = await AdminModel.findOne();
         if (!admin) {
             console.error("❌ Notification skipped: No Admin found in database.");
