@@ -4,6 +4,9 @@ import {
     decrypt
 } from "../utils/crypto.js";
 import {
+    createAndSendNotification
+} from "../utils/notificationHelper.js";
+import {
     sendMail
 } from "../utils/sendMail.js";
 
@@ -195,6 +198,10 @@ export const replyToPrioritySupportTicket = async (request, response) => {
             status
         } = request.body;
 
+        const adminId = request.user?._id;
+
+
+
         // Validate required fields
         if (!ticketId || !text?.trim() || !status) {
             return response.status(400).json({
@@ -275,6 +282,22 @@ export const replyToPrioritySupportTicket = async (request, response) => {
             <p>Thanks & Regards,<br/>Support Team</p>
             `
         );
+
+        const escort = await EscortModel.findOne(ticket.escortId);
+        if (!escort) {
+            console.error("❌ Notification skipped: No Escort found in database.");
+        } else {
+            const load = await createAndSendNotification(request.app, {
+                recipientId: escort._id,
+                recipientModel: "Escort",
+                senderId: adminId,
+                senderModel: "Admin",
+                type: "SUPPORT_REPLY", // Support response ke liye specific type
+                title: "Support Ticket Reply Received",
+                message: `Admin has replied to your ticket "${ticket.subject}": "${ticket.adminReply.text}"`,
+                link: `/modeldashboard/support`
+            });
+        }
 
         return response.status(200).json({
             message: "Reply sent successfully",
