@@ -141,8 +141,6 @@ export const createTransaction = async (request, response) => {
 
             }
 
-
-
             const subscriptionStart = new Date();
 
             const subscriptionExpiry = new Date(
@@ -169,10 +167,6 @@ export const createTransaction = async (request, response) => {
                 boostExpiry: manualBoosts > 0 ? boostExpiry : null,
                 boostCycleDays
             };
-
-
-
-
 
             const freeSubscription = await subcribedModel.create({
                 userId,
@@ -204,6 +198,36 @@ export const createTransaction = async (request, response) => {
                     subscribedplans: freeSubscription._id
                 }
             });
+
+            const updatedPlan = await SubscriptionModel.findOneAndUpdate({
+                    _id: plan._id,
+                    totalSpots: {
+                        $gt: 0
+                    },
+                },
+                [{
+                        $set: {
+                            totalSpots: {
+                                $subtract: ["$totalSpots", 1]
+                            },
+                        },
+                    },
+                    {
+                        $set: {
+                            duration: {
+                                $cond: [{
+                                        $eq: ["$totalSpots", 0]
+                                    },
+                                    "1 WEEK",
+                                    "$duration",
+                                ],
+                            },
+                        },
+                    },
+                ], {
+                    new: true,
+                }
+            );
 
             return response.status(200).json({
                 message: `${plan.title} plan subscribed successfully`,
@@ -629,6 +653,53 @@ export const nowPaymentsWebhook = async (request, response) => {
                 "Subscription activated:",
                 userId
             );
+
+            if (plan.discountedPrice === 0) {
+                // FREE PLAN
+                const updatedPlan = await SubscriptionModel.findOneAndUpdate({
+                        _id: plan._id,
+                        totalSpots: {
+                            $gt: 0
+                        },
+                    },
+                    [{
+                            $set: {
+                                totalSpots: {
+                                    $subtract: ["$totalSpots", 1]
+                                },
+                            },
+                        },
+                        {
+                            $set: {
+                                duration: {
+                                    $cond: [{
+                                            $eq: ["$totalSpots", 0]
+                                        },
+                                        "1 WEEK",
+                                        "$duration",
+                                    ],
+                                },
+                            },
+                        },
+                    ], {
+                        new: true
+                    }
+                );
+            } else {
+                // PAID PLAN
+                const updatedPlan = await SubscriptionModel.findOneAndUpdate({
+                    _id: plan._id,
+                    totalSpots: {
+                        $gt: 0
+                    },
+                }, {
+                    $inc: {
+                        totalSpots: -1,
+                    },
+                }, {
+                    new: true
+                });
+            }
         }
 
 
