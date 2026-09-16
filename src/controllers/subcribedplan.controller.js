@@ -226,6 +226,7 @@ export const createTransaction = async (request, response) => {
                     },
                 ], {
                     new: true,
+                    updatePipeline: true,
                 }
             );
 
@@ -682,7 +683,8 @@ export const nowPaymentsWebhook = async (request, response) => {
                             },
                         },
                     ], {
-                        new: true
+                        new: true,
+                        updatePipeline: true,
                     }
                 );
             } else {
@@ -697,7 +699,8 @@ export const nowPaymentsWebhook = async (request, response) => {
                         totalSpots: -1,
                     },
                 }, {
-                    new: true
+                    new: true,
+                    updatePipeline: true,
                 });
             }
         }
