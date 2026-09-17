@@ -3252,7 +3252,7 @@ export async function fetchFiltercityescortscontroller(request, response) {
 
         query["avatar.status"] = "Approved";
 
-
+        console.time("CITY_AGGREGATION");
 
         // 🔹 Fetch escorts (NO populate)
         const escortList = await EscortModel.aggregate([
@@ -3563,10 +3563,8 @@ export async function fetchFiltercityescortscontroller(request, response) {
             }
         ]);
 
-        // 6. Existing bookings populate — preserved
-        await EscortModel.populate(escortList, {
-            path: "bookings"
-        });
+        console.timeEnd("CITY_AGGREGATION");
+        console.log("CITY_AGGREGATION_COUNT:", escortList.length);
 
         const formattedEscortList = escortList?.map((escort) => ({
             ...escort,
