@@ -3898,8 +3898,26 @@ export async function fetchFilterHomescortscontroller(request, response) {
                 {
                     $lookup: {
                         from: "subcribedplans",
-                        localField: "currentSubscription",
-                        foreignField: "_id",
+                        let: {
+                            subscriptionId: "$currentSubscription"
+                        },
+                        pipeline: [{
+                                $match: {
+                                    $expr: {
+                                        $eq: ["$_id", "$$subscriptionId"]
+                                    }
+                                }
+                            },
+                            {
+                                $project: {
+                                    _id: 0,
+                                    subscriptionExpiry: 1,
+                                    "permissions.prioritySearch": 1,
+                                    "permissions.prioritySearchPositioning": 1,
+                                    "limits.baseLocations": 1
+                                }
+                            }
+                        ],
                         as: "currentPlan"
                     }
                 },
