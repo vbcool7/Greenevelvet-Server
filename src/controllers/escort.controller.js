@@ -3843,24 +3843,6 @@ export async function fetchFilterHomescortscontroller(request, response) {
         // City + Additional Cities
         const selectedCity = city?.trim().replace(/\s+/g, " ");
 
-        // if (selectedCity) {
-        //     query.$and.push({
-        //         $or: [{
-        //                 city: {
-        //                     $regex: `^${selectedCity}$`,
-        //                     $options: "i"
-        //                 }
-        //             },
-        //             {
-        //                 additionalCities: {
-        //                     $regex: `^${selectedCity}$`,
-        //                     $options: "i"
-        //                 }
-        //             }
-        //         ]
-        //     });
-        // }
-
         if (name?.trim()) {
             const searchName = name.trim().replace(/\s+/g, " ");
 
@@ -4340,6 +4322,9 @@ export async function fetchFilterHomescortscontroller(request, response) {
 
     } catch (error) {
         console.log("Fetch home escort error : ", error);
+
+        console.error("Fetch home escort error:", error.message);
+        console.error("Fetch home escort stack:", error.stack);
 
         return response.status(500).json({
             message: "Fetching escorts profile failed!",
