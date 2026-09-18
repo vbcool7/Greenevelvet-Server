@@ -3135,6 +3135,209 @@ export async function fetchescortServicescontroller(request, response) {
     }
 }
 
+// ==========================================================< Fetch Home and City Slider Escorts >====================================================================
+
+// country escorts for home page banner
+export async function fetchHomeSliderEscorts(request, response) {
+    try {
+        const {
+            role,
+            isVerified,
+            country,
+            city,
+            isVisible
+        } = request.query;
+
+        let filter = {};
+
+        if (role) filter.role = role;
+
+        if (!country) {
+            return response.status(400).json({
+                message: "country is missing",
+                error: true,
+                success: false
+            });
+        }
+        filter.country = country;
+
+        if (isVerified !== undefined)
+            filter.isVerified = isVerified === "true";
+
+        if (isVisible !== undefined)
+            filter.isVisible = isVisible === "true";
+
+        // Only escorts with avatar
+        filter.avatar = {
+            $exists: true,
+            $ne: null,
+            $ne: ""
+        };
+
+        filter.status = "Active";
+
+        // City filter only if city is provided
+        if (city) filter.city = city;
+
+        console.log("request filter: ", filter);
+
+        const escorts = await EscortModel.find(filter).lean();
+
+        return response.status(200).json({
+            message: "Escort list fetched",
+            error: false,
+            success: true,
+            data: escorts
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || error,
+            error: true,
+            success: false
+        });
+    }
+}
+
+// city escorts for banner slider
+export async function fetchCitySliderEscorts(request, response) {
+    try {
+        const {
+            role,
+            isVerified,
+            city,
+            country,
+            isVisible
+        } = request.query;
+
+        let filter = {};
+
+        if (role) filter.role = role;
+
+        // if (!city) {
+        //     return response.status(400).json({
+        //         message: "city is missing",
+        //         error: true,
+        //         success: false
+        //     });
+        // }
+
+
+        // if (city) filter.city = city;
+
+
+        filter.country = country;
+
+        if (isVerified !== undefined)
+            filter.isVerified = isVerified === "true";
+
+        if (isVisible !== undefined)
+            filter.isVisible = isVisible === "true";
+
+        // Only escorts with avatar
+        filter.avatar = {
+            $exists: true,
+            $ne: null,
+            $ne: ""
+        };
+
+        filter.status = "Active";
+
+
+        const selectedCity = city
+            ?.trim()
+            .replace(/\s+/g, " ");
+
+        const escorts = await EscortModel.aggregate([
+            // 1. Existing filters
+            {
+                $match: {
+                    ...filter
+                }
+            },
+
+            // 2. Current subscription
+            {
+                $lookup: {
+                    from: "subcribedplans",
+                    localField: "currentSubscription",
+                    foreignField: "_id",
+                    as: "currentPlan"
+                }
+            },
+
+            // 3. Plan based city search
+            ...(selectedCity ? [{
+                $match: {
+                    $or: [{
+                            city: {
+                                $regex: `^${selectedCity}$`,
+                                $options: "i"
+                            }
+                        },
+                        {
+                            $expr: {
+                                $in: [
+                                    selectedCity.toUpperCase(),
+                                    {
+                                        $map: {
+                                            input: {
+                                                $slice: [{
+                                                        $ifNull: [
+                                                            "$additionalCities",
+                                                            []
+                                                        ]
+                                                    },
+                                                    {
+                                                        $ifNull: [{
+                                                                $arrayElemAt: [
+                                                                    "$currentPlan.limits.baseLocations",
+                                                                    0
+                                                                ]
+                                                            },
+                                                            0
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            as: "city",
+                                            in: {
+                                                $toUpper: "$$city"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }] : [])
+        ]);
+
+        const formattedEscorts = escorts.map((escort) => ({
+            ...escort,
+            city: selectedCity || escort.city
+        }));
+
+        return response.status(200).json({
+            message: "Escort list fetched",
+            error: false,
+            success: true,
+            data: formattedEscorts,
+            counts: formattedEscorts.length,
+        });
+
+    } catch (error) {
+        console.log("City Slider escorts rfetching error ", error);
+
+        return response.status(500).json({
+            message: `Fetching available ${selectedCity} city escort failed!`,
+            error: true,
+            success: false
+        });
+    }
+}
+
 // ===================================================< Fetch Home, City and Advanced Search controlls >============================================================
 
 // filter city escorts
@@ -7806,208 +8009,7 @@ export const cancelTour = async (request, response) => {
     }
 };
 
-// ==========================================================< Fetch Home Slider Escorts >====================================================================
 
-// country escorts for home page banner
-export async function fetchHomeSliderEscorts(request, response) {
-    try {
-        const {
-            role,
-            isVerified,
-            country,
-            city,
-            isVisible
-        } = request.query;
-
-        let filter = {};
-
-        if (role) filter.role = role;
-
-        if (!country) {
-            return response.status(400).json({
-                message: "country is missing",
-                error: true,
-                success: false
-            });
-        }
-        filter.country = country;
-
-        if (isVerified !== undefined)
-            filter.isVerified = isVerified === "true";
-
-        if (isVisible !== undefined)
-            filter.isVisible = isVisible === "true";
-
-        // Only escorts with avatar
-        filter.avatar = {
-            $exists: true,
-            $ne: null,
-            $ne: ""
-        };
-
-        filter.status = "Active";
-
-        // City filter only if city is provided
-        if (city) filter.city = city;
-
-        console.log("request filter: ", filter);
-
-        const escorts = await EscortModel.find(filter);
-
-        return response.status(200).json({
-            message: "Escort list fetched",
-            error: false,
-            success: true,
-            data: escorts
-        });
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || error,
-            error: true,
-            success: false
-        });
-    }
-}
-
-// city escorts for banner slider
-export async function fetchCitySliderEscorts(request, response) {
-    try {
-        const {
-            role,
-            isVerified,
-            city,
-            country,
-            isVisible
-        } = request.query;
-
-        let filter = {};
-
-        if (role) filter.role = role;
-
-        // if (!city) {
-        //     return response.status(400).json({
-        //         message: "city is missing",
-        //         error: true,
-        //         success: false
-        //     });
-        // }
-
-
-        // if (city) filter.city = city;
-
-
-        filter.country = country;
-
-        if (isVerified !== undefined)
-            filter.isVerified = isVerified === "true";
-
-        if (isVisible !== undefined)
-            filter.isVisible = isVisible === "true";
-
-        // Only escorts with avatar
-        filter.avatar = {
-            $exists: true,
-            $ne: null,
-            $ne: ""
-        };
-
-        filter.status = "Active";
-
-
-        const selectedCity = city
-            ?.trim()
-            .replace(/\s+/g, " ");
-
-        const escorts = await EscortModel.aggregate([
-            // 1. Existing filters
-            {
-                $match: {
-                    ...filter
-                }
-            },
-
-            // 2. Current subscription
-            {
-                $lookup: {
-                    from: "subcribedplans",
-                    localField: "currentSubscription",
-                    foreignField: "_id",
-                    as: "currentPlan"
-                }
-            },
-
-            // 3. Plan based city search
-            ...(selectedCity ? [{
-                $match: {
-                    $or: [{
-                            city: {
-                                $regex: `^${selectedCity}$`,
-                                $options: "i"
-                            }
-                        },
-                        {
-                            $expr: {
-                                $in: [
-                                    selectedCity.toUpperCase(),
-                                    {
-                                        $map: {
-                                            input: {
-                                                $slice: [{
-                                                        $ifNull: [
-                                                            "$additionalCities",
-                                                            []
-                                                        ]
-                                                    },
-                                                    {
-                                                        $ifNull: [{
-                                                                $arrayElemAt: [
-                                                                    "$currentPlan.limits.baseLocations",
-                                                                    0
-                                                                ]
-                                                            },
-                                                            0
-                                                        ]
-                                                    }
-                                                ]
-                                            },
-                                            as: "city",
-                                            in: {
-                                                $toUpper: "$$city"
-                                            }
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                }
-            }] : [])
-        ]);
-
-        const formattedEscorts = escorts.map((escort) => ({
-            ...escort,
-            city: selectedCity || escort.city
-        }));
-
-        return response.status(200).json({
-            message: "Escort list fetched",
-            error: false,
-            success: true,
-            data: formattedEscorts,
-            counts: formattedEscorts.length,
-        });
-
-    } catch (error) {
-        console.log("City Slider escorts rfetching error ", error);
-
-        return response.status(500).json({
-            message: `Fetching available ${selectedCity} city escort failed!`,
-            error: true,
-            success: false
-        });
-    }
-}
 
 // ===========================================< Get Escort Contact >=====================================================
 
