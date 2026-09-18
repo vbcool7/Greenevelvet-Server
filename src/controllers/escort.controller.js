@@ -3312,7 +3312,7 @@ export async function fetchCitySliderEscorts(request, response) {
                     ]
                 }
             }] : [])
-        ]).lean();
+        ]);
 
         const formattedEscorts = escorts.map((escort) => ({
             ...escort,
@@ -3764,7 +3764,7 @@ export async function fetchFiltercityescortscontroller(request, response) {
                     boostedAt: -1
                 }
             }
-        ]).lean();
+        ]);
 
         console.timeEnd("CITY_AGGREGATION");
         console.log("CITY_AGGREGATION_COUNT:", escortList.length);
@@ -4292,7 +4292,7 @@ export async function fetchFilterHomescortscontroller(request, response) {
                     isFaceBlurred: 1
                 }
             }
-        ]).lean();
+        ]);
 
 
         // Total remains based ONLY on existing filters
