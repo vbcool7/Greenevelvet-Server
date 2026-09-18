@@ -3181,7 +3181,19 @@ export async function fetchHomeSliderEscorts(request, response) {
 
         console.log("request filter: ", filter);
 
-        const escorts = await EscortModel.find(filter).lean();
+        const escorts = await EscortModel.find(filter).select(`
+        escortId
+        name
+        city
+        adverties_category
+        rateFrom
+        last_login_date
+        available
+        availability_start
+        isFaceBlurred
+        avatar.url
+        avatar.status
+    `).lean();
 
         return response.status(200).json({
             message: "Escort list fetched",
