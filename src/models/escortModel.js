@@ -540,7 +540,16 @@ const EscortSchema = new mongoose.Schema({
 
 }, {
     timestamps: true
-})
+});
+
+
+EscortSchema.index({
+    role: 1,
+    country: 1,
+    isVerified: 1,
+    isVisible: 1,
+    status: 1
+});
 
 const EscortModel = mongoose.model("Escort", EscortSchema)
 
