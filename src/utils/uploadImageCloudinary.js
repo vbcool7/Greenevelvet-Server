@@ -8,17 +8,17 @@ const uploadImageCloudinary = async (image, folder = "gallery/images") => {
       ? image.buffer
       : Buffer.from(await image.arrayBuffer());
 
-
     const metadata = await sharp(buffer).metadata();
-
     const imageWidth = metadata.width || 1000;
 
-    // Dynamic font size
-    const dynamicFontSize = Math.round(imageWidth * 0.05);
+    // Dynamic Logo Width (Main image ki width ka 25%)
+    const calculatedLogoWidth = Math.round(imageWidth * 0.25);
 
-    // Min / Max control
-    const fontSize = Math.max(30, Math.min(dynamicFontSize, 80));
+    // Min / Max Control (Minimum 120px, Maximum 350px)
+    const logoWidth = Math.max(120, Math.min(calculatedLogoWidth, 350));
 
+    // Cloudinary overlay transformation requires ':' for folder paths
+    const logoPublicId = "uploads/ejzrpoaarzqqcqatmd7m".replace(/\//g, ":");
 
     // Return promise for upload_stream
     return new Promise((resolve, reject) => {
@@ -29,16 +29,12 @@ const uploadImageCloudinary = async (image, folder = "gallery/images") => {
           transformation: [
             { quality: "auto", fetch_format: "auto" },
 
+            // Image Logo Watermark Overlay
             {
-              overlay: {
-                font_family: "Arial",
-                font_size: fontSize,
-                font_weight: "bold",
-                text: "greenevelvet.com"
-              },
-              color: "white",
-              opacity: 35,
-              gravity: "center"
+              overlay: logoPublicId, // uploads:ejzrpoaarzqqcqatmd7m
+              width: logoWidth,      // Dynamic responsive width
+              opacity: 35,           // Transparency level
+              gravity: "center"      // Position
             }
           ]
         },
