@@ -2,11 +2,12 @@ import fs from "fs";
 import cloudinary from "../config/cloudinary.js";
 import sharp from "sharp";
 
-// Function signature mein addWatermark (default: true) add kiya hai
+// Function signature me addWatermark (default: true) maintained hai
 export const uploadFromCloudinary = async (fileBuffer, addWatermark = true) => {
     try {
         if (!fileBuffer) throw new Error("File buffer is required");
 
+        // 1. Resizing check for high-resolution images (>24 Megapixels)
         const metadata = await sharp(fileBuffer).metadata();
 
         if (metadata.width && metadata.height) {
@@ -27,35 +28,33 @@ export const uploadFromCloudinary = async (fileBuffer, addWatermark = true) => {
             }
         }
 
-        const imageWidth = (await sharp(fileBuffer).metadata()).width || 1000;
-
-        // Dynamic font size
-        const dynamicFontSize = Math.round(imageWidth * 0.05);
-
-        // Min / Max control
-        const fontSize = Math.max(30, Math.min(dynamicFontSize, 80));
-
-        // Base transformations
+        // 2. Base transformations
         const transformations = [{
             quality: "auto",
             fetch_format: "auto"
         }];
 
-        // Agar addWatermark true hai tabhi watermark push karein
+        // 3. Dynamic Logo Watermark (Agar addWatermark true ho)
         if (addWatermark) {
+            const updatedMetadata = await sharp(fileBuffer).metadata();
+            const imageWidth = updatedMetadata.width || 1000;
+
+            // Logo size calculation (35% of image width)
+            const calculatedLogoWidth = Math.round(imageWidth * 0.35);
+            const logoWidth = Math.max(180, Math.min(calculatedLogoWidth, 500));
+
+            // Format public_id for Cloudinary overlay (slash to colon conversion)
+            const logoPublicId = "uploads/ejzrpoaarzqqcqatmd7m".replace(/\//g, ":");
+
             transformations.push({
-                overlay: {
-                    font_family: "Arial",
-                    font_size: fontSize,
-                    font_weight: "bold",
-                    text: "greenevelvet.com"
-                },
-                color: "white",
+                overlay: logoPublicId,
+                width: logoWidth,
                 opacity: 35,
                 gravity: "center"
             });
         }
 
+        // 4. Cloudinary Stream Upload
         return await new Promise((resolve, reject) => {
             cloudinary.uploader.upload_stream({
                     folder: "uploads",
@@ -74,7 +73,7 @@ export const uploadFromCloudinary = async (fileBuffer, addWatermark = true) => {
         });
 
     } catch (error) {
-        console.log("upload error:", error);
+        console.error("upload error:", error);
         throw new Error("Image upload failed");
     }
 };

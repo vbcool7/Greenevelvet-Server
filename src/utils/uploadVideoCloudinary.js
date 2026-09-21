@@ -2,32 +2,31 @@ import cloudinary from "../config/cloudinary.js";
 
 const uploadVideoCloudinary = async (video, folder = "gallery/videos") => {
   try {
+    const buffer = video?.buffer ?
+      video.buffer :
+      Buffer.from(await video.arrayBuffer());
 
-    const buffer = video?.buffer
-      ? video.buffer
-      : Buffer.from(await video.arrayBuffer());
+    // Cloudinary overlay transformation requires ':' instead of '/' for sub-folders
+    const logoPublicId = "uploads/ejzrpoaarzqqcqatmd7m".replace(/\//g, ":");
 
     return new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
+      const uploadStream = cloudinary.uploader.upload_stream({
           folder,
           resource_type: "video",
-          transformation: [
-            { quality: "auto", bitrate: "auto", fetch_format: "auto" },
+          transformation: [{
+              quality: "auto",
+              bitrate: "auto",
+              fetch_format: "auto"
+            },
 
+            // Video Logo Watermark Overlay
             {
-              overlay: {
-                font_family: "Arial",
-                font_size: 30,
-                font_weight: "bold",
-                text: "greenevelvet.com"
-              },
-              color: "white",
-              opacity: 35,
-              gravity: "south_east",
+              overlay: logoPublicId,
+              width: 180, // Fixed logo width suitable for video overlays
+              opacity: 35, // Watermark transparency level
+              gravity: "south_east", // Positioned at bottom-right corner
               x: 30,
               y: 30
-
             }
           ]
         },

@@ -2,37 +2,48 @@ import cloudinary from "../config/cloudinary.js";
 
 export const uploadMediaCloudinary = (file, folder) => {
     return new Promise((resolve, reject) => {
-        const isVideo = file.mimetype && file.mimetype.includes("video");
-
-        // Cloudinary overlay transformation demands ':' instead of '/' for folder paths
-        const logoPublicId = "uploads/ejzrpoaarzqqcqatmd7m".replace(/\//g, ":");
-
-        cloudinary.uploader.upload_stream(
-            {
-                folder,
-                resource_type: "auto",
-                transformation: [
-                    // 1. Quality & Format Optimization
-                    {
-                        quality: "auto",
-                        fetch_format: "auto",
-                        ...(isVideo && { bitrate: "auto" })
-                    },
-
-                    // 2. Dynamic Image Logo Watermark Overlay
-                    {
-                        overlay: logoPublicId, // uploads:ejzrpoaarzqqcqatmd7m
-                        width: isVideo ? 120 : 180, // Logo size (px)
-                        opacity: 35, // Transparency level
-                        gravity: isVideo ? "south_east" : "center", // Centered on images, bottom-right on videos
-                        ...(isVideo && { x: 30, y: 30 })
-                    }
-                ]
-            },
-            (error, result) => {
-                if (error) return reject(error);
-                resolve(result);
+        try {
+            if (!file || !file.buffer) {
+                return reject(new Error("Invalid file buffer provided"));
             }
-        ).end(file.buffer);
+
+            const isVideo = file.mimetype && file.mimetype.includes("video");
+
+            // Format Cloudinary Overlay Public ID (slashes replaced with colons)
+            const logoPublicId = "uploads/ejzrpoaarzqqcqatmd7m".replace(/\//g, ":");
+
+            const uploadStream = cloudinary.uploader.upload_stream(
+                {
+                    folder,
+                    resource_type: "auto",
+                    transformation: [
+                        {
+                            quality: "auto",
+                            fetch_format: "auto",
+                            ...(isVideo && { bitrate: "auto" })
+                        },
+                        {
+                            overlay: logoPublicId,
+                            width: isVideo ? 160 : 250,
+                            opacity: 35,
+                            gravity: isVideo ? "south_east" : "center",
+                            ...(isVideo && { x: 30, y: 30 })
+                        }
+                    ]
+                },
+                (error, result) => {
+                    if (error) {
+                        console.error("Cloudinary media upload error:", error);
+                        return reject(error);
+                    }
+                    resolve(result);
+                }
+            );
+
+            uploadStream.end(file.buffer);
+        } catch (err) {
+            console.error("uploadMediaCloudinary execution error:", err);
+            reject(err);
+        }
     });
 };
