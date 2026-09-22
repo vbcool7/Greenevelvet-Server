@@ -15,6 +15,9 @@ export const createReview = async (req, res) => {
             review
         } = req.body;
 
+        console.log("req body ", req.body);
+        console.log("clientId ", clientId);
+
         // Validate required fields
         if (!escortId || !rating || !review?.trim()) {
             return res.status(400).json({
