@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import EscortModel from "../models/escortModel.js";
 import ReviewModel from "../models/reviewModel.js";
 
