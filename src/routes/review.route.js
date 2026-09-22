@@ -31,8 +31,8 @@ reviewRouter.patch("/reject-review", protect(["Admin"]), rejectReview);
 
 
 // ------------------------------< Escort >---------------------------//
-reviewRouter.get("/get-escort-profile-reviews", protect(["Escort"]), getEscortProfileReviews);
-reviewRouter.get("/get-escort-reviews", protect(["Escort"]), getEscortProfileReviews);
+reviewRouter.get("/get-escort-profile-reviews",  getEscortProfileReviews);
+reviewRouter.get("/get-escort-reviews", getEscortProfileReviews);
 reviewRouter.patch("/reply-to-reviews", protect(["Escort"]), getEscortProfileReviews);
 reviewRouter.patch("/edit-reply", protect(["Escort"]), getEscortProfileReviews);
 reviewRouter.delete("/delete-reply", protect(["Escort"]), getEscortProfileReviews);
