@@ -607,6 +607,7 @@ export const getEscortReviews = async (req, res) => {
                     city: escort.city,
                     status: escort.status,
                     isVerified: escort.isVerified,
+                    
                 },
                 reviews,
                 totalReviews: stats.totalReviews,
