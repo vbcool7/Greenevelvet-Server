@@ -18,6 +18,7 @@ import dashboardRouter from "./routes/dashboard.route.js";
 import notificationRouter from "./routes/notification.route.js";
 import chatRouter from "./routes/chatRoutes.js";
 import prioritySupportRouter from "./routes/prioritySupport.route.js";
+import reviewRouter from "./routes/review.route.js";
 
 const app = express();
 
@@ -35,7 +36,9 @@ app.use(cors({
 
 
 app.use(express.json())
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({
+    extended: true
+}));
 
 app.use(cookieParser());
 
@@ -76,6 +79,7 @@ app.use('/extra', extraRouter);
 app.use('/notification', notificationRouter);
 app.use('/chat', chatRouter);
 app.use('/support', prioritySupportRouter);
+app.use('/review', reviewRouter);
 
 
 /* Global Error Handler */

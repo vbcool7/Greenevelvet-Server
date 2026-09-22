@@ -485,7 +485,7 @@ const EscortSchema = new mongoose.Schema({
 
     displayContact: {
         type: Boolean,
-        default: false
+        default: true
     },
 
 

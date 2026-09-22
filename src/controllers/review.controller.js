@@ -306,7 +306,7 @@ export const getAllReviews = async (req, res) => {
         }
 
         const [reviews, totalReviews] = await Promise.all([
-            Review.find(query)
+            ReviewModel.find(query)
             .populate("clientId", "name avatar")
             .populate("escortId", "name email")
             .sort(sortOptions)
@@ -314,7 +314,7 @@ export const getAllReviews = async (req, res) => {
             .limit(limitNumber)
             .lean(),
 
-            Review.countDocuments(query),
+            ReviewModel.countDocuments(query),
         ]);
 
         return res.status(200).json({
