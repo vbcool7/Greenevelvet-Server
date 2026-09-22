@@ -471,7 +471,7 @@ export const getEscortProfileReviews = async (req, res) => {
     try {
         const {
             escortId
-        } = req.body;
+        } = req.query;
 
         const [reviews, reviewStats] = await Promise.all([
             ReviewModel.find({
@@ -535,7 +535,7 @@ export const getEscortReviews = async (req, res) => {
     try {
         const {
             escortId
-        } = req.body;
+        } = req.query;
 
         const reviews = await ReviewModel.find({
                 escortId,
