@@ -541,32 +541,54 @@ export const getEscortReviews = async (req, res) => {
             escortId
         } = req.query;
 
-        const reviews = await ReviewModel.find({
+        if (!escortId) {
+            return res.status(400).json({
+                success: false,
+                message: "Escort ID is required.",
+            });
+        }
+
+        const escort = await EscortModel.findById(
+            escortId,
+            "avatar name city status isVerified"
+        ).lean();
+
+        if (!escort) {
+            return res.status(404).json({
+                success: false,
+                message: "Escort not found.",
+            });
+        }
+
+        const [reviews, reviewStats] = await Promise.all([
+            ReviewModel.find({
                 escortId,
                 status: "approved",
             })
             .populate("clientId", "name avatar")
             .sort({
-                createdAt: -1
-            });
+                createdAt: -1,
+            })
+            .lean(),
 
-        const reviewStats = await ReviewModel.aggregate([{
-                $match: {
-                    escortId: new mongoose.Types.ObjectId(escortId),
-                    status: "approved",
-                },
-            },
-            {
-                $group: {
-                    _id: "$escortId",
-                    totalReviews: {
-                        $sum: 1
-                    },
-                    averageRating: {
-                        $avg: "$rating"
+            ReviewModel.aggregate([{
+                    $match: {
+                        escortId: new mongoose.Types.ObjectId(escortId),
+                        status: "approved",
                     },
                 },
-            },
+                {
+                    $group: {
+                        _id: "$escortId",
+                        totalReviews: {
+                            $sum: 1,
+                        },
+                        averageRating: {
+                            $avg: "$rating",
+                        },
+                    },
+                },
+            ]),
         ]);
 
         const stats = reviewStats[0] || {
@@ -578,6 +600,14 @@ export const getEscortReviews = async (req, res) => {
             success: true,
             message: "Escort reviews fetched successfully.",
             data: {
+                escort: {
+                    _id: escort._id,
+                    avatar: escort.avatar,
+                    name: escort.name,
+                    city: escort.city,
+                    status: escort.status,
+                    isVerified: escort.isVerified,
+                },
                 reviews,
                 totalReviews: stats.totalReviews,
                 averageRating: Number(stats.averageRating.toFixed(2)),
