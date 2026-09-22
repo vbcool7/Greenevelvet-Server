@@ -548,10 +548,9 @@ export const getEscortReviews = async (req, res) => {
             });
         }
 
-        const escort = await EscortModel.findById(
-            escortId,
-            "avatar name city status isVerified"
-        ).lean();
+        const escort = await EscortModel.findById(escortId)
+            .select("avatar name city status isVerified")
+            .lean();
 
         if (!escort) {
             return res.status(404).json({
@@ -607,7 +606,7 @@ export const getEscortReviews = async (req, res) => {
                     city: escort.city,
                     status: escort.status,
                     isVerified: escort.isVerified,
-                    
+
                 },
                 reviews,
                 totalReviews: stats.totalReviews,
