@@ -533,7 +533,7 @@ export const getEscortProfileReviews = async (req, res) => {
 // Escort get all review
 export const getEscortReviews = async (req, res) => {
     try {
-        const escortId = req.user._id;
+        const escortId = req.body;
 
         const reviews = await ReviewModel.find({
                 escortId,
