@@ -87,20 +87,50 @@ export const createReview = async (req, res) => {
 // Client get all My given review
 export const getMyReviews = async (req, res) => {
     try {
+        const {
+            page = 1,
+                limit = 10,
+        } = req.query;
+
+        const pageNumber = Math.max(Number(page) || 1, 1);
+        const limitNumber = Math.min(
+            Math.max(Number(limit) || 10, 1),
+            100
+        );
+
+        const skip = (pageNumber - 1) * limitNumber;
+
         const clientId = req.user._id;
 
-        const reviews = await ReviewModel.find({
-                clientId
-            })
-            .populate("escortId", "name email avatar")
+        const query = {
+            clientId,
+        };
+
+        const [reviews, totalReviews] = await Promise.all([
+            ReviewModel.find(query)
+            .populate("escortId", "name email avatar city")
             .sort({
-                createdAt: -1
-            });
+                createdAt: -1,
+            })
+            .skip(skip)
+            .limit(limitNumber)
+            .lean(),
+
+            ReviewModel.countDocuments(query),
+        ]);
+
+        const totalPages = Math.ceil(totalReviews / limitNumber);
 
         return res.status(200).json({
             success: true,
             message: "Your reviews fetched successfully.",
-            data: reviews,
+            data: {
+                reviews,
+                page: pageNumber,
+                totalPages,
+                totalReviews,
+                limit: limitNumber,
+            },
         });
     } catch (error) {
         console.error("Get My Reviews Error:", error);
@@ -108,7 +138,6 @@ export const getMyReviews = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Something went wrong while fetching your reviews.",
-            error: error.message,
         });
     }
 };
