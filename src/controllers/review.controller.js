@@ -602,20 +602,20 @@ export const getEscortReviews = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Escort reviews fetched successfully.",
-            // data: {
-            //     escort: {
-            //         _id: escort._id,
-            //         avatar: escort.avatar,
-            //         name: escort.name,
-            //         city: escort.city,
-            //         status: escort.status,
-            //         isVerified: escort.isVerified,
+            data: {
+                escort: {
+                    _id: escort._id,
+                    avatar: escort.avatar,
+                    name: escort.name,
+                    city: escort.city,
+                    status: escort.status,
+                    isVerified: escort.isVerified,
 
-            //     },
-            //     reviews,
-            //     totalReviews: stats.totalReviews,
-            //     averageRating: Number(stats.averageRating.toFixed(2)),
-            // },
+                },
+                reviews,
+                totalReviews: stats.totalReviews,
+                averageRating: Number(stats.averageRating.toFixed(2)),
+            },
         });
     } catch (error) {
         console.error("Get Escort Reviews Error:", error);

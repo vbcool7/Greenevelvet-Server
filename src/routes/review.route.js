@@ -8,11 +8,15 @@ import {
     approveReview,
     createReview,
     deleteMyReview,
+    deleteReviewReply,
     editMyReview,
+    editReviewReply,
     getAllReviews,
     getEscortProfileReviews,
+    getEscortReviews,
     getMyReviews,
-    rejectReview
+    rejectReview,
+    replyToReview
 } from "../controllers/review.controller.js";
 
 const reviewRouter = Router();
@@ -32,10 +36,10 @@ reviewRouter.patch("/reject-review", protect(["Admin"]), rejectReview);
 
 // ------------------------------< Escort >---------------------------//
 reviewRouter.get("/get-escort-profile-reviews",  getEscortProfileReviews);
-reviewRouter.get("/get-escort-reviews", getEscortProfileReviews);
-reviewRouter.patch("/reply-to-reviews", protect(["Escort"]), getEscortProfileReviews);
-reviewRouter.patch("/edit-reply", protect(["Escort"]), getEscortProfileReviews);
-reviewRouter.delete("/delete-reply", protect(["Escort"]), getEscortProfileReviews);
+reviewRouter.get("/get-escort-reviews", getEscortReviews);
+reviewRouter.patch("/reply-to-reviews", protect(["Escort"]), replyToReview);
+reviewRouter.patch("/edit-reply", protect(["Escort"]), editReviewReply);
+reviewRouter.delete("/delete-reply", protect(["Escort"]), deleteReviewReply);
 
 
 export default reviewRouter ;
