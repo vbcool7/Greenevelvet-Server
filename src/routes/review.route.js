@@ -16,7 +16,8 @@ import {
     getEscortReviews,
     getMyReviews,
     rejectReview,
-    replyToReview
+    replyToReview,
+    reportReview
 } from "../controllers/review.controller.js";
 
 const reviewRouter = Router();
@@ -37,6 +38,10 @@ reviewRouter.patch("/reject-review", protect(["Admin"]), rejectReview);
 // ------------------------------< Escort >---------------------------//
 reviewRouter.get("/get-escort-profile-reviews",  getEscortProfileReviews);
 reviewRouter.get("/get-escort-reviews", getEscortReviews);
+reviewRouter.patch("/report-to-review", protect(["Escort"]), reportReview);
+
+
+
 reviewRouter.patch("/reply-to-reviews", protect(["Escort"]), replyToReview);
 reviewRouter.patch("/edit-reply", protect(["Escort"]), editReviewReply);
 reviewRouter.delete("/delete-reply", protect(["Escort"]), deleteReviewReply);

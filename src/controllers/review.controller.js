@@ -674,6 +674,98 @@ export const getEscortReviews = async (req, res) => {
     }
 };
 
+
+// report to review
+export const reportReview = async (req, res) => {
+    try {
+        const {
+            reviewId,
+            reason,
+            description,
+        } = req.body;
+
+        // 1. User Authentication Check
+        if (!req.user?._id) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized access.",
+            });
+        }
+
+        // 2. Validate reviewId format
+        if (!reviewId || !mongoose.Types.ObjectId.isValid(reviewId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Valid Review ID is required.",
+            });
+        }
+
+
+        if (!reason?.trim() && !description.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Report reason and description are required.",
+            });
+        }
+
+        const review = await ReviewModel.findById(reviewId);
+
+        if (!review) {
+            return res.status(404).json({
+                success: false,
+                message: "Review not found.",
+            });
+        }
+
+        // Only the escort who received the review can report it
+        if (review.escortId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: "You are not authorized to report this review.",
+            });
+        }
+
+        if (review.status !== "approved") {
+            return res.status(400).json({
+                success: false,
+                message: "Only approved reviews can be reported.",
+            });
+        }
+
+        if (review.report?.isReported) {
+            return res.status(400).json({
+                success: false,
+                message: "This review has already been reported.",
+            });
+        }
+
+        review.report = {
+            isReported: true,
+            reason: reason.trim(),
+            description: description.trim(),
+            reportedAt: new Date(),
+            status: "pending",
+            adminId: null,
+            actionAt: null,
+            adminReason: "",
+        };
+
+        await review.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Review reported successfully.",
+        });
+    } catch (error) {
+        console.error("Report Review Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Something went wrong while reporting the review.",
+        });
+    }
+};
+
 // Escort reply Review
 export const replyToReview = async (req, res) => {
     try {

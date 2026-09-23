@@ -71,7 +71,57 @@ const reviewSchema = new mongoose.Schema({
             type: Date,
             default: null,
         },
-    }
+    },
+    report: {
+        isReported: {
+            type: Boolean,
+            default: false,
+            index: true,
+        },
+
+        reason: {
+            type: String,
+            trim: true,
+            maxlength: 80,
+            default: "",
+        },
+        description: {
+            type: String,
+            trim: true,
+            maxlength: 500,
+            default: "",
+        },
+
+        reportedAt: {
+            type: Date,
+            default: null,
+        },
+
+        // Admin action on reported review
+        status: {
+            type: String,
+            enum: ["pending", "resolved", "dismissed"],
+            default: "pending",
+        },
+
+        adminId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Admin",
+            default: null,
+        },
+
+        actionAt: {
+            type: Date,
+            default: null,
+        },
+
+        adminReason: {
+            type: String,
+            trim: true,
+            maxlength: 500,
+            default: "",
+        },
+    },
 }, {
     timestamps: true,
 });
