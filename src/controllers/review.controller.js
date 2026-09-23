@@ -541,6 +541,8 @@ export const getEscortReviews = async (req, res) => {
             escortId
         } = req.query;
 
+        console.log("getEscortReviews req.query ", req.query);
+
         if (!escortId) {
             return res.status(400).json({
                 success: false,
