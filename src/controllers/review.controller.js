@@ -538,42 +538,90 @@ export const getEscortProfileReviews = async (req, res) => {
 export const getEscortReviews = async (req, res) => {
     try {
         const {
-            escortId
+            escortId,
+            rating,
+            search,
+            sortBy = "newest",
+            page = 1,
+            limit = 10,
         } = req.query;
 
-        console.log("getEscortReviews req.query ", req.query);
-
-        if (!escortId) {
+        if (!escortId || !mongoose.Types.ObjectId.isValid(escortId)) {
             return res.status(400).json({
                 success: false,
-                message: "Escort ID is required.",
+                message: "Valid Escort ID is required.",
             });
         }
 
-        const escort = await EscortModel.findById(escortId)
-            .select("avatar name city status isVerified")
-            .lean();
+        const pageNumber = Math.max(Number(page) || 1, 1);
+        const limitNumber = Math.min(Math.max(Number(limit) || 10, 1), 100);
+        const skip = (pageNumber - 1) * limitNumber;
 
-            console.log("escort ", escort);
+        // Base Query
+        const query = {
+            escortId: new mongoose.Types.ObjectId(escortId),
+            status: "approved",
+        };
 
-        if (!escort) {
-            return res.status(404).json({
-                success: false,
-                message: "Escort not found.",
-            });
+        // 1. Rating Filter Fix
+        if (rating && rating !== "all" && rating !== undefined) {
+            const ratingNumber = Number(rating);
+            if (!isNaN(ratingNumber) && ratingNumber >= 1 && ratingNumber <= 5) {
+                query.rating = ratingNumber;
+            }
         }
 
-        const [reviews, reviewStats] = await Promise.all([
-            ReviewModel.find({
-                escortId,
-                status: "approved",
-            })
+        // 2. Search Filter Fix (Safely string format handle karna)
+        if (search && String(search).trim() !== "" && search !== "undefined") {
+            const cleanSearch = String(search).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            query.review = {
+                $regex: cleanSearch,
+                $options: "i"
+            };
+        }
+
+        // 3. Sorting Options
+        let sortOptions = {
+            createdAt: -1
+        };
+        switch (sortBy) {
+            case "oldest":
+                sortOptions = {
+                    createdAt: 1
+                };
+                break;
+            case "highest":
+                sortOptions = {
+                    rating: -1,
+                    createdAt: -1
+                };
+                break;
+            case "lowest":
+                sortOptions = {
+                    rating: 1,
+                    createdAt: -1
+                };
+                break;
+            case "newest":
+            default:
+                sortOptions = {
+                    createdAt: -1
+                };
+                break;
+        }
+
+        // Aggregate execution for populate & regex search consistency
+        const [reviews, totalReviews, reviewStats] = await Promise.all([
+            ReviewModel.find(query)
             .populate("clientId", "name avatar")
-            .sort({
-                createdAt: -1,
-            })
+            .sort(sortOptions)
+            .skip(skip)
+            .limit(limitNumber)
             .lean(),
 
+            ReviewModel.countDocuments(query),
+
+            // Escort overall summary (unfiltered stats)
             ReviewModel.aggregate([{
                     $match: {
                         escortId: new mongoose.Types.ObjectId(escortId),
@@ -584,10 +632,10 @@ export const getEscortReviews = async (req, res) => {
                     $group: {
                         _id: "$escortId",
                         totalReviews: {
-                            $sum: 1,
+                            $sum: 1
                         },
                         averageRating: {
-                            $avg: "$rating",
+                            $avg: "$rating"
                         },
                     },
                 },
@@ -603,23 +651,21 @@ export const getEscortReviews = async (req, res) => {
             success: true,
             message: "Escort reviews fetched successfully.",
             data: {
-                escort: {
-                    _id: escort._id,
-                    avatar: escort.avatar,
-                    name: escort.name,
-                    city: escort.city,
-                    status: escort.status,
-                    isVerified: escort.isVerified,
-
-                },
                 reviews,
                 totalReviews: stats.totalReviews,
-                averageRating: Number(stats.averageRating.toFixed(2)),
+                averageRating: Number((stats.averageRating || 0).toFixed(2)),
+            },
+            pagination: {
+                totalFilteredReviews: totalReviews,
+                currentPage: pageNumber,
+                totalPages: Math.ceil(totalReviews / limitNumber) || 1,
+                limit: limitNumber,
+                hasNextPage: pageNumber * limitNumber < totalReviews,
+                hasPreviousPage: pageNumber > 1,
             },
         });
     } catch (error) {
         console.error("Get Escort Reviews Error:", error);
-
         return res.status(500).json({
             success: false,
             message: "Something went wrong while fetching reviews.",
