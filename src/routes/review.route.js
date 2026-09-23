@@ -8,6 +8,7 @@ import {
     approveReview,
     createReview,
     deleteMyReview,
+    deleteReview,
     deleteReviewReply,
     editMyReview,
     editReviewReply,
@@ -33,13 +34,13 @@ reviewRouter.delete("/delete-my-review", protect(["Client"]), deleteMyReview);
 reviewRouter.get("/get-all-review", protect(["Admin"]), getAllReviews);
 reviewRouter.patch("/approve-review", protect(["Admin"]), approveReview);
 reviewRouter.patch("/reject-review", protect(["Admin"]), rejectReview);
+reviewRouter.delete("/delete-review", protect(["Admin"]), deleteReview);
 
 
 // ------------------------------< Escort >---------------------------//
 reviewRouter.get("/get-escort-profile-reviews",  getEscortProfileReviews);
 reviewRouter.get("/get-escort-reviews", getEscortReviews);
 reviewRouter.patch("/report-to-review", protect(["Escort"]), reportReview);
-
 
 
 reviewRouter.patch("/reply-to-reviews", protect(["Escort"]), replyToReview);

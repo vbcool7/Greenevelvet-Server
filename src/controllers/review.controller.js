@@ -435,13 +435,6 @@ export const rejectReview = async (req, res) => {
             });
         }
 
-        if (review.status === "approved") {
-            return res.status(400).json({
-                success: false,
-                message: "Approved review cannot be rejected.",
-            });
-        }
-
         review.status = "rejected";
         review.adminAction = {
             adminId,
@@ -462,6 +455,56 @@ export const rejectReview = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Something went wrong while rejecting the review.",
+            error: error.message,
+        });
+    }
+};
+
+export const deleteReview = async (req, res) => {
+    try {
+        const {
+            reviewId
+        } = req.query;
+        const adminId = req.user._id;
+
+        if (!adminId) {
+            return res.status(400).json({
+                success: false,
+                message: "Unauthorized access.",
+            });
+        }
+
+
+        const review = await ReviewModel.findOne({
+            _id: reviewId,
+        });
+
+        if (!review) {
+            return res.status(404).json({
+                success: false,
+                message: "Review not found.",
+            });
+        }
+
+        if (review.status !== "rejected") {
+            return res.status(400).json({
+                success: false,
+                message: "Only rejected reviews can be deleted.",
+            });
+        }
+
+        await review.deleteOne();
+
+        return res.status(200).json({
+            success: true,
+            message: "Review deleted successfully.",
+        });
+    } catch (error) {
+        console.error("Delete My Review Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Something went wrong while deleting the review.",
             error: error.message,
         });
     }
@@ -701,7 +744,7 @@ export const reportReview = async (req, res) => {
         }
 
 
-        if (!reason?.trim() && !description.trim()) {
+        if (!reason?.trim() || !description.trim()) {
             return res.status(400).json({
                 success: false,
                 message: "Report reason and description are required.",
@@ -795,6 +838,13 @@ export const replyToReview = async (req, res) => {
             });
         }
 
+        if (review.report?.isReported) {
+            return res.status(400).json({
+                success: false,
+                message: "This review has been reported.",
+            });
+        }
+
         if (review.status !== "approved") {
             return res.status(400).json({
                 success: false,
@@ -859,6 +909,13 @@ export const editReviewReply = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: "Review not found.",
+            });
+        }
+
+        if (review.report?.isReported) {
+            return res.status(400).json({
+                success: false,
+                message: "This review has been reported.",
             });
         }
 
