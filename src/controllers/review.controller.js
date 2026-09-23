@@ -552,6 +552,8 @@ export const getEscortReviews = async (req, res) => {
             .select("avatar name city status isVerified")
             .lean();
 
+            console.log("escort ", escort);
+
         if (!escort) {
             return res.status(404).json({
                 success: false,
