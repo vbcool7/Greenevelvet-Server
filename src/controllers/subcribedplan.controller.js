@@ -940,6 +940,8 @@ export async function getAllSubscribedPlan(request, response) {
         limit = parseInt(limit) || 10;
         const skip = (page - 1) * limit;
 
+        const currentDate = new Date();
+
         // Base Filter Query (Non-search filters)
         let baseQuery = {};
 
@@ -948,12 +950,7 @@ export async function getAllSubscribedPlan(request, response) {
             baseQuery.status = status;
         }
 
-        // 2. Active State Filter
-        if (isActive !== undefined && isActive !== "") {
-            baseQuery.isActive = isActive === "true";
-        }
-
-        // 3. Plan Name Filter
+        // 2. Plan Name Filter
         if (planName) {
             baseQuery.planName = {
                 $regex: planName,
@@ -961,7 +958,7 @@ export async function getAllSubscribedPlan(request, response) {
             };
         }
 
-        // Aggregate Pipeline Sequence
+        // 3. Aggregate Pipeline Sequence
         let aggregatePipeline = [
             // Step 1: Apply Base Filters First (fast indexing)
             {
@@ -982,10 +979,38 @@ export async function getAllSubscribedPlan(request, response) {
                     path: "$escort",
                     preserveNullAndEmptyArrays: true
                 }
+            },
+
+            // Step 3: Compute Dynamic Active Status Based on Expiry Date ⚡
+            {
+                $addFields: {
+                    computedIsActive: {
+                        $and: [{
+                                $eq: ["$isActive", true]
+                            },
+                            {
+                                $ne: ["$subscriptionExpiry", null]
+                            },
+                            {
+                                $gt: ["$subscriptionExpiry", currentDate]
+                            } // Expiry > Current Date
+                        ]
+                    }
+                }
             }
         ];
 
-        // Step 3: Apply Search Filter (ONLY ONCE) after Lookup
+        // Step 4: Filter by Active State if provided in query (using computedIsActive)
+        if (isActive !== undefined && isActive !== "") {
+            const isActBool = isActive === "true";
+            aggregatePipeline.push({
+                $match: {
+                    computedIsActive: isActBool
+                }
+            });
+        }
+
+        // Step 5: Apply Search Filter (ONLY ONCE) after Lookup
         if (search && search.trim() !== "") {
             const searchRegex = new RegExp(search.trim(), "i");
             aggregatePipeline.push({
@@ -1020,14 +1045,14 @@ export async function getAllSubscribedPlan(request, response) {
         const sortOptions = {};
         sortOptions[sortBy] = sortOrder === "asc" ? 1 : -1;
 
-        // Step 4: Count Total Documents Matching Filters
+        // Step 6: Count Total Documents Matching Filters
         const totalDocsPipeline = [...aggregatePipeline, {
             $count: "total"
         }];
         const totalResult = await subcribedModel.aggregate(totalDocsPipeline);
         const totalSubscriptions = totalResult.length > 0 ? totalResult[0].total : 0;
 
-        // Step 5: Pagination and Field Projection
+        // Step 7: Pagination and Field Projection
         aggregatePipeline.push({
             $sort: sortOptions
         }, {
@@ -1045,7 +1070,7 @@ export async function getAllSubscribedPlan(request, response) {
                 amount: 1,
                 currency: 1,
                 features: 1,
-                isActive: 1,
+                isActive: "$computedIsActive",
                 subscriptionStart: 1,
                 subscriptionExpiry: 1,
                 orderId: 1,
