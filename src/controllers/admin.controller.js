@@ -849,13 +849,7 @@ export async function escortProfileDetails(request, response) {
             })
         }
 
-        const escort = await EscortModel.findById(id)
-            .populate("tours")
-            .populate("services")
-            .populate("rates")
-            .populate("blog")
-            .populate("newsTour")
-            .populate("bookings");
+        const escort = await EscortModel.findById(id);
 
 
         let mobile = escort.mobile;
