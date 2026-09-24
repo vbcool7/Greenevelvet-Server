@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import EscortModel from "../models/escortModel.js";
 import ReviewModel from "../models/reviewModel.js";
+import ClientModel from "../models/clientModel.js";
+import { createAndSendNotification } from "../utils/notificationHelper.js";
 
 
 
@@ -66,6 +68,25 @@ export const createReview = async (req, res) => {
             review: review.trim(),
             status: "pending",
         });
+        
+        //------------------------------ uncompleted ------------------------------//
+
+        // const Client = await ClientModel.findById(clientId);
+
+        // if (!escort._id) {
+        //     console.error("❌ Notification skipped: No Escort found in database.");
+        // } else {
+        //     const load = await createAndSendNotification(request.app, {
+        //         recipientId: escort._id,
+        //         recipientModel: "Escort",
+        //         senderId: Client._id,
+        //         senderModel: "Client",
+        //         type: "NEW REVIEW",
+        //         title: "New reivew",
+        //         message: `${Client.name} has Like your blog. Click to view.`,
+        //         link: `/blog`
+        //     });
+        // }
 
         return res.status(201).json({
             success: true,
@@ -179,6 +200,14 @@ export const editMyReview = async (req, res) => {
                 message: "Review not found.",
             });
         }
+
+        if (existingReview.status === "rejected" || existingReview.report?.isReported) {
+            return res.status(400).json({
+                success: false,
+                message: "This review cannot be edited because it has been rejected or reported.",
+            });
+        }
+
 
         existingReview.rating = rating;
         existingReview.review = reviewText.trim();
