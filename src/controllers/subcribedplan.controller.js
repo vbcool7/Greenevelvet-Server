@@ -914,3 +914,183 @@ export const fetchEscortCurrentPlan = async (request, response) => {
         });
     }
 };
+
+
+
+// Admin get all subscribed plan
+
+// * Get all subscribed plans with filtering, searching, and pagination for Admin Dashboard *//
+
+export async function getAllSubscribedPlan(request, response) {
+    try {
+        let {
+            page = 1,
+                limit = 10,
+                search = "",
+                status = "",
+                isActive,
+                planName = "",
+                sortBy = "createdAt",
+                sortOrder = "desc"
+        } = request.query;
+
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        const skip = (page - 1) * limit;
+
+        // Base Filter Query (Non-search filters)
+        let baseQuery = {};
+
+        // 1. Status Filter
+        if (status) {
+            baseQuery.status = status;
+        }
+
+        // 2. Active State Filter
+        if (isActive !== undefined && isActive !== "") {
+            baseQuery.isActive = isActive === "true";
+        }
+
+        // 3. Plan Name Filter
+        if (planName) {
+            baseQuery.planName = {
+                $regex: planName,
+                $options: "i"
+            };
+        }
+
+        // Aggregate Pipeline Sequence
+        let aggregatePipeline = [
+            // Step 1: Apply Base Filters First (fast indexing)
+            {
+                $match: baseQuery
+            },
+
+            // Step 2: Populate Escort Details
+            {
+                $lookup: {
+                    from: "escorts", // Escort collection name
+                    localField: "userId",
+                    foreignField: "_id",
+                    as: "escort"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$escort",
+                    preserveNullAndEmptyArrays: true
+                }
+            }
+        ];
+
+        // Step 3: Apply Search Filter (ONLY ONCE) after Lookup
+        if (search && search.trim() !== "") {
+            const searchRegex = new RegExp(search.trim(), "i");
+            aggregatePipeline.push({
+                $match: {
+                    $or: [{
+                            title: searchRegex
+                        },
+                        {
+                            planName: searchRegex
+                        },
+                        {
+                            orderId: searchRegex
+                        },
+                        {
+                            paymentId: searchRegex
+                        },
+                        {
+                            nowPaymentInvoiceId: searchRegex
+                        },
+                        {
+                            "escort.name": searchRegex
+                        },
+                        {
+                            "escort.email": searchRegex
+                        }
+                    ]
+                }
+            });
+        }
+
+        // Build Sort Object
+        const sortOptions = {};
+        sortOptions[sortBy] = sortOrder === "asc" ? 1 : -1;
+
+        // Step 4: Count Total Documents Matching Filters
+        const totalDocsPipeline = [...aggregatePipeline, {
+            $count: "total"
+        }];
+        const totalResult = await subcribedModel.aggregate(totalDocsPipeline);
+        const totalSubscriptions = totalResult.length > 0 ? totalResult[0].total : 0;
+
+        // Step 5: Pagination and Field Projection
+        aggregatePipeline.push({
+            $sort: sortOptions
+        }, {
+            $skip: skip
+        }, {
+            $limit: limit
+        }, {
+            $project: {
+                _id: 1,
+                title: 1,
+                planName: 1,
+                duration: 1,
+                originalPrice: 1,
+                discountedPrice: 1,
+                amount: 1,
+                currency: 1,
+                features: 1,
+                isActive: 1,
+                subscriptionStart: 1,
+                subscriptionExpiry: 1,
+                orderId: 1,
+                paymentId: 1,
+                nowPaymentInvoiceId: 1,
+                payAmount: 1,
+                payCurrency: 1,
+                permissions: 1,
+                limits: 1,
+                status: 1,
+                createdAt: 1,
+                updatedAt: 1,
+                escort: {
+                    _id: "$escort._id",
+                    name: "$escort.name",
+                    email: "$escort.email",
+                    escortId: "$escort.escortId",
+                    profileImage: "$escort.avatar",
+                    phone: "$escort.mobile"
+                }
+            }
+        });
+
+        const subscriptions = await subcribedModel.aggregate(aggregatePipeline);
+        const totalPages = Math.ceil(totalSubscriptions / limit);
+
+        return response.status(200).json({
+            message: "Subscribed plans fetched successfully",
+            success: true,
+            error: false,
+            data: subscriptions,
+            pagination: {
+                total: totalSubscriptions,
+                page,
+                limit,
+                totalPages,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1
+            }
+        });
+
+    } catch (error) {
+        console.error("Error in getAllSubscribedPlan:", error);
+        return response.status(500).json({
+            message: error.message || "Failed to fetch subscribed plans!",
+            error: true,
+            success: false
+        });
+    }
+}
