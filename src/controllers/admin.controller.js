@@ -6,7 +6,9 @@ import ClientModel from "../models/clientModel.js";
 import {
     sendMail
 } from "../utils/sendMail.js";
-import { sendRegistrationReminderEmail } from '../utils/sendRegistrationNotification.js';
+import {
+    sendRegistrationReminderEmail
+} from '../utils/sendRegistrationNotification.js';
 
 import TourModel from '../models/tourModel.js';
 import BlogModel from '../models/blogModel.js';
@@ -2406,12 +2408,21 @@ export async function sendRegistrationReminder(request, response) {
 
 
         // Send reminder email
-        await sendRegistrationReminderEmail(
-            user.email,
-            user.name,
+        const mailResponse = await sendRegistrationReminderEmail({
+            email: user.email,
+            modelName: user.name,
             redirectUrl,
             customMessage,
-        );
+        });
+
+        if (!mailResponse?.success) {
+            return response.status(500).json({
+                success: false,
+                error: true,
+                message: "Registration reminder email could not be sent.",
+            });
+        }
+
 
         return response.status(200).json({
             success: true,
@@ -2436,4 +2447,3 @@ export async function sendRegistrationReminder(request, response) {
         });
     }
 }
-
