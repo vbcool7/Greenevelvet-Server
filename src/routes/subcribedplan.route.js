@@ -6,6 +6,7 @@ import {
     checkSubscription,
     createTransaction,
     fetchEscortCurrentPlan,
+    getAllSubscribedPlan,
     nowPaymentsWebhook,
 } from "../controllers/subcribedplan.controller.js";
 import {
@@ -25,7 +26,7 @@ subcribedRouter.get("/check-subcription", checkSubscription);
 subcribedRouter.get("/escort-current-plan", protect(["Escort"]), fetchEscortCurrentPlan);
 
 
-subcribedRouter.get("/get-all-subscription", protect(["Admin"]), checkSubscription);
+subcribedRouter.get("/get-all-subscription", protect(["Admin"]), getAllSubscribedPlan);
 
 
 
