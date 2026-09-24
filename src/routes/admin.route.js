@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { adminlogincontroller, adminlogoutcontroller, changePassword, deleteBlog, deleteClient, deleteEscortcontroller, deleteNewsandtour, deleteTour, escortProfileDetails, fetchBlogDetails, fetchBlogs, fetchClientdetails, fetchClients, fetchEscortcontroller, fetchEscortdetailscontroller, fetchNewsandtourDetails, fetchNewsandtours, fetchTourDetails, fetchTours, forgotPassword, getAdminDetails, resetPassword, updateAdminName, updateBlogStatus, updateClient, updateEscortcontroller, updateNewsandtourStatus, verifiedEscortcontroller, verifyOtp, verifyUploadImages } from '../controllers/admin.controller.js';
+import { adminlogincontroller, adminlogoutcontroller, changePassword, deleteBlog, deleteClient, deleteEscortcontroller, deleteNewsandtour, deleteTour, escortProfileDetails, fetchBlogDetails, fetchBlogs, fetchClientdetails, fetchClients, fetchEscortcontroller, fetchEscortdetailscontroller, fetchNewsandtourDetails, fetchNewsandtours, fetchTourDetails, fetchTours, forgotPassword, getAdminDetails, resetPassword, sendRegistrationReminder, updateAdminName, updateBlogStatus, updateClient, updateEscortcontroller, updateNewsandtourStatus, verifiedEscortcontroller, verifyOtp, verifyUploadImages } from '../controllers/admin.controller.js';
 import { protect } from '../middleware/auth.js';
 
 const adminRouter = Router();
@@ -35,6 +35,9 @@ adminRouter.get("/fetch-verified-escorts", verifiedEscortcontroller)
 
 // approve / reject images upload avatar and gallery
 adminRouter.patch('/verify-images', verifyUploadImages);
+
+// Send registration reminder email to escort
+adminRouter.post("/send-registration-reminder", protect(["Admin"]), sendRegistrationReminder)
 
 // clients fetch update and delete operation
 adminRouter.get("/fetch-clients", fetchClients)

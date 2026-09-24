@@ -6,6 +6,8 @@ import ClientModel from "../models/clientModel.js";
 import {
     sendMail
 } from "../utils/sendMail.js";
+import { sendRegistrationReminderEmail } from '../utils/sendRegistrationNotification.js';
+
 import TourModel from '../models/tourModel.js';
 import BlogModel from '../models/blogModel.js';
 import BlogCommentsModel from '../models/blogCommentsModel.js';
@@ -17,9 +19,7 @@ import NewstourLikesModel from '../models/newstourLikesModel.js';
 import {
     decrypt
 } from '../utils/crypto.js';
-import {
-    error
-} from 'console';
+
 import ServiceModel from '../models/escortserviceModel.js';
 import BookingModel from '../models/bookingModel.js';
 import RatesModel from '../models/escortratesModel.js';
@@ -2217,7 +2217,7 @@ export async function deleteNewsandtour(request, response) {
     }
 }
 
-// ======================================================<  >==============================================================
+// ======================================================< avatar and gallery images status update and verify >==============================================================
 
 // avatar and gallery images status update and verify
 export async function verifyUploadImages(request, response) {
@@ -2337,3 +2337,102 @@ export async function verifyUploadImages(request, response) {
     }
 
 }
+
+
+//=================================================< Send registration reminder >==================================================//
+
+export async function sendRegistrationReminder(request, response) {
+    try {
+        const {
+            pendingEscortId,
+            customMessage
+        } = request.body;
+
+        if (!pendingEscortId) {
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "Escort Id is required",
+            });
+        }
+
+
+        const user = await EscortModel.findOne({
+            _id: pendingEscortId,
+            status: "Pending",
+        });
+
+        if (!user) {
+            return response.status(404).json({
+                success: false,
+                error: true,
+                message: "No incomplete escort registration found for this escort id.",
+            });
+        }
+
+        // Registration steps
+        const registrationSteps = {
+            1: "/signupadvertiser",
+            2: "/welcometogreenvelvet",
+            3: "/confirmmobilenumber",
+            4: "/profiledetails",
+            5: "/identityverification",
+            6: "/uploadprofileimage",
+            7: "/uploadprofilegalleryphotos",
+        };
+
+        // Registration already completed
+        if (user.lastCompletedStep >= 7) {
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "Escort registration is already completed and is under review.",
+            });
+        }
+
+        const nextStep = (user.lastCompletedStep || 0) + 1;
+
+        const stepPath = registrationSteps[nextStep] || "/signupadvertiser";
+
+        if (!stepPath) {
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "Unable to determine the next registration step.",
+            });
+        }
+
+        const redirectUrl = `https://www.greenevelvet.com${stepPath}/${user.escortId}`;
+
+
+        // Send reminder email
+        await sendRegistrationReminderEmail(
+            user.email,
+            redirectUrl,
+            customMessage,
+        );
+
+        return response.status(200).json({
+            success: true,
+            error: false,
+            message: "Registration reminder email sent successfully.",
+            data: {
+                email: user.email,
+                escortId: user.escortId,
+                lastCompletedStep: user.lastCompletedStep,
+                nextStep,
+                redirectUrl,
+            },
+        });
+
+    } catch (error) {
+        console.log("Send registration reminder error:", error);
+
+        return response.status(500).json({
+            success: false,
+            error: true,
+            message: "Failed to send registration reminder email.",
+        });
+    }
+}
+
