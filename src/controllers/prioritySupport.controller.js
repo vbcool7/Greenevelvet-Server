@@ -7,9 +7,10 @@ import {
 import {
     createAndSendNotification
 } from "../utils/notificationHelper.js";
+
 import {
-    sendMail
-} from "../utils/sendMail.js";
+    sendPrioritySupportReplyEmail
+} from "../utils/sendRegistrationNotification.js";
 
 // create contact
 export const createPrioritySupportTicket = async (request, response) => {
@@ -280,26 +281,21 @@ export const replyToPrioritySupportTicket = async (request, response) => {
         // Save ticket
         await ticket.save();
 
-        // Send email to Escort
-        // await sendPrioritySupportReplyEmail({
-        //     email: ticket.email,
-        //     fullname: ticket.fullname,
-        //     subject: ticket.subject,
-        //     reply: text.trim(),
-        //     status: status
-        // });
+        const mailResponse = await sendPrioritySupportReplyEmail({
+            email: ticket.email,
+            fullname: ticket.fullname,
+            subject: ticket.subject,
+            reply: text.trim(),
+            status: status
+        });
 
-
-        await sendMail(
-            ticket.email,
-            "Response to your ticket - GREENE VELVET",
-            `
-            <p>Hi ${ticket.fullname},</p>
-            <p>${text}</p>
-            <br/>
-            <p>Thanks & Regards,<br/>Support Team</p>
-            `
-        );
+        if (!mailResponse?.success) {
+            return response.status(500).json({
+                success: false,
+                error: true,
+                message: "Support email could not be sent.",
+            });
+        }
 
         const escort = await EscortModel.findOne(ticket.escortId);
         if (!escort) {
@@ -318,7 +314,7 @@ export const replyToPrioritySupportTicket = async (request, response) => {
         }
 
         return response.status(200).json({
-            message: "Reply sent successfully",
+            message: "Priority support reply sent successfully",
             success: true,
             error: false,
             data: ticket
