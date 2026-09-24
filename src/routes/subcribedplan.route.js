@@ -25,5 +25,8 @@ subcribedRouter.get("/check-subcription", checkSubscription);
 subcribedRouter.get("/escort-current-plan", protect(["Escort"]), fetchEscortCurrentPlan);
 
 
+subcribedRouter.get("/get-all-subscription", protect(["Admin"]), checkSubscription);
+
+
 
 export default subcribedRouter;
