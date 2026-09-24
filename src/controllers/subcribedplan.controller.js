@@ -924,7 +924,6 @@ export const fetchEscortCurrentPlan = async (request, response) => {
 export async function getAllSubscribedPlan(request, response) {
     try {
 
-        console.log("fetch subscribed plan api call");
         let {
             page = 1,
                 limit = 10,
