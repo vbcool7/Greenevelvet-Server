@@ -2408,6 +2408,7 @@ export async function sendRegistrationReminder(request, response) {
         // Send reminder email
         await sendRegistrationReminderEmail(
             user.email,
+            user.name,
             redirectUrl,
             customMessage,
         );
