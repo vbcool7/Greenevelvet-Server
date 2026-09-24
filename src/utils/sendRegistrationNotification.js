@@ -211,6 +211,9 @@ export const sendRegistrationReminderEmail = async ({
   redirectUrl,
   customMessage
 }) => {
+  
+  console.log("send mail query check ", email, modelName, redirectUrl, customMessage);
+
   const isValidEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
