@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { adminlogincontroller, adminlogoutcontroller, changePassword, deleteBlog, deleteClient, deleteEscortcontroller, deleteNewsandtour, deleteTour, escortProfileDetails, fetchBlogDetails, fetchBlogs, fetchClientdetails, fetchClients, fetchEscortcontroller, fetchEscortdetailscontroller, fetchNewsandtourDetails, fetchNewsandtours, fetchTourDetails, fetchTours, forgotPassword, getAdminDetails, resetPassword, sendRegistrationReminder, updateAdminName, updateBlogStatus, updateClient, updateEscortcontroller, updateNewsandtourStatus, verifiedEscortcontroller, verifyOtp, verifyUploadImages } from '../controllers/admin.controller.js';
+import { adminlogincontroller, adminlogoutcontroller, changePassword, deleteBlog, deleteClient, deleteEscortcontroller, deleteNewsandtour, deleteTour, escortFullDetails, escortProfileDetails, fetchBlogDetails, fetchBlogs, fetchClientdetails, fetchClients, fetchEscortcontroller, fetchEscortdetailscontroller, fetchNewsandtourDetails, fetchNewsandtours, fetchTourDetails, fetchTours, forgotPassword, getAdminDetails, resetPassword, sendRegistrationReminder, updateAdminName, updateBlogStatus, updateClient, updateEscortcontroller, updateNewsandtourStatus, verifiedEscortcontroller, verifyOtp, verifyUploadImages } from '../controllers/admin.controller.js';
 import { protect } from '../middleware/auth.js';
 
 const adminRouter = Router();
@@ -28,6 +28,8 @@ adminRouter.post("/reset-password", resetPassword);
 adminRouter.get("/fetch-unverified-escorts", fetchEscortcontroller)
 adminRouter.get("/fetch-escort-details", fetchEscortdetailscontroller)
 adminRouter.get("/escort-profile-details", escortProfileDetails);
+adminRouter.get("/escort-profile-details", protect(["Admin"]), escortFullDetails);
+
 adminRouter.patch("/escort-update", updateEscortcontroller)
 adminRouter.delete("/escort-delete", deleteEscortcontroller)
 adminRouter.get("/fetch-verified-escorts", verifiedEscortcontroller)
