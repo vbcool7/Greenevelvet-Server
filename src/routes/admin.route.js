@@ -28,7 +28,7 @@ adminRouter.post("/reset-password", resetPassword);
 adminRouter.get("/fetch-unverified-escorts", fetchEscortcontroller)
 adminRouter.get("/fetch-escort-details", fetchEscortdetailscontroller)
 adminRouter.get("/escort-profile-details", escortProfileDetails);
-adminRouter.get("/escort-profile-details", protect(["Admin"]), escortFullDetails);
+adminRouter.get("/escort-full-details", protect(["Admin"]), escortFullDetails);
 
 adminRouter.patch("/escort-update", updateEscortcontroller)
 adminRouter.delete("/escort-delete", deleteEscortcontroller)
