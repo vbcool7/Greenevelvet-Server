@@ -903,7 +903,7 @@ export async function escortFullDetails(request, response) {
         const escort = await EscortModel.findById(id)
             .populate("tours")
             .populate("blog")
-            .populate("newsandtour")
+            .populate("newsTour")
             .populate("services")
             .populate("rates")
             .populate("bookings")
