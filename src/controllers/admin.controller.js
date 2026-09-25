@@ -901,11 +901,13 @@ export async function escortFullDetails(request, response) {
         }
 
         const escort = await EscortModel.findById(id)
-        .populate("tour")
-        .populate("service")
-        .populate("blog")
-        .populate("newsandtour")
-        ;
+            .populate("tours")
+            .populate("blog")
+            .populate("newsandtour")
+            .populate("services")
+            .populate("rates")
+            .populate("bookings")
+            .populate("currentSubscription");;
 
 
         let mobile = escort.mobile;
