@@ -712,7 +712,7 @@ export const resetPassword = async (request, response) => {
 
 //============================================================< Escorts >======================================================================
 
-// fetch awaiting verification escorts
+// fetch awaiting verification (for new registration approval) escorts
 export async function fetchEscortcontroller(request, response) {
     try {
         const {
@@ -735,7 +735,7 @@ export async function fetchEscortcontroller(request, response) {
             $ne: ""
         };
 
-        filter["avatar.url"] = {
+        filter["pendingAvatar.url"] = {
             $ne: ""
         };
 
