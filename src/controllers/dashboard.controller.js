@@ -7,9 +7,12 @@ import EscortModel from "../models/escortModel.js";
 export async function getEscortsdata(request, response) {
 
     try {
-        console.log("api call");
 
-        const escorts = await EscortModel.find()
+        const escorts = await EscortModel.find({
+                lastCompletedStep: {
+                    $lte: 6
+                }
+            })
             .select("-password");
 
         return response.status(200).json({
@@ -104,5 +107,3 @@ export const getBookingsData = async (request, response) => {
 
     }
 };
-
-
