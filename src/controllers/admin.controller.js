@@ -29,6 +29,7 @@ import NotificationModel from '../models/notificationModel.js';
 import {
     createAndSendNotification
 } from '../utils/notificationHelper.js';
+import { deleteFromCloudinary } from '../utils/deleteFromCloudinary.js';
 
 // Admin login
 export async function adminlogincontroller(request, response) {

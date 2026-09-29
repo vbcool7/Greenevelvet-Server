@@ -1478,7 +1478,7 @@ export async function uploadAvatarcontroller(request, response) {
 
 
         return response.status(200).json({
-            message: "profile image uploaded successfully",
+            message: "profile image uploaded successfully and approval pending",
             success: true,
             error: false,
             data: {
