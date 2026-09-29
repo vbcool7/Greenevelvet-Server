@@ -29,7 +29,9 @@ import NotificationModel from '../models/notificationModel.js';
 import {
     createAndSendNotification
 } from '../utils/notificationHelper.js';
-import { deleteFromCloudinary } from '../utils/deleteFromCloudinary.js';
+import {
+    deleteFromCloudinary
+} from '../utils/deleteFromCloudinary.js';
 
 // Admin login
 export async function adminlogincontroller(request, response) {
@@ -726,6 +728,11 @@ export async function fetchEscortcontroller(request, response) {
 
         filter.isVerified = false;
 
+        filter.status = {
+            $ne: "Active"
+        };
+
+
         filter.isEmailVerified = true;
 
         filter.verificationSelfie = {
@@ -736,9 +743,6 @@ export async function fetchEscortcontroller(request, response) {
             $ne: ""
         };
 
-        filter["pendingAvatar.url"] = {
-            $ne: ""
-        };
 
         filter["gallery.photos.2"] = {
             $exists: true
@@ -749,19 +753,17 @@ export async function fetchEscortcontroller(request, response) {
                 createdAt: -1
             });
 
-        let mobile = escorts.mobile;
-
-        try {
-            if (mobile?.startsWith("enc:")) {
-                mobile = decrypt(mobile.replace("enc:", ""));
-            } else {
-                mobile = decrypt(mobile);
+        escorts.forEach((escort) => {
+            try {
+                if (escort.mobile?.startsWith("enc:")) {
+                    escort.mobile = decrypt(escort.mobile.replace("enc:", ""));
+                } else if (escort.mobile) {
+                    escort.mobile = decrypt(escort.mobile);
+                }
+            } catch {
+                escort.mobile = "";
             }
-        } catch {
-            mobile = "";
-        }
-
-        escorts.mobile = mobile;
+        });
 
         return response.status(200).json({
             message: escorts?.length ? "Escort list fetched" : "No escorts found",
