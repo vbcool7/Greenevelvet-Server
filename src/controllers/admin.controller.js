@@ -1175,7 +1175,7 @@ export async function updateEscortcontroller(request, response) {
                     status: "Active",
                 };
 
-                emailSubject = "Your account has been Activated ✅ - GreeneVelvet";
+                emailSubject = "Your account has been Activated ✅ - Greene Velvet";
                 emailHtml = verifyHtml;
             } else if (action === "Suspended") {
                 updateData = {
@@ -1184,7 +1184,7 @@ export async function updateEscortcontroller(request, response) {
                     reason
                 };
 
-                emailSubject = "Your account has been Deactivated - GreeneVelvet";
+                emailSubject = "Your account has been Deactivated - Greene Velvet";
                 emailHtml = rejectedHtml;
             } else {
                 return response.status(400).json({
@@ -1202,7 +1202,7 @@ export async function updateEscortcontroller(request, response) {
                     docsuploadStatus: "approved"
                 };
 
-                emailSubject = "Your account has been verified ✅ - GreeneVelvet";
+                emailSubject = "Your account has been verified ✅ - Greene Velvet";
                 emailHtml = verifyHtml;
             } else if (action === "Rejected") {
                 updateData = {
@@ -1213,7 +1213,7 @@ export async function updateEscortcontroller(request, response) {
 
                 };
 
-                emailSubject = "Your verification was rejected - GreeneVelvet";
+                emailSubject = "Your verification was rejected - Greene Velvet";
                 emailHtml = rejectedHtml;
             } else {
                 return response.status(400).json({
