@@ -36,7 +36,7 @@ adminRouter.get("/fetch-verified-escorts", verifiedEscortcontroller)
 
 
 // approve / reject images upload avatar and gallery
-adminRouter.patch('/verify-images', verifyUploadImages);
+adminRouter.patch('/verify-images', protect(["Admin"]), verifyUploadImages);
 
 // Send registration reminder email to escort
 adminRouter.post("/send-registration-reminder", protect(["Admin"]), sendRegistrationReminder)
