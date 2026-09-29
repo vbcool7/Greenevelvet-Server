@@ -1427,18 +1427,18 @@ export async function uploadAvatarcontroller(request, response) {
             });
         }
 
-        if (existingEscort?.avatar?.public_id) {
-
-            await deleteFromCloudinary(existingEscort.avatar.public_id);
-
+        if (existingEscort?.pendingAvatar?.public_id) {
+            await deleteFromCloudinary(existingEscort.pendingAvatar.public_id);
         }
+
+
 
         const avatarUpload = await uploadImageCloudinary(request.files.avatar[0], "profileImg/avatar");
 
         const uploadEscort = await EscortModel.findOneAndUpdate({
             escortId
         }, {
-            avatar: {
+            pendingAvatar: {
                 url: avatarUpload.secure_url,
                 public_id: avatarUpload.public_id,
                 status: "Pending"

@@ -26,6 +26,9 @@ import ServiceModel from '../models/escortserviceModel.js';
 import BookingModel from '../models/bookingModel.js';
 import RatesModel from '../models/escortratesModel.js';
 import NotificationModel from '../models/notificationModel.js';
+import {
+    createAndSendNotification
+} from '../utils/notificationHelper.js';
 
 // Admin login
 export async function adminlogincontroller(request, response) {
@@ -2289,6 +2292,17 @@ export async function verifyUploadImages(request, response) {
             type
         } = request.body;
 
+
+        const adminId = request.user?._id;
+
+        if (!adminId) {
+            return response.status(401).json({
+                message: "Unauthorized access!",
+                success: false,
+                error: true
+            });
+        }
+
         const allowedStatus = ["Pending", "Approved", "Rejected"];
 
         if (!escortId || !imageUrl || !status || !type) {
@@ -2323,17 +2337,101 @@ export async function verifyUploadImages(request, response) {
 
         if (type === "avatar") {
 
-            // update avatar status
-            updatedEscort = await EscortModel.findOneAndUpdate({
-                escortId
-            }, {
-                $set: {
-                    "avatar.status": status
-                }
-            }, {
-                new: true
-            });
+            // Make sure pending avatar exists
+            if (!escort?.pendingAvatar?.url) {
+                return response.status(404).json({
+                    success: false,
+                    error: true,
+                    message: "Pending avatar not found"
+                });
+            }
 
+            // =========================*
+            // APPROVE AVATAR
+            // =========================
+            if (status === "Approved") {
+
+                const oldAvatarPublicId = escort?.avatar?.public_id;
+                const newAvatar = escort.pendingAvatar;
+
+                // Update DB first
+                updatedEscort = await EscortModel.findOneAndUpdate({
+                    escortId
+                }, {
+                    $set: {
+                        avatar: {
+                            url: newAvatar.url,
+                            public_id: newAvatar.public_id,
+                            status: "Approved"
+                        },
+                        pendingAvatar: {
+                            url: "",
+                            public_id: "",
+                            status: "Pending"
+                        }
+                    }
+                }, {
+                    new: true
+                });
+
+                // Delete old approved avatar from Cloudinary
+                if (oldAvatarPublicId) {
+                    await deleteFromCloudinary(oldAvatarPublicId);
+                }
+
+                // Send notification to Escort
+                await createAndSendNotification(request.app, {
+                    recipientId: updatedEscort._id,
+                    recipientModel: "Escort",
+                    senderId: adminId,
+                    senderModel: "Admin",
+                    type: "VERIFICATION",
+                    title: "Profile Image Approved",
+                    message: "Your profile image has been approved by the admin.",
+                    link: "/modeldashboard"
+                });
+            }
+
+            // =========================
+            // REJECT AVATAR
+            // =========================
+            if (status === "Rejected") {
+
+                const pendingAvatarPublicId =
+                    escort?.pendingAvatar?.public_id;
+
+                // Delete pending image from Cloudinary
+                if (pendingAvatarPublicId) {
+                    await deleteFromCloudinary(pendingAvatarPublicId);
+                }
+
+                // Keep current avatar unchanged
+                updatedEscort = await EscortModel.findOneAndUpdate({
+                    escortId
+                }, {
+                    $set: {
+                        pendingAvatar: {
+                            url: "",
+                            public_id: "",
+                            status: "Rejected"
+                        }
+                    }
+                }, {
+                    new: true
+                });
+
+                // Send notification to Escort
+                await createAndSendNotification(request.app, {
+                    recipientId: updatedEscort._id,
+                    recipientModel: "Escort",
+                    senderId: adminId,
+                    senderModel: "Admin",
+                    type: "VERIFICATION",
+                    title: "Profile Image Rejected",
+                    message: "Your profile image has been rejected by the admin. Please upload a new profile image.",
+                    link: "/modeldashboard/profile"
+                });
+            }
         }
 
 

@@ -384,6 +384,21 @@ const EscortSchema = new mongoose.Schema({
             default: 'Pending'
         }
     },
+    pendingAvatar: {
+        url: {
+            type: String,
+            default: ""
+        },
+        public_id: {
+            type: String,
+            default: ""
+        },
+        status: {
+            type: String,
+            enum: ['Pending', 'Approved', 'Rejected'],
+            default: 'Pending'
+        }
+    },
     isAvatarApproved: {
         type: String,
         enum: ['Pending', 'Approved', 'Rejected'],
