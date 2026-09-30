@@ -67,6 +67,11 @@ const EscortSchema = new mongoose.Schema({
         default: false
     },
 
+    infmty: {
+        type: Boolean,
+        default: false,
+    },
+
     rateFrom: {
         type: Number
     },
@@ -543,10 +548,7 @@ const EscortSchema = new mongoose.Schema({
         default: [],
     },
 
-    infmty: {
-        type: Boolean,
-        default: false,
-    },
+
 
     reason: {
         type: String,

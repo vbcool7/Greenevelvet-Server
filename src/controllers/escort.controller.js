@@ -53,6 +53,9 @@ import AdminModel from "../models/adminModel.js";
 import NotificationModel from "../models/notificationModel.js";
 import PendingEscortModel from "../models/PendingEscortModel.js";
 import subcribedModel from "../models/subcribedplanModel.js";
+import {
+    inflate
+} from "zlib";
 
 // change password
 export const escortChangePassword = async (request, response) => {
@@ -2660,6 +2663,7 @@ export async function updateHighlightscontroller(request, response) {
             escortId,
             incall,
             outcall,
+            infmty,
             rateFrom,
             highlights,
             about
@@ -2677,6 +2681,7 @@ export async function updateHighlightscontroller(request, response) {
 
         if (incall !== undefined) updateData.incall = incall;
         if (outcall !== undefined) updateData.outcall = outcall;
+        if (infmty !== undefined) updateData.infmty = infmty;
         if (highlights) updateData.highlights = highlights;
         if (about) updateData.about = about;
         if (rateFrom) updateData.rateFrom = rateFrom;
@@ -8243,6 +8248,10 @@ export async function editEscortProfileDetails(request, response) {
             about,
             country,
             city,
+            incall,
+            outcall,
+            infmty,
+            rateFrom,
             additionalCities,
         } = request.body;
 
@@ -8282,6 +8291,12 @@ export async function editEscortProfileDetails(request, response) {
         if (Array.isArray(preferData)) updateData.preferData = preferData;
 
         if (about !== undefined) updateData.about = about;
+
+        if (incall !== undefined) updateData.incall = incall;
+        if (outcall !== undefined) updateData.outcall = outcall;
+        if (infmty !== undefined) updateData.infmty = infmty;
+        if (rateFrom) updateData.rateFrom = rateFrom;
+
 
         if (country !== undefined) updateData.country = country;
         if (city !== undefined) updateData.city = city;
