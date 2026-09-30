@@ -4201,6 +4201,8 @@ export async function fetchFilterHomescortscontroller(request, response) {
                         name: 1,
                         age: 1,
                         city: 1,
+                        isVerified: 1,
+                        infmty: 1,
                         additionalCities: 1,
                         country: 1,
                         gender: 1,
