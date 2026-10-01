@@ -3194,6 +3194,7 @@ export async function fetchHomeSliderEscorts(request, response) {
         age
         isVerified
         adverties_category
+        infmty
         rateFrom
         last_login_date
         available
@@ -3343,6 +3344,7 @@ export async function fetchCitySliderEscorts(request, response) {
                     isVerified: 1,
                     adverties_category: 1,
                     rateFrom: 1,
+                    infmty:1,
                     last_login_date: 1,
                     available: 1,
                     availability_start: 1,
