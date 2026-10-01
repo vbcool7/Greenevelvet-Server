@@ -3190,6 +3190,9 @@ export async function fetchHomeSliderEscorts(request, response) {
         escortId
         name
         city
+        additionalCities
+        age
+        isVerified
         adverties_category
         rateFrom
         last_login_date
@@ -3328,7 +3331,26 @@ export async function fetchCitySliderEscorts(request, response) {
                         }
                     ]
                 }
-            }] : [])
+            }] : []),
+            {
+                $project: {
+                    _id: 0,
+                    escortId: 1,
+                    name: 1,
+                    city: 1,
+                    additionalCities: 1,
+                    age: 1,
+                    isVerified: 1,
+                    adverties_category: 1,
+                    rateFrom: 1,
+                    last_login_date: 1,
+                    available: 1,
+                    availability_start: 1,
+                    isFaceBlurred: 1,
+                    "avatar.url": 1,
+                    "avatar.status": 1
+                }
+            }
         ]);
 
         const formattedEscorts = escorts.map((escort) => ({
