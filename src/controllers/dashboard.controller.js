@@ -9,9 +9,7 @@ export async function getEscortsdata(request, response) {
     try {
 
         const escorts = await EscortModel.find({
-                lastCompletedStep: {
-                    $lte: 6
-                }
+                isVerified: true,
             })
             .select("-password");
 
