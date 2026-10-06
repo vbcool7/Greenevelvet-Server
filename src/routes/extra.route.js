@@ -8,6 +8,7 @@ import {
     createExtraPlan,
     createExtraPlanTransaction,
     extranowPaymentsWebhook,
+    fetchEscortAllPurchasedExtraPlan,
     fetchEscortExtraPurchasePlan,
     getAllActiveExtraPlans,
     getAllExtraPlans,
@@ -38,5 +39,8 @@ extraRouter.post("/extra-nowpayments-webhook", express.raw({
 extraRouter.get("/fetch-escort-extra-purchase-plan", protect(["Escort"]), fetchEscortExtraPurchasePlan);
 
 extraRouter.post("/boost-profile", protect(["Escort"]), boostProfile);
+
+
+extraRouter.get("/fetch-all-extra-purchase-plan", protect(["Escort"]), fetchEscortAllPurchasedExtraPlan)
 
 export default extraRouter;
