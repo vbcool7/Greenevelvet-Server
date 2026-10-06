@@ -1120,3 +1120,355 @@ export async function getAllSubscribedPlan(request, response) {
         });
     }
 }
+
+
+export const fetchEscortAllPurchasedPlan = async (request, response) => {
+    try {
+        const userId = request?.user?._id;
+
+        if (!userId) {
+            return response.status(401).json({
+                message: "User not authenticated",
+                success: false,
+                error: true
+            });
+        }
+
+        const {
+            planName,
+            duration,
+            currency,
+            isActive,
+            status,
+            subscriptionStatus,
+            subscriptionStartFrom,
+            subscriptionStartTo,
+            subscriptionExpiryFrom,
+            subscriptionExpiryTo,
+            sortBy = "newest",
+            page = 1,
+            limit = 10,
+        } = request.query;
+
+        const pageNumber = Math.max(Number(page) || 1, 1);
+        const limitNumber = Math.min(
+            Math.max(Number(limit) || 10, 1),
+            100
+        );
+
+        const skip = (pageNumber - 1) * limitNumber;
+
+        const escort = await EscortModel
+            .findById(userId)
+            .select("currentSubscription")
+            .lean();
+
+        if (!escort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+        const currentPlanId = escort.currentSubscription ?
+            escort.currentSubscription.toString() :
+            null;
+
+        const query = {
+            userId: new mongoose.Types.ObjectId(userId)
+        };
+
+        // Plan Name Filter
+        if (
+            planName &&
+            planName !== "all" &&
+            planName !== "undefined"
+        ) {
+            query.planName = planName;
+        }
+
+        // Duration Filter
+        if (
+            duration &&
+            duration !== "all" &&
+            duration !== "undefined"
+        ) {
+            query.duration = duration;
+        }
+
+        // Currency Filter
+        if (
+            currency &&
+            currency !== "all" &&
+            currency !== "undefined"
+        ) {
+            query.currency = currency;
+        }
+
+        // isActive Filter
+        if (
+            isActive !== undefined &&
+            isActive !== "" &&
+            isActive !== "all" &&
+            isActive !== "undefined"
+        ) {
+            query.isActive = isActive === "true";
+        }
+
+        // Payment / Subscription Status Filter
+        if (
+            status &&
+            status !== "all" &&
+            status !== "undefined"
+        ) {
+            query.status = status;
+        }
+
+        // Active / Expired Filter
+        if (
+            subscriptionStatus &&
+            subscriptionStatus !== "all" &&
+            subscriptionStatus !== "undefined"
+        ) {
+            const currentDate = new Date();
+
+            if (subscriptionStatus === "active") {
+                query.subscriptionExpiry = {
+                    $gte: currentDate
+                };
+            }
+
+            if (subscriptionStatus === "expired") {
+                query.subscriptionExpiry = {
+                    $lt: currentDate
+                };
+            }
+
+            if (subscriptionStatus === "no_expiry") {
+                query.$or = [{
+                        subscriptionExpiry: null
+                    },
+                    {
+                        subscriptionExpiry: {
+                            $exists: false
+                        }
+                    }
+                ];
+            }
+        }
+
+        // Subscription Start Date Filter
+        if (
+            subscriptionStartFrom ||
+            subscriptionStartTo
+        ) {
+            query.subscriptionStart = {};
+
+            if (subscriptionStartFrom) {
+                query.subscriptionStart.$gte = new Date(
+                    subscriptionStartFrom
+                );
+            }
+
+            if (subscriptionStartTo) {
+                const endDate = new Date(subscriptionStartTo);
+                endDate.setHours(23, 59, 59, 999);
+
+                query.subscriptionStart.$lte = endDate;
+            }
+        }
+
+        // Subscription Expiry Date Filter
+        if (
+            subscriptionExpiryFrom ||
+            subscriptionExpiryTo
+        ) {
+            query.subscriptionExpiry = {};
+
+            if (subscriptionExpiryFrom) {
+                query.subscriptionExpiry.$gte = new Date(
+                    subscriptionExpiryFrom
+                );
+            }
+
+            if (subscriptionExpiryTo) {
+                const endDate = new Date(subscriptionExpiryTo);
+                endDate.setHours(23, 59, 59, 999);
+
+                query.subscriptionExpiry.$lte = endDate;
+            }
+        }
+
+        // Sorting
+        let sortOptions = {
+            createdAt: -1
+        };
+
+        switch (sortBy) {
+            case "oldest":
+                sortOptions = {
+                    createdAt: 1
+                };
+                break;
+
+            case "price_high":
+                sortOptions = {
+                    amount: -1,
+                    createdAt: -1
+                };
+                break;
+
+            case "price_low":
+                sortOptions = {
+                    amount: 1,
+                    createdAt: -1
+                };
+                break;
+
+            case "original_price_high":
+                sortOptions = {
+                    originalPrice: -1,
+                    createdAt: -1
+                };
+                break;
+
+            case "original_price_low":
+                sortOptions = {
+                    originalPrice: 1,
+                    createdAt: -1
+                };
+                break;
+
+            case "discount_high":
+                sortOptions = {
+                    discountedPrice: -1,
+                    createdAt: -1
+                };
+                break;
+
+            case "start_newest":
+                sortOptions = {
+                    subscriptionStart: -1
+                };
+                break;
+
+            case "start_oldest":
+                sortOptions = {
+                    subscriptionStart: 1
+                };
+                break;
+
+            case "expiry_latest":
+                sortOptions = {
+                    subscriptionExpiry: -1
+                };
+                break;
+
+            case "expiry_soonest":
+                sortOptions = {
+                    subscriptionExpiry: 1
+                };
+                break;
+
+            case "newest":
+            default:
+                sortOptions = {
+                    createdAt: -1
+                };
+                break;
+        }
+
+        /*
+         * Current plan ko pagination se pehle top par rakhne ke liye
+         * aggregation use kar rahe hain.
+         */
+        const currentPlanObjectId = currentPlanId ?
+            new mongoose.Types.ObjectId(currentPlanId) :
+            null;
+
+        const aggregationPipeline = [{
+                $match: query
+            },
+            {
+                $addFields: {
+                    isCurrentPlan: currentPlanObjectId ?
+                        {
+                            $cond: [{
+                                    $eq: [
+                                        "$_id",
+                                        currentPlanObjectId
+                                    ]
+                                },
+                                1,
+                                0
+                            ]
+                        } :
+                        0
+                }
+            },
+            {
+                $sort: {
+                    isCurrentPlan: -1,
+                    ...sortOptions
+                }
+            },
+            {
+                $facet: {
+                    plans: [{
+                            $skip: skip
+                        },
+                        {
+                            $limit: limitNumber
+                        }
+                    ],
+                    totalCount: [{
+                        $count: "count"
+                    }]
+                }
+            }
+        ];
+
+        const result = await subcribedModel.aggregate(
+            aggregationPipeline
+        );
+
+        const plans = result?. [0]?.plans || [];
+        const totalPlans = result?. [0]?.totalCount?. [0]?.count || 0;
+
+        const totalPages =
+            Math.ceil(totalPlans / limitNumber) || 1;
+
+        return response.status(200).json({
+            message: "All purchased plans fetched successfully",
+            success: true,
+            error: false,
+
+            data: plans,
+
+            currentPlanId,
+
+            pagination: {
+                totalFilteredPlans: totalPlans,
+                currentPage: pageNumber,
+                totalPages,
+                limit: limitNumber,
+                hasNextPage: pageNumber < totalPages,
+                hasPreviousPage: pageNumber > 1
+            }
+        });
+
+    } catch (error) {
+        console.log(
+            "FETCH ESCORT ALL PURCHASED PLANS ERROR:",
+            error?.message
+        );
+
+        return response.status(500).json({
+            message: "Failed to fetch purchased plans",
+            success: false,
+            error: true,
+            details: error?.message
+        });
+    }
+};

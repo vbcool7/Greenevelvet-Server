@@ -5,6 +5,7 @@ import {
 import {
     checkSubscription,
     createTransaction,
+    fetchEscortAllPurchasedPlan,
     fetchEscortCurrentPlan,
     getAllSubscribedPlan,
     nowPaymentsWebhook,
@@ -27,6 +28,11 @@ subcribedRouter.get("/escort-current-plan", protect(["Escort"]), fetchEscortCurr
 
 
 subcribedRouter.get("/get-all-subscription", protect(["Admin"]), getAllSubscribedPlan);
+
+subcribedRouter.get("/get-all-my-purchased-plan", protect(["Escort"]), fetchEscortAllPurchasedPlan);
+
+
+
 
 
 
