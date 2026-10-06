@@ -1395,6 +1395,38 @@ export async function verifiedEscortcontroller(request, response) {
     }
 }
 
+
+export async function getIncompleteRegistration(request, response) {
+
+    try {
+
+        const escorts = await EscortModel.find({
+                lastCompletedStep: {
+                    $lte: 6
+                }
+            })
+            .select("-password");
+
+        return response.status(200).json({
+            success: true,
+            error: false,
+            message: `fetch Escort data successfully`,
+            data: escorts || [],
+        });
+
+    } catch (error) {
+        console.log("get escorts data error ", error);
+
+        return response.status(500).json({
+            success: false,
+            error: true,
+            message: error.message || error
+        });
+
+    }
+
+}
+
 //==========================================================< Clients >======================================================================
 
 // fetch clients
