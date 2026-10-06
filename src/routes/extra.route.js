@@ -12,6 +12,7 @@ import {
     fetchEscortExtraPurchasePlan,
     getAllActiveExtraPlans,
     getAllExtraPlans,
+    getAllPurchasedExtraPlans,
     getSelectExtraPlan,
     updateExtraPlan,
 } from "../controllers/extra.controller.js";
@@ -36,11 +37,14 @@ extraRouter.post("/extra-nowpayments-webhook", express.raw({
     type: "application/json"
 }), extranowPaymentsWebhook);
 
+
 extraRouter.get("/fetch-escort-extra-purchase-plan", protect(["Escort"]), fetchEscortExtraPurchasePlan);
 
 extraRouter.post("/boost-profile", protect(["Escort"]), boostProfile);
 
 
-extraRouter.get("/fetch-all-extra-purchase-plan", protect(["Escort"]), fetchEscortAllPurchasedExtraPlan)
+extraRouter.get("/fetch-all-extra-purchase-plan", protect(["Escort"]), fetchEscortAllPurchasedExtraPlan);
+
+extraRouter.get("/get-all-purchased-extra-plans", protect(["Admin"]), getAllPurchasedExtraPlans);
 
 export default extraRouter;

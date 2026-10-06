@@ -1218,7 +1218,7 @@ export const boostProfile = async (request, response) => {
 };
 
 
-// fetch Escort All Purchased Extra Plan
+// fetch Escort My All Purchased Extra Plan
 
 export const fetchEscortAllPurchasedExtraPlan = async (request, response) => {
     try {
@@ -1564,6 +1564,352 @@ export const fetchEscortAllPurchasedExtraPlan = async (request, response) => {
     } catch (error) {
         console.log(
             "FETCH ESCORT ALL PURCHASED EXTRA PLANS ERROR:",
+            error?.message
+        );
+
+        return response.status(500).json({
+            message: "Failed to fetch purchased extra plans",
+            success: false,
+            error: true,
+            details: error?.message
+        });
+    }
+};
+
+
+// Admin Fetch all purchased extra plans
+export const getAllPurchasedExtraPlans = async (request, response) => {
+    try {
+        const {
+            page = 1,
+                limit = 10,
+                search = "",
+                planType,
+                planName,
+                currency,
+                isActive,
+                status,
+                subscriptionStatus,
+                availabilityStatus,
+                subscriptionStartFrom,
+                subscriptionStartTo,
+                subscriptionExpiryFrom,
+                subscriptionExpiryTo,
+                availabilityStartFrom,
+                availabilityStartTo,
+                availabilityEndFrom,
+                availabilityEndTo,
+                sortBy = "newest",
+        } = request.query;
+
+        const pageNumber = Math.max(Number(page) || 1, 1);
+        const limitNumber = Math.min(Math.max(Number(limit) || 10, 1), 100);
+        const skip = (pageNumber - 1) * limitNumber;
+
+        const query = {};
+
+        if (planType && planType !== "all" && planType !== "undefined") {
+            query.planType = planType;
+        }
+
+        if (planName && planName !== "all" && planName !== "undefined") {
+            query.planName = planName;
+        }
+
+        if (currency && currency !== "all" && currency !== "undefined") {
+            query.currency = currency;
+        }
+
+        if (
+            isActive !== undefined &&
+            isActive !== "" &&
+            isActive !== "all" &&
+            isActive !== "undefined"
+        ) {
+            query.isActive = isActive === "true";
+        }
+
+        if (status && status !== "all" && status !== "undefined") {
+            query.status = status;
+        }
+
+        if (subscriptionStatus && subscriptionStatus !== "all" && subscriptionStatus !== "undefined") {
+            const currentDate = new Date();
+
+            if (subscriptionStatus === "active") {
+                query.subscriptionExpiry = {
+                    $gte: currentDate
+                };
+            }
+
+            if (subscriptionStatus === "expired") {
+                query.subscriptionExpiry = {
+                    $lt: currentDate
+                };
+            }
+
+            if (subscriptionStatus === "no_expiry") {
+                query.$or = [{
+                        subscriptionExpiry: null
+                    },
+                    {
+                        subscriptionExpiry: {
+                            $exists: false
+                        }
+                    }
+                ];
+            }
+        }
+
+        if (availabilityStatus && availabilityStatus !== "all" && availabilityStatus !== "undefined") {
+            const currentDate = new Date();
+
+            if (availabilityStatus === "active") {
+                query.availabilityActive = true;
+                query.availabilityEnd = {
+                    $gte: currentDate
+                };
+            }
+
+            if (availabilityStatus === "inactive") {
+                query.availabilityActive = false;
+            }
+
+            if (availabilityStatus === "expired") {
+                query.availabilityEnd = {
+                    $lt: currentDate
+                };
+            }
+        }
+
+        if (subscriptionStartFrom || subscriptionStartTo) {
+            query.subscriptionStart = {};
+
+            if (subscriptionStartFrom) {
+                query.subscriptionStart.$gte = new Date(subscriptionStartFrom);
+            }
+
+            if (subscriptionStartTo) {
+                const endDate = new Date(subscriptionStartTo);
+                endDate.setHours(23, 59, 59, 999);
+                query.subscriptionStart.$lte = endDate;
+            }
+        }
+
+        if (subscriptionExpiryFrom || subscriptionExpiryTo) {
+            query.subscriptionExpiry = {};
+
+            if (subscriptionExpiryFrom) {
+                query.subscriptionExpiry.$gte = new Date(subscriptionExpiryFrom);
+            }
+
+            if (subscriptionExpiryTo) {
+                const endDate = new Date(subscriptionExpiryTo);
+                endDate.setHours(23, 59, 59, 999);
+                query.subscriptionExpiry.$lte = endDate;
+            }
+        }
+
+        if (availabilityStartFrom || availabilityStartTo) {
+            query.availabilityStart = {};
+
+            if (availabilityStartFrom) {
+                query.availabilityStart.$gte = new Date(availabilityStartFrom);
+            }
+
+            if (availabilityStartTo) {
+                const endDate = new Date(availabilityStartTo);
+                endDate.setHours(23, 59, 59, 999);
+                query.availabilityStart.$lte = endDate;
+            }
+        }
+
+        if (availabilityEndFrom || availabilityEndTo) {
+            query.availabilityEnd = {};
+
+            if (availabilityEndFrom) {
+                query.availabilityEnd.$gte = new Date(availabilityEndFrom);
+            }
+
+            if (availabilityEndTo) {
+                const endDate = new Date(availabilityEndTo);
+                endDate.setHours(23, 59, 59, 999);
+                query.availabilityEnd.$lte = endDate;
+            }
+        }
+
+        const aggregationPipeline = [{
+                $match: query
+            },
+
+            {
+                $lookup: {
+                    from: "escorts",
+                    localField: "userId",
+                    foreignField: "_id",
+                    as: "escort"
+                }
+            },
+
+            {
+                $unwind: {
+                    path: "$escort",
+                    preserveNullAndEmptyArrays: true
+                }
+            }
+        ];
+
+        if (search) {
+            aggregationPipeline.push({
+                $match: {
+                    $or: [{
+                            "escort.name": {
+                                $regex: search,
+                                $options: "i"
+                            }
+                        },
+                        {
+                            "escort.email": {
+                                $regex: search,
+                                $options: "i"
+                            }
+                        },
+                        {
+                            "escort.escortId": {
+                                $regex: search,
+                                $options: "i"
+                            }
+                        },
+                        {
+                            planName: {
+                                $regex: search,
+                                $options: "i"
+                            }
+                        },
+                        {
+                            orderId: {
+                                $regex: search,
+                                $options: "i"
+                            }
+                        }
+                    ]
+                }
+            });
+        }
+
+        let sortOptions = {
+            createdAt: -1
+        };
+
+        switch (sortBy) {
+            case "oldest":
+                sortOptions = {
+                    createdAt: 1
+                };
+                break;
+
+            case "price_high":
+                sortOptions = {
+                    price: -1,
+                    createdAt: -1
+                };
+                break;
+
+            case "price_low":
+                sortOptions = {
+                    price: 1,
+                    createdAt: -1
+                };
+                break;
+
+            case "start_newest":
+                sortOptions = {
+                    subscriptionStart: -1
+                };
+                break;
+
+            case "start_oldest":
+                sortOptions = {
+                    subscriptionStart: 1
+                };
+                break;
+
+            case "expiry_latest":
+                sortOptions = {
+                    subscriptionExpiry: -1
+                };
+                break;
+
+            case "expiry_soonest":
+                sortOptions = {
+                    subscriptionExpiry: 1
+                };
+                break;
+
+            case "availability_latest":
+                sortOptions = {
+                    availabilityEnd: -1
+                };
+                break;
+
+            case "availability_soonest":
+                sortOptions = {
+                    availabilityEnd: 1
+                };
+                break;
+
+            case "newest":
+            default:
+                sortOptions = {
+                    createdAt: -1
+                };
+                break;
+        }
+
+        aggregationPipeline.push({
+            $facet: {
+                plans: [{
+                        $sort: sortOptions
+                    },
+                    {
+                        $skip: skip
+                    },
+                    {
+                        $limit: limitNumber
+                    }
+                ],
+                totalCount: [{
+                    $count: "count"
+                }]
+            }
+        });
+
+        const result = await ExtraPlanSubscriptionModel.aggregate(
+            aggregationPipeline
+        );
+
+        const plans = result?. [0]?.plans || [];
+        const totalPlans = result?. [0]?.totalCount?. [0]?.count || 0;
+        const totalPages = Math.ceil(totalPlans / limitNumber) || 1;
+
+        return response.status(200).json({
+            message: "All purchased extra plans fetched successfully",
+            success: true,
+            error: false,
+            data: plans,
+            pagination: {
+                total: totalPlans,
+                page: pageNumber,
+                limit: limitNumber,
+                totalPages,
+                hasNextPage: pageNumber < totalPages,
+                hasPreviousPage: pageNumber > 1
+            }
+        });
+
+    } catch (error) {
+        console.log(
+            "GET ALL PURCHASED EXTRA PLANS ERROR:",
             error?.message
         );
 
