@@ -32,6 +32,7 @@ import {
 import {
     deleteFromCloudinary
 } from '../utils/deleteFromCloudinary.js';
+import subcribedModel from '../models/subcribedplanModel.js';
 
 // Admin login
 export async function adminlogincontroller(request, response) {
@@ -1514,7 +1515,7 @@ export async function getVerifiedEscorts(req, res) {
         ] = await Promise.all([
             EscortModel.find(filter)
             .select(
-                "escortId name email country city status isVerified adverties_category createdAt"
+                "escortId name avatar email country city status isVerified adverties_category createdAt"
             )
             .sort({
                 createdAt: -1
