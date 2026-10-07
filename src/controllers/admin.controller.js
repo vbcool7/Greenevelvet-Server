@@ -1427,6 +1427,177 @@ export async function getIncompleteRegistration(request, response) {
 
 }
 
+
+// fetch Verified escort with search filter data //
+
+
+export async function getVerifiedEscorts(req, res) {
+    try {
+        const {
+            search = "",
+                country = "",
+                city = "",
+                status = "",
+                register = "",
+                page = 1,
+                limit = 10
+        } = req.query;
+
+        const currentPage = Math.max(Number(page) || 1, 1);
+        const pageLimit = Math.min(Number(limit) || 10, 50);
+        const skip = (currentPage - 1) * pageLimit;
+
+        const filter = {
+            isVerified: true,
+            status: {
+                $in: ["Active", "Suspended", "Rejected"]
+            }
+        };
+
+        if (search.trim()) {
+            filter.$or = [{
+                    name: {
+                        $regex: search.trim(),
+                        $options: "i"
+                    }
+                },
+                {
+                    escortId: {
+                        $regex: search.trim(),
+                        $options: "i"
+                    }
+                },
+                {
+                    email: {
+                        $regex: search.trim(),
+                        $options: "i"
+                    }
+                }
+            ];
+        }
+
+        if (country.trim()) {
+            filter.country = {
+                $regex: `^${country.trim()}$`,
+                $options: "i"
+            };
+        }
+
+        if (city.trim()) {
+            filter.city = {
+                $regex: `^${city.trim()}$`,
+                $options: "i"
+            };
+        }
+
+        if (
+            status && ["Active", "Suspended", "Rejected"].includes(status)
+        ) {
+            filter.status = status;
+        }
+
+        if (register === "new") {
+            const newDate = new Date();
+            newDate.setDate(newDate.getDate() - 7);
+
+            filter.createdAt = {
+                $gte: newDate
+            };
+        }
+
+        const [
+            escorts,
+            totalEscorts,
+            activeEscorts,
+            newEscorts,
+            recentSubscribedIds
+        ] = await Promise.all([
+            EscortModel.find(filter)
+            .select(
+                "escortId name email country city status isVerified adverties_category createdAt"
+            )
+            .sort({
+                createdAt: -1
+            })
+            .skip(skip)
+            .limit(pageLimit)
+            .lean(),
+
+            EscortModel.countDocuments({
+                isVerified: true,
+                status: {
+                    $in: ["Active", "Suspended", "Rejected"]
+                }
+            }),
+
+            EscortModel.countDocuments({
+                isVerified: true,
+                status: "Active"
+            }),
+
+            EscortModel.countDocuments({
+                isVerified: true,
+                status: {
+                    $in: ["Active", "Suspended", "Rejected"]
+                },
+                createdAt: {
+                    $gte: (() => {
+                        const date = new Date();
+                        date.setDate(date.getDate() - 7);
+                        return date;
+                    })()
+                }
+            }),
+
+            subcribedModel.distinct("userId", {
+                status: "finished"
+            })
+        ]);
+
+        const recentSubscribedEscorts = await EscortModel.countDocuments({
+            _id: {
+                $in: recentSubscribedIds
+            },
+            isVerified: true,
+            status: {
+                $in: ["Active", "Suspended", "Rejected"]
+            }
+        });
+
+        const totalPages = Math.ceil(totalEscorts / pageLimit);
+
+        return res.status(200).json({
+            success: true,
+            message: "Registered escorts fetched successfully",
+            data: {
+                escorts,
+                cards: {
+                    totalEscorts,
+                    activeEscorts,
+                    recentSubscribedEscorts,
+                    newEscorts
+                },
+                pagination: {
+                    total: totalEscorts,
+                    page: currentPage,
+                    limit: pageLimit,
+                    totalPages
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error("Get Registered Escorts Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch registered escorts",
+            error: error.message
+        });
+    }
+};
+
+
 //==========================================================< Clients >======================================================================
 
 // fetch clients
