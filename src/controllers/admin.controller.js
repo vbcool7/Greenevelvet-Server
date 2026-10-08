@@ -1355,7 +1355,7 @@ export async function deleteEscortcontroller(request, response) {
     }
 }
 
-// fecth verified escorts 
+// fecth verified escorts (*--ye ab kam me nahi le rahe h--*)
 export async function verifiedEscortcontroller(request, response) {
     try {
         const {
@@ -1429,9 +1429,154 @@ export async function getIncompleteRegistration(request, response) {
 }
 
 
+// fetch new registration escorts for verfication 
+export const getAwaitingVerificationEscorts = async (req, res) => {
+    try {
+        const {
+            search = "",
+                country = "",
+                city = "",
+                status = "",
+                register = "",
+                page = 1,
+                limit = 10
+        } = req.query;
+
+        const currentPage = Math.max(Number(page) || 1, 1);
+        const pageLimit = Math.min(Number(limit) || 10, 50);
+        const skip = (currentPage - 1) * pageLimit;
+
+        const filter = {
+            isVerified: false,
+            status: {
+                $in: ["Pending", "Suspended", "Rejected"]
+            },
+            isEmailVerified: true,
+
+            verificationSelfie: {
+                $exists: true,
+                $nin: ["", null]
+            },
+
+            verificationgovtId: {
+                $exists: true,
+                $nin: ["", null]
+            },
+
+            "avatar.url": {
+                $exists: true,
+                $nin: ["", null]
+            },
+
+            "gallery.photos.2": {
+                $exists: true,
+                $nin: ["", null]
+            }
+        };
+
+        if (
+            status && ["Pending", "Suspended", "Rejected"].includes(status)
+        ) {
+            filter.status = status;
+        }
+
+        if (search.trim()) {
+            filter.$or = [{
+                    name: {
+                        $regex: search.trim(),
+                        $options: "i"
+                    }
+                },
+                {
+                    escortId: {
+                        $regex: search.trim(),
+                        $options: "i"
+                    }
+                },
+                {
+                    email: {
+                        $regex: search.trim(),
+                        $options: "i"
+                    }
+                }
+            ];
+        }
+
+        if (country.trim()) {
+            filter.country = {
+                $regex: `^${country.trim()}$`,
+                $options: "i"
+            };
+        }
+
+        if (city.trim()) {
+            filter.city = {
+                $regex: `^${city.trim()}$`,
+                $options: "i"
+            };
+        }
+
+        if (register === "new") {
+            const newDate = new Date();
+            newDate.setDate(newDate.getDate() - 7);
+
+            filter.createdAt = {
+                $gte: newDate
+            };
+        }
+
+        if (register === "old") {
+            const oldDate = new Date();
+            oldDate.setDate(oldDate.getDate() - 7);
+
+            filter.createdAt = {
+                $lt: oldDate
+            };
+        }
+
+        const [escorts, totalEscorts] = await Promise.all([
+            EscortModel.find(filter)
+            .select(
+                "escortId name email country city status isVerified isEmailVerified verificationSelfie verificationgovtId avatar gallery adverties_category createdAt"
+            )
+            .sort({
+                createdAt: -1
+            })
+            .skip(skip)
+            .limit(pageLimit)
+            .lean(),
+
+            EscortModel.countDocuments(filter)
+        ]);
+
+        const totalPages = Math.ceil(totalEscorts / pageLimit);
+
+        return res.status(200).json({
+            success: true,
+            message: "Awaiting verification escorts fetched successfully",
+            data: {
+                escorts,
+                pagination: {
+                    total: totalEscorts,
+                    page: currentPage,
+                    limit: pageLimit,
+                    totalPages
+                }
+            }
+        });
+    } catch (error) {
+        console.error("Get Awaiting Verification Escorts Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch awaiting verification escorts",
+            error: error.message
+        });
+    }
+};
+
+
 // fetch Verified escort with search filter data //
-
-
 export async function getVerifiedEscorts(req, res) {
     try {
         const {
@@ -1503,6 +1648,15 @@ export async function getVerifiedEscorts(req, res) {
 
             filter.createdAt = {
                 $gte: newDate
+            };
+        }
+
+        if (register === "old") {
+            const oldDate = new Date();
+            oldDate.setDate(oldDate.getDate() - 7);
+
+            filter.createdAt = {
+                $lt: oldDate
             };
         }
 

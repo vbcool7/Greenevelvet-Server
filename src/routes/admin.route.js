@@ -1,6 +1,46 @@
-import { Router } from 'express';
-import { adminlogincontroller, adminlogoutcontroller, changePassword, deleteBlog, deleteClient, deleteEscortcontroller, deleteNewsandtour, deleteTour, escortFullDetails, escortProfileDetails, fetchBlogDetails, fetchBlogs, fetchClientdetails, fetchClients, fetchEscortcontroller, fetchEscortdetailscontroller, fetchNewsandtourDetails, fetchNewsandtours, fetchTourDetails, fetchTours, forgotPassword, getAdminDetails, getIncompleteRegistration, getVerifiedEscorts, resetPassword, sendRegistrationReminder, updateAdminName, updateBlogStatus, updateClient, updateEscortcontroller, updateNewsandtourStatus, verifiedEscortcontroller, verifyOtp, verifyUploadImages } from '../controllers/admin.controller.js';
-import { protect } from '../middleware/auth.js';
+import {
+    Router
+} from 'express';
+import {
+    adminlogincontroller,
+    adminlogoutcontroller,
+    changePassword,
+    deleteBlog,
+    deleteClient,
+    deleteEscortcontroller,
+    deleteNewsandtour,
+    deleteTour,
+    escortFullDetails,
+    escortProfileDetails,
+    fetchBlogDetails,
+    fetchBlogs,
+    fetchClientdetails,
+    fetchClients,
+    fetchEscortcontroller,
+    fetchEscortdetailscontroller,
+    fetchNewsandtourDetails,
+    fetchNewsandtours,
+    fetchTourDetails,
+    fetchTours,
+    forgotPassword,
+    getAdminDetails,
+    getAwaitingVerificationEscorts,
+    getIncompleteRegistration,
+    getVerifiedEscorts,
+    resetPassword,
+    sendRegistrationReminder,
+    updateAdminName,
+    updateBlogStatus,
+    updateClient,
+    updateEscortcontroller,
+    updateNewsandtourStatus,
+    verifiedEscortcontroller,
+    verifyOtp,
+    verifyUploadImages
+} from '../controllers/admin.controller.js';
+import {
+    protect
+} from '../middleware/auth.js';
 
 const adminRouter = Router();
 
@@ -10,7 +50,10 @@ adminRouter.post("/logout", protect(["Admin"]), adminlogoutcontroller);
 // Protected example route
 adminRouter.get("/admin-data", protect(["Admin"]), async (request, response) => {
     // req.user me Admin ka data aayega
-    response.json({ success: true, data: request.user });
+    response.json({
+        success: true,
+        data: request.user
+    });
 });
 
 // admin account details fetch and update
@@ -25,7 +68,8 @@ adminRouter.post("/reset-password", resetPassword);
 // -----------------------------------------------------------------------------------------------------------------------------------
 
 // escorts fetch update and delete operation
-adminRouter.get("/fetch-unverified-escorts", fetchEscortcontroller)
+// adminRouter.get("/fetch-unverified-escorts", fetchEscortcontroller);
+adminRouter.get("/fetch-unverified-escorts", getAwaitingVerificationEscorts);
 adminRouter.get("/fetch-escort-details", fetchEscortdetailscontroller)
 adminRouter.get("/escort-profile-details", escortProfileDetails);
 adminRouter.get("/escort-full-details", protect(["Admin"]), escortFullDetails);
