@@ -1454,25 +1454,25 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
             },
             isEmailVerified: true,
 
-            // verificationSelfie: {
-            //     $exists: true,
-            //     $nin: ["", null]
-            // },
+            verificationSelfie: {
+                $exists: true,
+                $nin: ["", null]
+            },
 
-            // verificationgovtId: {
-            //     $exists: true,
-            //     $nin: ["", null]
-            // },
+            verificationgovtId: {
+                $exists: true,
+                $nin: ["", null]
+            },
 
-            // "avatar.url": {
-            //     $exists: true,
-            //     $nin: ["", null]
-            // },
+            "pendingAvatar.url": {
+                $exists: true,
+                $nin: ["", null]
+            },
 
-            // "gallery.photos.2": {
-            //     $exists: true,
-            //     $nin: ["", null]
-            // }
+            "gallery.photos.2": {
+                $exists: true,
+                $nin: ["", null]
+            }
         };
 
 
@@ -1545,7 +1545,7 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
         const [escorts, totalEscorts] = await Promise.all([
             EscortModel.find(filter)
             .select(
-                "escortId name email country city status isVerified isEmailVerified verificationSelfie verificationgovtId avatar gallery adverties_category createdAt"
+                "escortId name email country city status isVerified isEmailVerified verificationSelfie verificationgovtId avatar pendingAvatar gallery adverties_category createdAt"
             )
             .sort({
                 createdAt: -1
