@@ -1536,6 +1536,8 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
             };
         }
 
+
+
         const [escorts, totalEscorts] = await Promise.all([
             EscortModel.find(filter)
             .select(
@@ -1553,7 +1555,14 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
 
         const totalPages = Math.ceil(totalEscorts / pageLimit);
 
-        console.log("api call response", escorts);
+
+
+        const testEscort = await EscortModel({
+            isVerified: false
+        });
+
+        console.log("testEscort api call response", testEscort);
+
 
 
         return res.status(200).json({
