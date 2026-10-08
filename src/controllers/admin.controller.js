@@ -1456,6 +1456,8 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
 
             isEmailVerified: true,
 
+            lastCompletedStep: 7,
+
             verificationselfie: {
                 $exists: true,
                 $type: "string",
@@ -1468,17 +1470,26 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
                 $ne: ""
             },
 
-            "pendingAvatar.url": {
-                $exists: true,
-                $type: "string",
-                $ne: ""
-            },
+            $or: [{
+                    "pendingAvatar.url": {
+                        $exists: true,
+                        $type: "string",
+                        $ne: ""
+                    }
+                },
+                {
+                    "avatar.url": {
+                        $exists: true,
+                        $type: "string",
+                        $ne: ""
+                    }
+                }
+            ],
 
             "gallery.photos.2": {
                 $exists: true
             }
         };
-
         if (
             status && ["Pending", "Suspended", "Rejected"].includes(status)
         ) {
