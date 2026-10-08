@@ -32,8 +32,8 @@ adminRouter.get("/escort-full-details", protect(["Admin"]), escortFullDetails);
 
 adminRouter.patch("/escort-update", updateEscortcontroller)
 adminRouter.delete("/escort-delete", deleteEscortcontroller)
-adminRouter.get("/fetch-verified-escorts", verifiedEscortcontroller); // ye old controller h 
-// adminRouter.get("/fetch-verified-escorts", getVerifiedEscorts); // ye new filter controller h
+// adminRouter.get("/fetch-verified-escorts", verifiedEscortcontroller); // ye old controller h 
+adminRouter.get("/fetch-verified-escorts", getVerifiedEscorts); // ye new filter controller h
 
 adminRouter.get("/fetch-incomplete-registration", getIncompleteRegistration);
 
