@@ -1442,6 +1442,8 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
                 limit = 10
         } = req.query;
 
+        console.log("req. query call", req.query);
+
         const currentPage = Math.max(Number(page) || 1, 1);
         const pageLimit = Math.min(Number(limit) || 10, 50);
         const skip = (currentPage - 1) * pageLimit;
@@ -1550,6 +1552,9 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
         ]);
 
         const totalPages = Math.ceil(totalEscorts / pageLimit);
+
+        console.log("api call response", escorts);
+
 
         return res.status(200).json({
             success: true,
