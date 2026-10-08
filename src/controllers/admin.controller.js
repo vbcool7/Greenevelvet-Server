@@ -1475,7 +1475,6 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
             }
         };
 
-
         if (
             status && ["Pending", "Suspended", "Rejected"].includes(status)
         ) {
@@ -1558,15 +1557,6 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
         ]);
 
         const totalPages = Math.ceil(totalEscorts / pageLimit);
-
-
-
-        const testEscort = await EscortModel({
-            isVerified: false,
-            status: "Pending"
-        });
-
-
 
 
         return res.status(200).json({
