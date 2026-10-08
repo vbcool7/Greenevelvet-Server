@@ -1429,7 +1429,7 @@ export async function getIncompleteRegistration(request, response) {
 }
 
 
-// fetch new registration escorts for verfication 
+// fetch new registration escorts for new verfication approval //
 export const getAwaitingVerificationEscorts = async (req, res) => {
     try {
         const {
