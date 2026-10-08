@@ -1454,28 +1454,26 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
             },
             isEmailVerified: true,
 
-            verificationSelfie: {
-                $exists: true,
-                $nin: ["", null]
-            },
+            // verificationSelfie: {
+            //     $exists: true,
+            //     $nin: ["", null]
+            // },
 
-            verificationgovtId: {
-                $exists: true,
-                $nin: ["", null]
-            },
+            // verificationgovtId: {
+            //     $exists: true,
+            //     $nin: ["", null]
+            // },
 
-            "avatar.url": {
-                $exists: true,
-                $nin: ["", null]
-            },
+            // "avatar.url": {
+            //     $exists: true,
+            //     $nin: ["", null]
+            // },
 
-            "gallery.photos.2": {
-                $exists: true,
-                $nin: ["", null]
-            }
+            // "gallery.photos.2": {
+            //     $exists: true,
+            //     $nin: ["", null]
+            // }
         };
-
-        console.log("initial filter", filter);
 
 
         if (
@@ -1566,11 +1564,8 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
         const testEscort = await EscortModel({
             isVerified: false,
             status: "Pending"
-        }).sort({
-            createdAt: -1
         });
 
-        console.log("testEscort api call response", testEscort);
 
 
 
