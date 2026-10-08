@@ -1442,7 +1442,6 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
                 limit = 10
         } = req.query;
 
-        console.log("req. query call", req.query);
 
         const currentPage = Math.max(Number(page) || 1, 1);
         const pageLimit = Math.min(Number(limit) || 10, 50);
@@ -1475,6 +1474,9 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
                 $nin: ["", null]
             }
         };
+
+        console.log("initial filter", filter);
+
 
         if (
             status && ["Pending", "Suspended", "Rejected"].includes(status)
@@ -1537,6 +1539,10 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
         }
 
 
+        console.log("complete filter", filter);
+
+
+
 
         const [escorts, totalEscorts] = await Promise.all([
             EscortModel.find(filter)
@@ -1558,7 +1564,10 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
 
 
         const testEscort = await EscortModel({
-            isVerified: false
+            isVerified: false,
+            status: "Pending"
+        }).sort({
+            createdAt: -1
         });
 
         console.log("testEscort api call response", testEscort);
