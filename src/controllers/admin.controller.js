@@ -1449,29 +1449,33 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
 
         const filter = {
             isVerified: false,
+
             status: {
                 $in: ["Pending", "Suspended", "Rejected"]
             },
+
             isEmailVerified: true,
 
-            verificationSelfie: {
+            verificationselfie: {
                 $exists: true,
-                $nin: ["", null]
+                $type: "string",
+                $ne: ""
             },
 
             verificationgovtId: {
                 $exists: true,
-                $nin: ["", null]
+                $type: "string",
+                $ne: ""
             },
 
             "pendingAvatar.url": {
                 $exists: true,
-                $nin: ["", null]
+                $type: "string",
+                $ne: ""
             },
 
             "gallery.photos.2": {
-                $exists: true,
-                $nin: ["", null]
+                $exists: true
             }
         };
 
