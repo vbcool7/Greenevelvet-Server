@@ -3005,7 +3005,7 @@ export async function verifyUploadImages(request, response) {
 
         if (type === "gallery") {
 
-            // update single image status
+            // Update gallery photo status
             updatedEscort = await EscortModel.findOneAndUpdate({
                 escortId,
                 "gallery.photos.url": imageUrl
@@ -3017,11 +3017,38 @@ export async function verifyUploadImages(request, response) {
                 new: true
             });
 
+            if (!updatedEscort) {
+                return response.status(404).json({
+                    success: false,
+                    error: true,
+                    message: "Gallery photo not found"
+                });
+            }
+
+            // Send notification to Escort
+            await createAndSendNotification(request.app, {
+                recipientId: updatedEscort._id,
+                recipientModel: "Escort",
+                senderId: adminId,
+                senderModel: "Admin",
+                type: "VERIFICATION",
+                title: status === "Approved" ?
+                    "Gallery Photo Approved" :
+                    status === "Rejected" ?
+                    "Gallery Photo Rejected" :
+                    "Gallery Photo Status Updated",
+                message: status === "Approved" ?
+                    "Your gallery photo has been approved by the admin." :
+                    status === "Rejected" ?
+                    "Your gallery photo has been rejected by the admin. Please upload another photo." :
+                    "Your gallery photo status has been updated by the admin.",
+                link: "/modeldashboard/profile"
+            });
         }
 
         if (type === "video") {
 
-            // update single image status
+            // Update gallery video status
             updatedEscort = await EscortModel.findOneAndUpdate({
                 escortId,
                 "gallery.videos.url": imageUrl
@@ -3033,7 +3060,35 @@ export async function verifyUploadImages(request, response) {
                 new: true
             });
 
+            if (!updatedEscort) {
+                return response.status(404).json({
+                    success: false,
+                    error: true,
+                    message: "Gallery video not found"
+                });
+            }
+
+            // Send notification to Escort
+            await createAndSendNotification(request.app, {
+                recipientId: updatedEscort._id,
+                recipientModel: "Escort",
+                senderId: adminId,
+                senderModel: "Admin",
+                type: "VERIFICATION",
+                title: status === "Approved" ?
+                    "Gallery Video Approved" :
+                    status === "Rejected" ?
+                    "Gallery Video Rejected" :
+                    "Gallery Video Status Updated",
+                message: status === "Approved" ?
+                    "Your gallery video has been approved by the admin." :
+                    status === "Rejected" ?
+                    "Your gallery video has been rejected by the admin. Please upload another video." :
+                    "Your gallery video status has been updated by the admin.",
+                link: "/modeldashboard/profile"
+            });
         }
+
 
         if (!updatedEscort) {
             return response.status(404).json({
@@ -3046,7 +3101,7 @@ export async function verifyUploadImages(request, response) {
         return response.status(200).json({
             success: true,
             error: false,
-            message: `Photo ${status} successfully`
+            message: `Uploaded ${type} ${status} successfully`
         });
 
     } catch (error) {
