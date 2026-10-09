@@ -2430,33 +2430,37 @@ export async function uploadImagescontroller(request, response) {
         //     }
         // });
 
-        const admin = await AdminModel.findOne();
-        if (!admin) {
-            console.error("❌ Notification skipped: No Admin found in database.");
-        } else {
-            const load = await createAndSendNotification(request.app, {
-                recipientId: admin._id,
-                recipientModel: "Admin",
-                senderId: updatedEscort._id,
-                senderModel: "Escort",
-                type: "VERIFICATION",
-                title: "New gallery images uploaded",
-                message: `${updatedEscort.name} has uploaded a gallery images and is waiting for approval.`,
-                link: `/dashboard/pending-escort-media/${updatedEscort.escortId}`
-            });
-        }
 
+        // Send notification and email only when new images are uploaded
+        if (
+            uploadedImages.length > 0 &&
+            updatedEscort?.status === "Active" &&
+            updatedEscort?.isVerified === true
+        ) {
+            const admin = await AdminModel.findOne();
 
+            if (!admin) {
+                console.error("Notification skipped: No Admin found in database.");
+            } else {
+                await createAndSendNotification(request.app, {
+                    recipientId: admin._id,
+                    recipientModel: "Admin",
+                    senderId: updatedEscort._id,
+                    senderModel: "Escort",
+                    type: "VERIFICATION",
+                    title: "New Gallery Images Uploaded",
+                    message: `${updatedEscort.name} has uploaded new gallery images and is waiting for approval.`,
+                    link: `/dashboard/pending-escort-media/${updatedEscort.escortId}`
+                });
+            }
 
-        if (updatedEscort?.status === "Active" && updatedEscort?.isVerified) {
             await sendMediaUploadNotification({
                 email: process.env.ADMIN_RECEIVER_EMAIL,
-                modelName: updatedEscort?.name,
+                modelName: updatedEscort.name,
                 mediaType: "photos",
-                escortId: updatedEscort?.escortId,
-            })
+                escortId: updatedEscort.escortId,
+            });
         }
-
 
 
 
@@ -2484,6 +2488,7 @@ export async function uploadImagescontroller(request, response) {
 }
 
 // upload gallery videos
+
 export async function uploadVideoscontroller(request, response) {
     try {
         const {
@@ -2576,30 +2581,39 @@ export async function uploadVideoscontroller(request, response) {
             }
         });
 
-        const admin = await AdminModel.findOne();
-        if (!admin) {
-            console.error("❌ Notification skipped: No Admin found in database.");
-        } else {
-            const load = await createAndSendNotification(request.app, {
-                recipientId: admin._id,
-                recipientModel: "Admin",
-                senderId: updatedEscort._id,
-                senderModel: "Escort",
-                type: "VERIFICATION",
-                title: "New gallery videos uploaded",
-                message: `${updatedEscort.name} has uploaded a gallery videos and is waiting for approval.`,
-                link: `/dashboard/pending-escort-media/${updatedEscort.escortId}`
+
+        // Send notification and email only when new videos are uploaded
+
+        if (
+            uploadedVideos.length > 0 &&
+            updatedEscort?.status === "Active" &&
+            updatedEscort?.isVerified === true
+        ) {
+            const admin = await AdminModel.findOne();
+
+            if (!admin) {
+                console.error("Notification skipped: No Admin found in database.");
+            } else {
+                await createAndSendNotification(request.app, {
+                    recipientId: admin._id,
+                    recipientModel: "Admin",
+                    senderId: updatedEscort._id,
+                    senderModel: "Escort",
+                    type: "VERIFICATION",
+                    title: "New Gallery Videos Uploaded",
+                    message: `${updatedEscort.name} has uploaded new gallery videos and is waiting for approval.`,
+                    link: `/dashboard/pending-escort-media/${updatedEscort.escortId}`
+                });
+            }
+
+            await sendMediaUploadNotification({
+                email: process.env.ADMIN_RECEIVER_EMAIL,
+                modelName: updatedEscort.name,
+                mediaType: "videos",
+                escortId: updatedEscort.escortId,
             });
         }
 
-        if (updatedEscort?.status === "Active" && updatedEscort?.isVerified) {
-            await sendMediaUploadNotification({
-                email: process.env.ADMIN_RECEIVER_EMAIL,
-                modelName: updatedEscort?.name,
-                mediaType: "videos",
-                escortId: updatedEscort?.escortId,
-            })
-        }
 
         return response.status(200).json({
             message: "Video gallery updated successfully",
