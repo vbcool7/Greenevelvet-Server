@@ -2448,12 +2448,12 @@ export async function uploadImagescontroller(request, response) {
 
 
 
-        if (uploadEscort.status === "Active" && uploadEscort.isVerified) {
+        if (updatedEscort?.status === "Active" && updatedEscort?.isVerified) {
             await sendMediaUploadNotification({
                 email: process.env.ADMIN_RECEIVER_EMAIL,
-                modelName: uploadEscort.name,
+                modelName: updatedEscort?.name,
                 mediaType: "photos",
-                escortId: uploadEscort.escortId,
+                escortId: updatedEscort?.escortId,
             })
         }
 
@@ -2592,12 +2592,12 @@ export async function uploadVideoscontroller(request, response) {
             });
         }
 
-        if (uploadEscort.status === "Active" && uploadEscort.isVerified) {
+        if (updatedEscort?.status === "Active" && updatedEscort?.isVerified) {
             await sendMediaUploadNotification({
                 email: process.env.ADMIN_RECEIVER_EMAIL,
-                modelName: uploadEscort.name,
+                modelName: updatedEscort?.name,
                 mediaType: "videos",
-                escortId: uploadEscort.escortId,
+                escortId: updatedEscort?.escortId,
             })
         }
 
