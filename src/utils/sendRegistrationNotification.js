@@ -558,7 +558,7 @@ export const sendMediaUploadNotification = async ({
 
   try {
     await sgMail.send({
-      to: "satishbhawsar92@gmail.com",
+      to: email,
       from: `"GREENE VELVET" <${process.env.SENDER_EMAIL}>`,
       subject: `New Media Uploaded: ${modelName} - ${uploadedMedia}`,
       html,

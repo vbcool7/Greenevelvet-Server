@@ -1475,7 +1475,7 @@ export async function uploadAvatarcontroller(request, response) {
                     type: "VERIFICATION",
                     title: "New Profile image upload",
                     message: `${uploadEscort.name} has upload new profile image and is waiting for approval.`,
-                    link: `/dashboard/pending-escort-media/${uploadEscort._id}`
+                    link: `/dashboard/pending-escort-media/${uploadEscort.escortId}`
                 });
             }
         }
@@ -2442,7 +2442,7 @@ export async function uploadImagescontroller(request, response) {
                 type: "VERIFICATION",
                 title: "New gallery images uploaded",
                 message: `${updatedEscort.name} has uploaded a gallery images and is waiting for approval.`,
-                link: `/dashboard/pending-escort-media/${updatedEscort._id}`
+                link: `/dashboard/pending-escort-media/${updatedEscort.escortId}`
             });
         }
 
@@ -2588,7 +2588,7 @@ export async function uploadVideoscontroller(request, response) {
                 type: "VERIFICATION",
                 title: "New gallery videos uploaded",
                 message: `${updatedEscort.name} has uploaded a gallery videos and is waiting for approval.`,
-                link: `/dashboard/pending-escort-media/${updatedEscort._id}`
+                link: `/dashboard/pending-escort-media/${updatedEscort.escortId}`
             });
         }
 
