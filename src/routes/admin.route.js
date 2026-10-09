@@ -26,6 +26,7 @@ import {
     getAdminDetails,
     getAwaitingVerificationEscorts,
     getIncompleteRegistration,
+    getPendingEscortMedia,
     getVerifiedEscorts,
     resetPassword,
     sendRegistrationReminder,
@@ -80,6 +81,8 @@ adminRouter.delete("/escort-delete", deleteEscortcontroller)
 adminRouter.get("/fetch-verified-escorts", getVerifiedEscorts); // ye new filter controller h
 
 adminRouter.get("/fetch-incomplete-registration", getIncompleteRegistration);
+adminRouter.get("/fetch-pending-media", getPendingEscortMedia);
+
 
 
 // approve / reject images upload avatar and gallery

@@ -1429,7 +1429,7 @@ export async function getIncompleteRegistration(request, response) {
 }
 
 
-// fetch new registration escorts for new verfication approval //
+//-------------------- fetch new registration escorts for new verfication approval ----------------------//
 export const getAwaitingVerificationEscorts = async (req, res) => {
     try {
         const {
@@ -1444,7 +1444,7 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
 
 
         const currentPage = Math.max(Number(page) || 1, 1);
-        const pageLimit = Math.min(Number(limit) || 10, 50);
+        const pageLimit = Math.min(Number(limit) || 10, 500);
         const skip = (currentPage - 1) * pageLimit;
 
         const filter = {
@@ -1599,7 +1599,7 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
 };
 
 
-// fetch Verified escort with search filter data //
+//-------------------- fetch Verified escort with search filter data -----------------------------------//
 export async function getVerifiedEscorts(req, res) {
     try {
         const {
@@ -1613,7 +1613,7 @@ export async function getVerifiedEscorts(req, res) {
         } = req.query;
 
         const currentPage = Math.max(Number(page) || 1, 1);
-        const pageLimit = Math.min(Number(limit) || 10, 50);
+        const pageLimit = Math.min(Number(limit) || 10, 500);
         const skip = (currentPage - 1) * pageLimit;
 
         const filter = {
@@ -1771,6 +1771,190 @@ export async function getVerifiedEscorts(req, res) {
             success: false,
             message: "Failed to fetch registered escorts",
             error: error.message
+        });
+    }
+};
+
+
+//-------------------- fetch media uploads with registerd escorts --------------------------------------//'
+export const getPendingEscortMedia = async (req, res) => {
+    try {
+        const {
+            search = "",
+                country = "",
+                city = "",
+                mediaType = "",
+                page = 1,
+                limit = 10,
+        } = req.query;
+
+        const currentPage = Math.max(Number(page) || 1, 1);
+        const pageLimit = Math.min(Number(limit) || 10, 100);
+        const skip = (currentPage - 1) * pageLimit;
+
+        const filter = {
+            isVerified: true,
+            status: "Active",
+
+            $or: [{
+
+                    "pendingAvatar.status": "Pending",
+                    "pendingAvatar.url": {
+                        $exists: true,
+                        $ne: ""
+                    },
+                },
+                {
+                    "gallery.photos": {
+                        $elemMatch: {
+                            status: "Pending",
+                            url: {
+                                $exists: true,
+                                $ne: ""
+                            },
+                        },
+                    },
+                },
+                {
+                    "gallery.videos": {
+                        $elemMatch: {
+                            status: "Pending",
+                            url: {
+                                $exists: true,
+                                $ne: ""
+                            },
+                        },
+                    },
+                },
+            ],
+        };
+
+        if (search.trim()) {
+            filter.$and = [{
+                $or: [{
+                        name: {
+                            $regex: search.trim(),
+                            $options: "i",
+                        },
+                    },
+                    {
+                        escortId: {
+                            $regex: search.trim(),
+                            $options: "i",
+                        },
+                    },
+                    {
+                        email: {
+                            $regex: search.trim(),
+                            $options: "i",
+                        },
+                    },
+                ],
+            }, ];
+        }
+
+        if (country.trim()) {
+            filter.country = {
+                $regex: `^${country.trim()}$`,
+                $options: "i",
+            };
+        }
+
+        if (city.trim()) {
+            filter.city = {
+                $regex: `^${city.trim()}$`,
+                $options: "i",
+            };
+        }
+
+        if (mediaType === "avatar") {
+            filter.$or = [{
+                "pendingAvatar.status": "Pending",
+                "pendingAvatar.url": {
+                    $exists: true,
+                    $ne: ""
+                },
+            }, ];
+        } else if (mediaType === "photos") {
+            filter.$or = [{
+                "gallery.photos": {
+                    $elemMatch: {
+                        status: "Pending",
+                        url: {
+                            $exists: true,
+                            $ne: ""
+                        },
+                    },
+                },
+            }, ];
+        } else if (mediaType === "videos") {
+            filter.$or = [{
+                "gallery.videos": {
+                    $elemMatch: {
+                        status: "Pending",
+                        url: {
+                            $exists: true,
+                            $ne: ""
+                        },
+                    },
+                },
+            }, ];
+        }
+
+        const [escorts, total] = await Promise.all([
+            EscortModel.find(filter)
+            .select(
+                "escortId name email country city status avatar pendingAvatar gallery.photos gallery.videos createdAt updatedAt"
+            )
+            .sort({
+                updatedAt: -1
+            })
+            .skip(skip)
+            .limit(pageLimit)
+            .lean(),
+
+            EscortModel.countDocuments(filter),
+        ]);
+
+        const data = escorts.map((escort) => ({
+            _id: escort._id,
+            escortId: escort.escortId,
+            name: escort.name,
+            email: escort.email,
+            country: escort.country,
+            city: escort.city,
+            status: escort.status,
+            avatar: escort.avatar,
+            pendingAvatar: escort.pendingAvatar?.status === "Pending" &&
+                escort.pendingAvatar?.url ?
+                escort.pendingAvatar : null,
+            pendingPhotos: (escort.gallery?.photos || []).filter(
+                (photo) => photo.status === "Pending" && photo.url
+            ),
+            pendingVideos: (escort.gallery?.videos || []).filter(
+                (video) => video.status === "Pending" && video.url
+            ),
+            createdAt: escort.createdAt,
+        }));
+
+        return res.status(200).json({
+            success: true,
+            message: "Pending escort media fetched successfully",
+            data,
+            pagination: {
+                total,
+                page: currentPage,
+                limit: pageLimit,
+                totalPages: Math.ceil(total / pageLimit),
+            },
+        });
+    } catch (error) {
+        console.error("Get Pending Escort Media Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch pending escort media",
+            error: error.message,
         });
     }
 };

@@ -548,8 +548,6 @@ const EscortSchema = new mongoose.Schema({
         default: [],
     },
 
-
-
     reason: {
         type: String,
     },
