@@ -716,7 +716,7 @@ export const resetPassword = async (request, response) => {
 
 //============================================================< Escorts >======================================================================
 
-// fetch awaiting verification (for new registration approval) escorts
+// fetch awaiting verification (old) escorts
 export async function fetchEscortcontroller(request, response) {
     try {
         const {
@@ -843,7 +843,7 @@ export async function fetchEscortdetailscontroller(request, response) {
     }
 }
 
-// escort profile details with fetch all related schema details
+// escort profile full details with fetch all related schema details
 export async function escortProfileDetails(request, response) {
     try {
         const {
@@ -1776,7 +1776,7 @@ export async function getVerifiedEscorts(req, res) {
 };
 
 
-//-------------------- fetch media uploads with registerd escorts --------------------------------------//'
+//-------------------- fetch pending media uploads escorts list--------------------------------------//'
 export const getPendingEscortMedia = async (req, res) => {
     try {
         const {

@@ -37,6 +37,7 @@ import {
 } from "../utils/crypto.js";
 import sharp from "sharp";
 import {
+    sendMediaUploadNotification,
     sendRegistrationNotification
 } from "../utils/sendRegistrationNotification.js";
 import cloudinary from "../config/cloudinary.js";
@@ -1474,9 +1475,18 @@ export async function uploadAvatarcontroller(request, response) {
                     type: "VERIFICATION",
                     title: "New Profile image upload",
                     message: `${uploadEscort.name} has upload new profile image and is waiting for approval.`,
-                    link: `/viewescortprofile/${uploadEscort._id}`
+                    link: `/dashboard/pending-escort-media/${uploadEscort._id}`
                 });
             }
+        }
+
+        if (uploadEscort.status === "Active" && uploadEscort.isVerified) {
+            await sendMediaUploadNotification({
+                email: process.env.ADMIN_RECEIVER_EMAIL,
+                modelName: uploadEscort.name,
+                mediaType: "avatar",
+                escortId: uploadEscort.escortId,
+            })
         }
 
 
@@ -1970,8 +1980,7 @@ export async function registrationResubmit(request, response) {
     }
 }
 
-//===================================================================================================//
-
+//===========================================================================//
 
 // Subcribe plan controll
 export async function subcribePlans(request, response) {
@@ -2433,9 +2442,23 @@ export async function uploadImagescontroller(request, response) {
                 type: "VERIFICATION",
                 title: "New gallery images uploaded",
                 message: `${updatedEscort.name} has uploaded a gallery images and is waiting for approval.`,
-                link: `/viewescortprofile/${updatedEscort._id}`
+                link: `/dashboard/pending-escort-media/${updatedEscort._id}`
             });
         }
+
+
+
+        if (uploadEscort.status === "Active" && uploadEscort.isVerified) {
+            await sendMediaUploadNotification({
+                email: process.env.ADMIN_RECEIVER_EMAIL,
+                modelName: uploadEscort.name,
+                mediaType: "photos",
+                escortId: uploadEscort.escortId,
+            })
+        }
+
+
+
 
         return response.status(200).json({
             message: "Gallery updated successfully",
@@ -2565,8 +2588,17 @@ export async function uploadVideoscontroller(request, response) {
                 type: "VERIFICATION",
                 title: "New gallery videos uploaded",
                 message: `${updatedEscort.name} has uploaded a gallery videos and is waiting for approval.`,
-                link: `/viewescortprofile/${updatedEscort._id}`
+                link: `/dashboard/pending-escort-media/${updatedEscort._id}`
             });
+        }
+
+        if (uploadEscort.status === "Active" && uploadEscort.isVerified) {
+            await sendMediaUploadNotification({
+                email: process.env.ADMIN_RECEIVER_EMAIL,
+                modelName: uploadEscort.name,
+                mediaType: "videos",
+                escortId: uploadEscort.escortId,
+            })
         }
 
         return response.status(200).json({
@@ -3344,7 +3376,7 @@ export async function fetchCitySliderEscorts(request, response) {
                     isVerified: 1,
                     adverties_category: 1,
                     rateFrom: 1,
-                    infmty:1,
+                    infmty: 1,
                     last_login_date: 1,
                     available: 1,
                     availability_start: 1,

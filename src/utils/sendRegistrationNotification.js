@@ -450,3 +450,125 @@ export const sendPrioritySupportReplyEmail = async ({
     throw error;
   }
 };
+
+
+// Send Media Upload notification to admin
+export const sendMediaUploadNotification = async ({
+  email,
+  modelName,
+  mediaType,
+  escortId,
+}) => {
+  const isValidEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  if (!isValidEmail(email)) {
+    console.log(`Invalid admin email: ${email} - skipping`);
+    return;
+  }
+
+  const mediaLabel = {
+    avatar: "Profile Image",
+    gallery: "Gallery Photo",
+    video: "Gallery Video",
+  };
+
+  const uploadedMedia = mediaLabel[mediaType] || "Media";
+
+  const adminDashboardUrl = process.env.ADMIN_DASHBOARD_URL;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background-color:#f9f9f9;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="padding:40px 0;">
+  <tr>
+    <td align="center">
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:460px;background:#ffffff;border-radius:12px;border:1px solid #eeeeee;overflow:hidden;">
+
+        <tr>
+          <td height="5" style="background-color:#00A68F;"></td>
+        </tr>
+
+        <tr>
+          <td style="padding:35px 40px 10px;text-align:center;">
+            <h1 style="margin:0;color:#00A68F;font-size:24px;font-weight:800;letter-spacing:1px;">
+              GREENE VELVET
+            </h1>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:20px 40px 40px;text-align:center;">
+            <h2 style="margin:0 0 12px;color:#1a1a1a;font-size:20px;font-weight:600;">
+              New Media Uploaded
+            </h2>
+
+            <p style="margin:0 0 20px;color:#555555;font-size:15px;line-height:24px;">
+              Hello Admin, <strong>${modelName}</strong> has uploaded new media to Greene Velvet.
+            </p>
+
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background:#f8f8f8;border-radius:8px;text-align:left;">
+              <tr>
+                <td style="padding:12px 16px;color:#666666;font-size:14px;">Escort ID</td>
+                <td style="padding:12px 16px;color:#222222;font-size:14px;font-weight:600;">${escortId}</td>
+              </tr>
+              <tr>
+                <td style="padding:12px 16px;color:#666666;font-size:14px;">Media Type</td>
+                <td style="padding:12px 16px;color:#222222;font-size:14px;font-weight:600;">${uploadedMedia}</td>
+              </tr>
+              <tr>
+                <td style="padding:12px 16px;color:#666666;font-size:14px;">Review Status</td>
+                <td style="padding:12px 16px;color:#b77900;font-size:14px;font-weight:600;">Pending Review</td>
+              </tr>
+            </table>
+
+            <div style="margin:30px 0;">
+              <a href="${adminDashboardUrl}"
+                 style="display:inline-block;background-color:#00A68F;color:#ffffff;padding:16px 32px;font-size:16px;font-weight:700;text-decoration:none;border-radius:8px;">
+                Review Uploaded Media
+              </a>
+            </div>
+
+            <p style="margin:20px 0 0;color:#888888;font-size:13px;line-height:20px;">
+              This is an automated notification. Please log in to the admin dashboard to review the uploaded media.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:25px 40px;background-color:#fcfcfc;border-top:1px solid #eeeeee;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#aaaaaa;line-height:18px;">
+              © ${new Date().getFullYear()} <b>Greene Velvet</b> All rights reserved.<br>
+              Australia's Exclusive Premium Escort Directory Platform.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+`;
+
+  try {
+    await sgMail.send({
+      to: email,
+      from: `"GREENE VELVET" <${process.env.SENDER_EMAIL}>`,
+      subject: `New Media Uploaded: ${modelName} - ${uploadedMedia}`,
+      html,
+    });
+
+    console.log(`Media upload notification sent to ${email}`);
+  } catch (error) {
+    console.error(
+      `Media notification email not sent to ${email}:`,
+      error.response?.body || error.message
+    );
+  }
+};
