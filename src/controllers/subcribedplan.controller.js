@@ -3,6 +3,7 @@ import axios from "axios";
 import subcribedModel from "../models/subcribedplanModel.js";
 import EscortModel from "../models/escortModel.js";
 import SubscriptionModel from "../models/subscriptionModel.js";
+import { runAutoBoostScheduler } from "../Cron/runAutoBoostScheduler.js";
 
 
 const activePaymentStatuses = [
@@ -639,24 +640,45 @@ export const nowPaymentsWebhook = async (request, response) => {
             // ACTIVATE ESCORT SUBSCRIPTION
             // ========================================
 
+
+            const autoBoosts = Number(plan.limits?.autoBoosts ?? 0);
+            const boostCycleDays = Number(plan.limits?.boostCycleDays ?? 28);
+
             await EscortModel.findByIdAndUpdate(
                 userId, {
-                    subscriptionActive: true,
-                    subscriptionStatus: "active",
-                    subscriptionplanexpiry: subscriptionExpiry,
-                    currentSubscription: plan._id,
+                    $set: {
+                        subscriptionActive: true,
+                        subscriptionStatus: "active",
+                        subscriptionplanexpiry: subscriptionExpiry,
+                        currentSubscription: plan._id,
 
+                        "boost.subscriptionPlanBoost": autoBoosts,
+                        "boost.subscriptionPlanBoostExpiry": new Date(
+                            subscriptionStart.getTime() + 28 * 24 * 60 * 60 * 1000
+                        ),
+                        "boost.boostCycleDays": boostCycleDays,
+                        "boost.subscriptionBoostIntervalDays": autoBoosts > 0 ? boostCycleDays / autoBoosts : 0,
+                        "boost.nextSubscriptionBoostAt": null
+                    },
                     $addToSet: {
                         subscribedplans: payment._id
                     },
-
-                    "boost.subscriptionPlanBoost": Number(plan.limits?.autoBoosts ?? 0),
-                    "boost.subscriptionPlanBoostExpiry": new Date(
-                        subscriptionStart.getTime() + 28 * 24 * 60 * 60 * 1000
-                    ),
-                    "boost.boostCycleDays": Number(plan.limits?.boostCycleDays ?? 0),
+                    $inc: {
+                        "boost.totalBoost": autoBoosts
+                    }
                 }
             );
+
+
+            await runAutoBoostScheduler();
+
+
+
+
+
+
+
+
 
             console.log(
                 "Subscription activated:",

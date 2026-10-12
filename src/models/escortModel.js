@@ -304,6 +304,15 @@ const EscortSchema = new mongoose.Schema({
             type: Date,
             default: null
         },
+        subscriptionBoostIntervalDays: {
+            type: Number,
+            default: 0
+        },
+        nextSubscriptionBoostAt: {
+            type: Date,
+            default: null
+        },
+
     },
 
     //---- Weekly Elite ----//

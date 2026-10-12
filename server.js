@@ -6,6 +6,7 @@ import { Server } from "socket.io";
 import app from "./src/app.js";
 import connectDB from "./src/config/db.js";
 import { autoTourStatusCron } from "./src/Cron/autoTourStatusCron.js";
+import { startAutoBoostScheduler } from "./src/Cron/runAutoBoostScheduler.js";
 import { handleChatSockets } from "./src/socket/chatSocket.js";
 const PORT = process.env.PORT || 8080;
 
@@ -63,6 +64,7 @@ const startServer = async () => {
         await connectDB();
         server.listen(PORT, () => {
             console.log(`🚀 Server running with Socket.IO on port ${PORT}`);
+            startAutoBoostScheduler();
             autoTourStatusCron();
         });
     } catch (error) {
