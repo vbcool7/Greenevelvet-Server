@@ -14,6 +14,7 @@ import {
     getAllExtraPlans,
     getAllPurchasedExtraPlans,
     getSelectExtraPlan,
+    manualProfileBoost,
     oneTimeUpdateEscort,
     updateExtraPlan,
 } from "../controllers/extra.controller.js";
@@ -42,6 +43,9 @@ extraRouter.post("/extra-nowpayments-webhook", express.raw({
 extraRouter.get("/fetch-escort-extra-purchase-plan", protect(["Escort"]), fetchEscortExtraPurchasePlan);
 
 extraRouter.post("/boost-profile", protect(["Escort"]), boostProfile);
+
+extraRouter.post("/manual-profile-boost", protect(["Escort"]), manualProfileBoost);
+
 
 
 extraRouter.get("/fetch-all-extra-purchase-plan", protect(["Escort"]), fetchEscortAllPurchasedExtraPlan);

@@ -1274,6 +1274,90 @@ export const boostProfile = async (request, response) => {
     }
 };
 
+// Manual boost profile , fetch data from escort db 
+export const manualProfileBoost = async (request, response) => {
+    try {
+        const userId = request?.user?._id;
+
+        if (!userId) {
+            return response.status(401).json({
+                message: "User not authenticated",
+                success: false,
+                error: true
+            });
+        }
+
+        const escort = await EscortModel.findById(userId);
+
+        if (!escort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+
+        // =====================================================
+        // MANUAL BOOST - EXTRA PLAN ONLY
+        // =====================================================
+
+        const extraBoosts = Number(
+            escort.boost?.extraPlanBoost || 0
+        );
+
+        const totalBoosts = Number(
+            escort.boost?.totalBoost || 0
+        );
+
+        if (extraBoosts <= 0 || totalBoosts <= 0) {
+            return response.status(400).json({
+                message: "No extra boosts available. Please purchase a boost.",
+                success: false,
+                error: true
+            });
+        }
+
+        // =====================================================
+        // DEDUCT EXTRA BOOST
+        // =====================================================
+
+        escort.boost.extraPlanBoost = extraBoosts - 1;
+        escort.boost.totalBoost = totalBoosts - 1;
+        escort.boost.profileBoostExpiry = null;
+
+        // Keep existing boost fields in sync
+        escort.boostSource = "extra";
+        escort.isBoosted = true;
+        escort.boostedAt = new Date();
+        escort.boostExpiry = null;
+
+        await escort.save();
+
+        return response.status(200).json({
+            message: "Profile boosted successfully",
+            success: true,
+            error: false,
+            boostSource: "extra",
+            remainingBoosts: escort.boost.extraPlanBoost,
+            totalBoosts: escort.boost.totalBoost,
+        });
+
+    } catch (error) {
+        console.error(
+            "PROFILE BOOST ERROR:",
+            error?.message
+        );
+
+        return response.status(500).json({
+            message: "Failed to boost your profile",
+            success: false,
+            error: true
+        });
+    }
+};
+
+
 
 // fetch Escort My All Purchased Extra Plan
 
