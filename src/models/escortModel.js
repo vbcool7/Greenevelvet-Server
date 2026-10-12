@@ -260,6 +260,80 @@ const EscortSchema = new mongoose.Schema({
 
     /*=================== EXTRA PLAN ====================*/
 
+    //---- Avalability ----//
+
+    avalability: {
+        totalAvailability: {
+            type: Number,
+            default: 0
+        },
+        availabilityStart: {
+            type: Date,
+            default: null
+        },
+        availabilityEnd: {
+            type: Date,
+            default: null
+        },
+    },
+
+    //---- Boost ----//
+
+    boost: {
+        totalBoost: {
+            type: Number,
+            default: 0
+        },
+        extraPlanBoost: {
+            type: Number,
+            default: 0
+        },
+        subscriptionPlanBoost: {
+            type: Number,
+            default: 0
+        },
+        subscriptionPlanBoostExpiry: {
+            type: Date,
+            default: null
+        },
+        boostCycleDays: {
+            type: Number,
+            default: 0
+        },
+        profileBoostExpiry: {
+            type: Date,
+            default: null
+        },
+    },
+
+    //---- Weekly Elite ----//
+
+    weeklyElite: {
+        totalWeeklyElite: {
+            type: Number,
+            default: 0
+        },
+        weeklyEliteExpiry: {
+            type: Date,
+            default: null
+        },
+    },
+
+    //---- Monthly Elite ----//
+
+    monthlyElite: {
+        totalMonthlyElite: {
+            type: Number,
+            default: 0
+        },
+        monthlyEliteExpiry: {
+            type: Date,
+            default: null
+        },
+    },
+
+    //============================================== //
+
     extraPlanSubscriptions: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "ExtraPlanSubscription"
@@ -385,7 +459,7 @@ const EscortSchema = new mongoose.Schema({
         },
         status: {
             type: String,
-            enum: ['Pending', 'Approved', 'Rejected',],
+            enum: ['Pending', 'Approved', 'Rejected', ],
             default: 'Pending'
         }
     },

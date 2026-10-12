@@ -644,10 +644,17 @@ export const nowPaymentsWebhook = async (request, response) => {
                     subscriptionActive: true,
                     subscriptionStatus: "active",
                     subscriptionplanexpiry: subscriptionExpiry,
-                    currentSubscription: freeSubscription._id,
+                    currentSubscription: plan._id,
+
                     $addToSet: {
                         subscribedplans: payment._id
-                    }
+                    },
+
+                    "boost.subscriptionPlanBoost": Number(plan.limits?.autoBoosts ?? 0),
+                    "boost.subscriptionPlanBoostExpiry": new Date(
+                        subscriptionStart.getTime() + 28 * 24 * 60 * 60 * 1000
+                    ),
+                    "boost.boostCycleDays": Number(plan.limits?.boostCycleDays ?? 0),
                 }
             );
 
@@ -655,6 +662,8 @@ export const nowPaymentsWebhook = async (request, response) => {
                 "Subscription activated:",
                 userId
             );
+
+            //--------------- Total Spot count down ------------//
 
             if (plan.discountedPrice === 0) {
                 // FREE PLAN
@@ -1393,19 +1402,17 @@ export const fetchEscortAllPurchasedPlan = async (request, response) => {
             },
             {
                 $addFields: {
-                    isCurrentPlan: currentPlanObjectId ?
-                        {
-                            $cond: [{
-                                    $eq: [
-                                        "$_id",
-                                        currentPlanObjectId
-                                    ]
-                                },
-                                1,
-                                0
-                            ]
-                        } :
-                        0
+                    isCurrentPlan: currentPlanObjectId ? {
+                        $cond: [{
+                                $eq: [
+                                    "$_id",
+                                    currentPlanObjectId
+                                ]
+                            },
+                            1,
+                            0
+                        ]
+                    } : 0
                 }
             },
             {

@@ -14,6 +14,7 @@ import {
     getAllExtraPlans,
     getAllPurchasedExtraPlans,
     getSelectExtraPlan,
+    oneTimeUpdateEscort,
     updateExtraPlan,
 } from "../controllers/extra.controller.js";
 
@@ -46,5 +47,9 @@ extraRouter.post("/boost-profile", protect(["Escort"]), boostProfile);
 extraRouter.get("/fetch-all-extra-purchase-plan", protect(["Escort"]), fetchEscortAllPurchasedExtraPlan);
 
 extraRouter.get("/get-all-purchased-extra-plans", protect(["Admin"]), getAllPurchasedExtraPlans);
+
+
+
+extraRouter.patch("/one-time-escort-update", oneTimeUpdateEscort);
 
 export default extraRouter;

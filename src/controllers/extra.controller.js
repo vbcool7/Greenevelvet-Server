@@ -7,6 +7,9 @@ import axios from "axios";
 import SubscriptionModel from "../models/subscriptionModel.js";
 
 import ExtraPlanSubscriptionModel from "../models/extraPlanSubscriptionModel.js";
+import {
+    response
+} from "express";
 
 
 
@@ -626,14 +629,68 @@ export const activateExtraPlan = async ({
 
     await extraPayment.save();
 
-    await EscortModel.findByIdAndUpdate(
-        extraPayment.userId, {
-            $addToSet: {
-                extraPlanSubscriptions: extraPayment._id
-            }
+    const escortUpdate = {
+        $addToSet: {
+            extraPlanSubscriptions: extraPayment._id
         }
-    );
+    };
+
+    // Availability: add purchased credits 
+    if (plan.planType === "availability") {
+        escortUpdate.$inc = {
+            "avalability.totalAvailability": plan.totalSlots
+        };
+    }
+
+    // Boost Profile: add purchased boost credits 
+    else if (plan.planType === "boost-profile") {
+        escortUpdate.$inc = {
+            "boost.totalBoost": plan.totalSlots,
+            "boost.extraPlanBoost": plan.totalSlots
+        };
+    }
+
+    // Weekly Elite: add purchased credits 
+    else if (plan.planType === "weekly-elite") {
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 7);
+
+        escortUpdate.$inc = {
+            "weeklyElite.totalWeeklyElite": plan.totalSlots
+        };
+
+        escortUpdate.$set = {
+            "weeklyElite.weeklyEliteExpiry": expiryDate
+        };
+    }
+
+
+    // Monthly Elite: add purchased credits 
+    else if (plan.planType === "monthly-elite") {
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 30);
+
+        escortUpdate.$inc = {
+            "monthlyElite.totalMonthlyElite": plan.totalSlots
+        };
+
+        escortUpdate.$set = {
+            "monthlyElite.monthlyEliteExpiry": expiryDate
+        };
+    }
+
+    const updatedEscort = await EscortModel.findByIdAndUpdate(
+        extraPayment.userId, escortUpdate, {
+            new: true,
+        });
+
+
+    if (!updatedEscort) {
+        throw new Error("Escort not found while activating extra plan");
+    }
 };
+
+
 
 // extra nowPayment webHook call
 export const extranowPaymentsWebhook = async (request, response) => {
@@ -1106,7 +1163,7 @@ export const boostProfile = async (request, response) => {
         // =====================================================
 
         const PROFILE_BOOST_DURATION =
-            24 * 60 * 60 * 1000; // 24 Hours
+            30 * 24 * 60 * 60 * 1000; // 24 Hours
 
         const profileBoostExpiry = new Date(
             now.getTime() + PROFILE_BOOST_DURATION
@@ -1921,3 +1978,47 @@ export const getAllPurchasedExtraPlans = async (request, response) => {
         });
     }
 };
+
+
+
+
+export const oneTimeUpdateEscort = async (req, res) => {
+
+    const subscriptionStart = new Date();
+
+    const updatedEscort = await EscortModel.updateOne({
+        escortId: "ES-12"
+    }, {
+        $set: {
+            // Availability
+            "avalability.totalAvailability": 10,
+            "avalability.availabilityStart": null,
+            "avalability.availabilityEnd": null,
+
+            // Boost
+            "boost.totalBoost": 15,
+            "boost.extraPlanBoost": 10,
+            "boost.subscriptionPlanBoost": 5,
+            "boost.subscriptionPlanBoostExpiry": new Date(subscriptionStart.getTime() + 28 * 24 * 60 * 60 * 1000),
+
+            "boost.boostCycleDays": 28,
+            "boost.profileBoostExpiry": null,
+
+            // Weekly Elite
+            "weeklyElite.totalWeeklyElite": 0,
+            "weeklyElite.weeklyEliteExpiry": null,
+
+            // Monthly Elite
+            "monthlyElite.totalMonthlyElite": 0,
+            "monthlyElite.monthlyEliteExpiry": null
+        }
+    });
+
+    return res.status(200).json({
+        success: true,
+        message: "Escort ES-12 updated successfully",
+        result: updatedEscort
+    });
+
+
+}
