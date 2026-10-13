@@ -260,9 +260,9 @@ const EscortSchema = new mongoose.Schema({
 
     /*=================== EXTRA PLAN ====================*/
 
-    //---- Avalability ----//
+    //---- Availability ----//
 
-    avalability: {
+    availability: {
         totalAvailability: {
             type: Number,
             default: 0

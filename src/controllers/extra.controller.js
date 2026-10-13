@@ -638,7 +638,7 @@ export const activateExtraPlan = async ({
     // Availability: add purchased credits 
     if (plan.planType === "availability") {
         escortUpdate.$inc = {
-            "avalability.totalAvailability": plan.totalSlots
+            "availability.totalAvailability": plan.totalSlots
         };
     }
 
@@ -1798,9 +1798,9 @@ export const oneTimeUpdateEscort = async (req, res) => {
     }, {
         $set: {
             // Availability
-            "avalability.totalAvailability": 10,
-            "avalability.availabilityStart": null,
-            "avalability.availabilityEnd": null,
+            "availability.totalAvailability": 10,
+            "availability.availabilityStart": null,
+            "availability.availabilityEnd": null,
 
             // Boost
             "boost.totalBoost": 15,
@@ -1941,25 +1941,25 @@ export const startAvailability = async (request, response) => {
 
         const escort = await EscortModel.findOneAndUpdate({
             _id: userId,
-            "avalability.totalAvailability": {
+            "availability.totalAvailability": {
                 $gt: 0
             },
             $or: [{
-                    "avalability.availabilityEnd": null
+                    "availability.availabilityEnd": null
                 },
                 {
-                    "avalability.availabilityEnd": {
+                    "availability.availabilityEnd": {
                         $lte: now
                     }
                 }
             ]
         }, {
             $inc: {
-                "avalability.totalAvailability": -1
+                "availability.totalAvailability": -1
             },
             $set: {
-                "avalability.availabilityStart": now,
-                "avalability.availabilityEnd": availabilityEnd
+                "availability.availabilityStart": now,
+                "availability.availabilityEnd": availabilityEnd
             }
         }, {
             new: true
@@ -1977,9 +1977,9 @@ export const startAvailability = async (request, response) => {
             message: "You are now available for 30 minutes",
             success: true,
             error: false,
-            totalAvailability: escort.avalability.totalAvailability,
-            availabilityStart: escort.avalability.availabilityStart,
-            availabilityEnd: escort.avalability.availabilityEnd
+            totalAvailability: escort.availability.totalAvailability,
+            availabilityStart: escort.availability.availabilityStart,
+            availabilityEnd: escort.availability.availabilityEnd
         });
 
     } catch (error) {
