@@ -1406,7 +1406,10 @@ export async function getIncompleteRegistration(request, response) {
                     $lte: 6
                 }
             })
-            .select("-password");
+            .select("-password")
+            .sort({
+                createdAt: -1
+            });
 
         return response.status(200).json({
             success: true,
@@ -3033,15 +3036,11 @@ export async function verifyUploadImages(request, response) {
                 senderModel: "Admin",
                 type: "VERIFICATION",
                 title: status === "Approved" ?
-                    "Gallery Photo Approved" :
-                    status === "Rejected" ?
-                    "Gallery Photo Rejected" :
-                    "Gallery Photo Status Updated",
+                    "Gallery Photo Approved" : status === "Rejected" ?
+                    "Gallery Photo Rejected" : "Gallery Photo Status Updated",
                 message: status === "Approved" ?
-                    "Your gallery photo has been approved by the admin." :
-                    status === "Rejected" ?
-                    "Your gallery photo has been rejected by the admin. Please upload another photo." :
-                    "Your gallery photo status has been updated by the admin.",
+                    "Your gallery photo has been approved by the admin." : status === "Rejected" ?
+                    "Your gallery photo has been rejected by the admin. Please upload another photo." : "Your gallery photo status has been updated by the admin.",
                 link: "/modeldashboard/profile"
             });
         }
@@ -3076,15 +3075,11 @@ export async function verifyUploadImages(request, response) {
                 senderModel: "Admin",
                 type: "VERIFICATION",
                 title: status === "Approved" ?
-                    "Gallery Video Approved" :
-                    status === "Rejected" ?
-                    "Gallery Video Rejected" :
-                    "Gallery Video Status Updated",
+                    "Gallery Video Approved" : status === "Rejected" ?
+                    "Gallery Video Rejected" : "Gallery Video Status Updated",
                 message: status === "Approved" ?
-                    "Your gallery video has been approved by the admin." :
-                    status === "Rejected" ?
-                    "Your gallery video has been rejected by the admin. Please upload another video." :
-                    "Your gallery video status has been updated by the admin.",
+                    "Your gallery video has been approved by the admin." : status === "Rejected" ?
+                    "Your gallery video has been rejected by the admin. Please upload another video." : "Your gallery video status has been updated by the admin.",
                 link: "/modeldashboard/profile"
             });
         }
