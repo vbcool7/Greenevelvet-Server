@@ -3404,12 +3404,12 @@ export async function fetchCitySliderEscorts(request, response) {
                     isFaceBlurred: 1,
                     "avatar.url": 1,
                     "avatar.status": 1,
-                    availability,
-                    boost,
-                    isBoosted,
-                    boostedAt,
-                    weeklyElite,
-                    monthlyElite,
+                    availability: 1,
+                    boost: 1,
+                    isBoosted: 1,
+                    boostedAt: 1,
+                    weeklyElite: 1,
+                    monthlyElite: 1,
                 }
             }
         ]);
@@ -3431,7 +3431,7 @@ export async function fetchCitySliderEscorts(request, response) {
         console.log("City Slider escorts rfetching error ", error);
 
         return response.status(500).json({
-            message: `Fetching available ${selectedCity} city escort failed!`,
+            message: `Fetching available ${city} city escort failed!`,
             error: true,
             success: false
         });

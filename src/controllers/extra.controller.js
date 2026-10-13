@@ -1826,8 +1826,6 @@ export const oneTimeUpdateEscort = async (req, res) => {
         message: "Escort ES-12 updated successfully",
         result: updatedEscort
     });
-
-
 }
 
 
