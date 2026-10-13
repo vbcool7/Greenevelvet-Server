@@ -14,7 +14,7 @@ import {
 
 
 
-// create plan
+//----------------------------- create plan ----------------------------//
 export const createExtraPlan = async (request, response) => {
     try {
         const {
@@ -297,7 +297,7 @@ export const getSelectExtraPlan = async (request, response) => {
 };
 
 
-// create Extra Plan Transaction
+//-------------------------------- create Extra Plan Transaction -------------------------------------//
 export const createExtraPlanTransaction = async (request, response) => {
     try {
 
@@ -691,7 +691,6 @@ export const activateExtraPlan = async ({
 };
 
 
-
 // extra nowPayment webHook call
 export const extranowPaymentsWebhook = async (request, response) => {
 
@@ -1081,282 +1080,6 @@ export const fetchEscortExtraPurchasePlan = async (request, response) => {
         });
     }
 };
-
-
-
-export const ReUsableController = async (request, response) => {
-    try {
-        const userId = request?.user?._id;
-
-        if (!userId) {
-            return response.status(401).json({
-                message: "User not authenticated",
-                success: false,
-                error: true
-            });
-        }
-        const escort = await EscortModel
-            .findById(userId)
-            .populate("currentSubscription")
-            .populate("extraPlanSubscriptions");
-
-        if (!escort) {
-            return response.status(404).json({
-                message: "Escort not found",
-                success: false,
-                error: true
-            });
-        }
-
-
-    } catch (error) {
-        console.error(
-            "PROFILE BOOST ERROR:",
-            error?.message
-        );
-
-        return response.status(500).json({
-            message: "Failed to bbost your profile",
-            success: false,
-            error: true
-        });
-    }
-}
-
-// Boost profile (next isko escort profile ko update karna h )
-export const boostProfile = async (request, response) => {
-    try {
-        const userId = request?.user?._id;
-
-        if (!userId) {
-            return response.status(401).json({
-                message: "User not authenticated",
-                success: false,
-                error: true
-            });
-        }
-
-        const escort = await EscortModel
-            .findById(userId)
-            .populate("currentSubscription")
-            .populate("extraPlanSubscriptions");
-
-        if (!escort) {
-            return response.status(404).json({
-                message: "Escort not found",
-                success: false,
-                error: true
-            });
-        }
-
-        const currentPlan = escort.currentSubscription;
-
-        const extraBoostPlan =
-            escort.extraPlanSubscriptions?.find(
-                (plan) => plan.planType === "boost-profile"
-            );
-
-        const now = new Date();
-
-        // =====================================================
-        // PROFILE BOOST DURATION
-        // =====================================================
-
-        const PROFILE_BOOST_DURATION =
-            30 * 24 * 60 * 60 * 1000; // 24 Hours
-
-        const profileBoostExpiry = new Date(
-            now.getTime() + PROFILE_BOOST_DURATION
-        );
-
-        // =====================================================
-        // 1. SUBSCRIPTION BOOST
-        // =====================================================
-
-        const subscriptionRemainingBoosts =
-            Number(
-                currentPlan?.limits?.remainingBoosts || 0
-            );
-
-        const subscriptionBoostExpiry =
-            currentPlan?.limits?.boostExpiry;
-
-        const hasValidSubscriptionBoost =
-            subscriptionRemainingBoosts > 0 &&
-            subscriptionBoostExpiry &&
-            new Date(subscriptionBoostExpiry) > now;
-
-        if (hasValidSubscriptionBoost) {
-
-            currentPlan.limits.remainingBoosts =
-                subscriptionRemainingBoosts - 1;
-
-            await currentPlan.save();
-
-            escort.boostSource = "subscription";
-            escort.isBoosted = true;
-            escort.boostedAt = now;
-            escort.boostExpiry = profileBoostExpiry;
-
-            await escort.save();
-
-            return response.status(200).json({
-                message: "Profile boosted successfully",
-                success: true,
-                error: false,
-
-                boostSource: "subscription",
-
-                remainingBoosts: currentPlan.limits.remainingBoosts,
-
-                boostExpiry: profileBoostExpiry
-            });
-        }
-
-        // =====================================================
-        // 2. PURCHASED / EXTRA BOOST
-        // =====================================================
-
-        const extraRemainingBoosts =
-            Number(
-                extraBoostPlan?.remainingCredits || 0
-            );
-
-        if (extraRemainingBoosts > 0) {
-
-            extraBoostPlan.remainingCredits =
-                extraRemainingBoosts - 1;
-
-            await extraBoostPlan.save();
-
-            escort.boostSource = "extra";
-            escort.isBoosted = true;
-            escort.boostedAt = now;
-            escort.boostExpiry = profileBoostExpiry;
-
-            await escort.save();
-
-            return response.status(200).json({
-                message: "Profile boosted successfully",
-                success: true,
-                error: false,
-
-                boostSource: "extra",
-
-                remainingBoosts: extraBoostPlan.remainingCredits,
-
-                boostExpiry: profileBoostExpiry
-            });
-        }
-
-        // =====================================================
-        // 3. NO BOOST AVAILABLE
-        // =====================================================
-
-        return response.status(400).json({
-            message: "No boosts available. Please purchase a boost.",
-            success: false,
-            error: true
-        });
-
-    } catch (error) {
-
-        console.error(
-            "PROFILE BOOST ERROR:",
-            error?.message
-        );
-
-        return response.status(500).json({
-            message: "Failed to boost your profile",
-            success: false,
-            error: true
-        });
-    }
-};
-
-// Manual boost profile , fetch data from escort db 
-export const manualProfileBoost = async (request, response) => {
-    try {
-        const userId = request?.user?._id;
-
-        if (!userId) {
-            return response.status(401).json({
-                message: "User not authenticated",
-                success: false,
-                error: true
-            });
-        }
-
-        const escort = await EscortModel.findById(userId);
-
-        if (!escort) {
-            return response.status(404).json({
-                message: "Escort not found",
-                success: false,
-                error: true
-            });
-        }
-
-
-        // =====================================================
-        // MANUAL BOOST - EXTRA PLAN ONLY
-        // =====================================================
-
-        const extraBoosts = Number(
-            escort.boost?.extraPlanBoost || 0
-        );
-
-        const totalBoosts = Number(
-            escort.boost?.totalBoost || 0
-        );
-
-        if (extraBoosts <= 0 || totalBoosts <= 0) {
-            return response.status(400).json({
-                message: "No extra boosts available. Please purchase a boost.",
-                success: false,
-                error: true
-            });
-        }
-
-        // =====================================================
-        // DEDUCT EXTRA BOOST
-        // =====================================================
-
-        escort.boost.extraPlanBoost = extraBoosts - 1;
-        escort.boost.totalBoost = totalBoosts - 1;
-        escort.boost.profileBoostExpiry = null;
-
-        // Keep existing boost fields in sync
-        escort.boostSource = "extra";
-        escort.isBoosted = true;
-        escort.boostedAt = new Date();
-        escort.boostExpiry = null;
-
-        await escort.save();
-
-        return response.status(200).json({
-            message: "Profile boosted successfully",
-            success: true,
-            error: false,
-            boostSource: "extra",
-            remainingBoosts: escort.boost.extraPlanBoost,
-            totalBoosts: escort.boost.totalBoost,
-        });
-
-    } catch (error) {
-        console.error(
-            "PROFILE BOOST ERROR:",
-            error?.message
-        );
-
-        return response.status(500).json({
-            message: "Failed to boost your profile",
-            success: false,
-            error: true
-        });
-    }
-};
-
 
 
 // fetch Escort My All Purchased Extra Plan
@@ -2064,7 +1787,7 @@ export const getAllPurchasedExtraPlans = async (request, response) => {
 };
 
 
-
+//-----------------------Test controller -----------------------//
 
 export const oneTimeUpdateEscort = async (req, res) => {
 
@@ -2106,3 +1829,166 @@ export const oneTimeUpdateEscort = async (req, res) => {
 
 
 }
+
+
+
+
+//------------------------------------------------------------------//
+//----------------- Active Extra Plan Controller -------------------//
+//------------------------------------------------------------------//
+
+// Manual Boost Profile , fetch data from escort db 
+export const manualProfileBoost = async (request, response) => {
+    try {
+        const userId = request?.user?._id;
+
+        if (!userId) {
+            return response.status(401).json({
+                message: "User not authenticated",
+                success: false,
+                error: true
+            });
+        }
+
+        const escort = await EscortModel.findById(userId);
+
+        if (!escort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+
+        // =====================================================
+        // MANUAL BOOST - EXTRA PLAN ONLY
+        // =====================================================
+
+        const extraBoosts = Number(
+            escort.boost?.extraPlanBoost || 0
+        );
+
+        const totalBoosts = Number(
+            escort.boost?.totalBoost || 0
+        );
+
+        if (extraBoosts <= 0 || totalBoosts <= 0) {
+            return response.status(400).json({
+                message: "No extra boosts available. Please purchase a boost.",
+                success: false,
+                error: true
+            });
+        }
+
+        // =====================================================
+        // DEDUCT EXTRA BOOST
+        // =====================================================
+
+        escort.boost.extraPlanBoost = extraBoosts - 1;
+        escort.boost.totalBoost = totalBoosts - 1;
+        escort.boost.profileBoostExpiry = null;
+
+        // Keep existing boost fields in sync
+        escort.boostSource = "extra";
+        escort.isBoosted = true;
+        escort.boostedAt = new Date();
+        escort.boostExpiry = null;
+
+        await escort.save();
+
+        return response.status(200).json({
+            message: "Profile boosted successfully",
+            success: true,
+            error: false,
+            boostSource: "extra",
+            remainingBoosts: escort.boost.extraPlanBoost,
+            totalBoosts: escort.boost.totalBoost,
+        });
+
+    } catch (error) {
+        console.error(
+            "PROFILE BOOST ERROR:",
+            error?.message
+        );
+
+        return response.status(500).json({
+            message: "Failed to boost your profile",
+            success: false,
+            error: true
+        });
+    }
+};
+
+
+// Manual activate availability 
+export const startAvailability = async (request, response) => {
+    try {
+        const userId = request?.user?._id;
+
+        if (!userId) {
+            return response.status(401).json({
+                message: "User not authenticated",
+                success: false,
+                error: true
+            });
+        }
+
+        const now = new Date();
+        const availabilityEnd = new Date(
+            now.getTime() + 30 * 60 * 1000
+        );
+
+        const escort = await EscortModel.findOneAndUpdate({
+            _id: userId,
+            "avalability.totalAvailability": {
+                $gt: 0
+            },
+            $or: [{
+                    "avalability.availabilityEnd": null
+                },
+                {
+                    "avalability.availabilityEnd": {
+                        $lte: now
+                    }
+                }
+            ]
+        }, {
+            $inc: {
+                "avalability.totalAvailability": -1
+            },
+            $set: {
+                "avalability.availabilityStart": now,
+                "avalability.availabilityEnd": availabilityEnd
+            }
+        }, {
+            new: true
+        });
+
+        if (!escort) {
+            return response.status(400).json({
+                message: "No availability slots available or availability is already active",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: "You are now available for 30 minutes",
+            success: true,
+            error: false,
+            totalAvailability: escort.avalability.totalAvailability,
+            availabilityStart: escort.avalability.availabilityStart,
+            availabilityEnd: escort.avalability.availabilityEnd
+        });
+
+    } catch (error) {
+        console.error("START AVAILABILITY ERROR:", error?.message);
+
+        return response.status(500).json({
+            message: "Failed to start availability",
+            success: false,
+            error: true
+        });
+    }
+};

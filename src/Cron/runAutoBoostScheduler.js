@@ -70,7 +70,7 @@ export const runAutoBoostScheduler = async () => {
                     boostSource: "subscription",
                     isBoosted: true,
                     boostedAt: now,
-                    boostExpiry: null
+                    boostExpiry: nextBoostAt
                 }
             }, {
                 new: true
