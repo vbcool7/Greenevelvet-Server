@@ -3248,6 +3248,13 @@ export async function fetchHomeSliderEscorts(request, response) {
         isFaceBlurred
         avatar.url
         avatar.status
+        availability
+        boost
+        isBoosted
+        boostedAt
+        weeklyElite
+        monthlyElite
+
     `).lean();
 
         return response.status(200).json({
@@ -3396,7 +3403,13 @@ export async function fetchCitySliderEscorts(request, response) {
                     availability_start: 1,
                     isFaceBlurred: 1,
                     "avatar.url": 1,
-                    "avatar.status": 1
+                    "avatar.status": 1,
+                    availability,
+                    boost,
+                    isBoosted,
+                    boostedAt,
+                    weeklyElite,
+                    monthlyElite,
                 }
             }
         ]);
