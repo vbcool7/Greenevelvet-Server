@@ -6,32 +6,61 @@ import ExtraPlanSubscriptionModel from "../models/extraPlanSubscriptionModel.js"
 
 // get all escorts data
 export async function getEscortsdata(request, response) {
-
     try {
-
-        const escorts = await EscortModel.find({
+        const [
+            verifiedEscorts,
+            pendingEscorts,
+            incompleteRegistrations,
+            subscribedEscorts,
+        ] = await Promise.all([
+            // 1. Verified Escorts
+            EscortModel.find({
                 isVerified: true,
-            })
-            .select("-password");
+            }).select("-password"),
+
+            // 2. Pending Escorts
+            EscortModel.find({
+                status: "Pending",
+                lastCompletedStep: 7,
+            }).select("-password"),
+
+            // 3. Incomplete Registrations
+            EscortModel.find({
+                status: "Pending",
+                lastCompletedStep: {
+                    $gte: 1,
+                    $lte: 6
+                },
+            }).select("-password"),
+
+            // 4. Subscribed Escorts
+            EscortModel.find({
+                subscriptionplanexpiry: {
+                    $gt: new Date()
+                },
+            }).select("-password"),
+        ]);
 
         return response.status(200).json({
             success: true,
             error: false,
-            message: `fetch Escort data successfully`,
-            data: escorts || [],
+            message: "Fetch escort data successfully",
+            data: {
+                verifiedEscorts: verifiedEscorts || [],
+                pendingEscorts: pendingEscorts || [],
+                incompleteRegistrations: incompleteRegistrations || [],
+                subscribedEscorts: subscribedEscorts || [],
+            },
         });
-
     } catch (error) {
         console.log("get escorts data error ", error);
 
         return response.status(500).json({
             success: false,
             error: true,
-            message: error.message || error
+            message: error.message || error,
         });
-
     }
-
 }
 
 // get all escorts data
