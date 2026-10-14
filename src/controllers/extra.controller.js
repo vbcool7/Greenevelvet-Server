@@ -1812,12 +1812,12 @@ export const oneTimeUpdateEscort = async (req, res) => {
             "boost.profileBoostExpiry": null,
 
             // Weekly Elite
-            "weeklyElite.totalWeeklyElite": 0,
-            "weeklyElite.weeklyEliteExpiry": null,
+            "weeklyElite.totalWeeklyElite": 1,
+            "weeklyElite.weeklyEliteExpiry": subscriptionStart,
 
             // Monthly Elite
-            "monthlyElite.totalMonthlyElite": 0,
-            "monthlyElite.monthlyEliteExpiry": null
+            "monthlyElite.totalMonthlyElite": 1,
+            "monthlyElite.monthlyEliteExpiry": subscriptionStart,
         }
     });
 
