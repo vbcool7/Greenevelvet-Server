@@ -3186,6 +3186,100 @@ export async function fetchescortServicescontroller(request, response) {
     }
 }
 
+//----------------------------------------- < Fetch Available, Escort Weekly and Monthly Elite > --------------------------------------------------------//
+
+
+export const getExtraPlannedEscorts = async (req, res) => {
+    try {
+        const now = new Date();
+
+        const escortFields = `
+                            escortId
+                            name
+                            age
+                            city
+                            rateFrom
+                            account_type
+                            adverties_category
+                            avatar
+                            isVerified
+                            infmty
+                        `;
+
+        const baseFilter = {
+            status: "Active",
+            isVerified: true,
+            "avatar.status": "Approved",
+            "avatar.url": {
+                $ne: ""
+            },
+        };
+
+        const [
+            availableEscorts,
+            escortOfTheWeek,
+            escortOfTheMonth,
+        ] = await Promise.all([
+            // Available Escorts
+            EscortModel.find({
+                ...baseFilter,
+                "availability.availabilityStart": {
+                    $lte: now
+                },
+                "availability.availabilityEnd": {
+                    $gt: now
+                },
+            })
+            .select(escortFields)
+            .lean(),
+
+            // Escort of the Week
+            EscortModel.find({
+                ...baseFilter,
+                "weeklyElite.totalWeeklyElite": {
+                    $gt: 0
+                },
+                "weeklyElite.weeklyEliteExpiry": {
+                    $gt: now
+                },
+            })
+            .select(escortFields)
+            .lean(),
+
+            // Escort of the Month
+            EscortModel.find({
+                ...baseFilter,
+                "monthlyElite.totalMonthlyElite": {
+                    $gt: 0
+                },
+                "monthlyElite.monthlyEliteExpiry": {
+                    $gt: now
+                },
+            })
+            .select(escortFields)
+            .lean(),
+        ]);
+
+        return res.status(200).json({
+            success: true,
+            message: "Home banner escorts fetched successfully",
+            data: {
+                availableEscorts,
+                escortOfTheWeek,
+                escortOfTheMonth,
+            },
+        });
+    } catch (error) {
+        console.error("getHomeBannerEscorts error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch home banner escorts",
+        });
+    }
+};
+
+
 // ==========================================================< Fetch Home and City Slider Escorts >====================================================================
 
 // country escorts for home page banner

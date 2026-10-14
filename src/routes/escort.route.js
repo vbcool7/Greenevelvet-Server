@@ -47,6 +47,7 @@ import {
     fetchSelectedNewsTourComments,
     fetchSelectNewsTourController,
     getEscortContact,
+    getExtraPlanedEscorts,
     getToursByDate,
     hideEscortProfile,
     logoutEscortcontroller,
@@ -165,7 +166,7 @@ escortRouter.post("/delete-rate", deleteRate);
 
 escortRouter.get("/fetch-escorts", verifiedEscortcontroller)
 
-// fecthing escorts by filters
+// fecthing Home, City, and Advanced escorts by filters
 escortRouter.get("/filter-home-escorts", fetchFilterHomescortscontroller);
 escortRouter.get("/filter-city-escorts", fetchFiltercityescortscontroller);
 escortRouter.get("/advance-search-escorts", advanceSearchController)
@@ -210,9 +211,12 @@ escortRouter.patch("/update-tour", updateTour);
 escortRouter.post("/delete-tour", deleteTour);
 escortRouter.patch("/cancel-tour", cancelTour);
 
-//  Home Slider Escorts
+//  Home and City Slider Escorts
 escortRouter.get("/fetch-home-slider-escorts", fetchHomeSliderEscorts);
 escortRouter.get("/fetch-city-slider-escorts", fetchCitySliderEscorts);
+
+// Home Available , Weekly and Monthly Elite escort
+escortRouter.get("/fetch-home-banner-escorts", getExtraPlanedEscorts);
 
 
 // get Escort contact link by Decryp mobile
