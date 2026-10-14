@@ -3333,9 +3333,13 @@ export async function fetchHomeSliderEscorts(request, response) {
         // City filter only if city is provided
         if (city) filter.city = city;
 
-        console.log("request filter: ", filter);
+        // console.log("request filter: ", filter);
 
-        const escorts = await EscortModel.find(filter).select(`
+        const escorts = await EscortModel.find(filter)
+            .sort({
+                createdAt: -1
+            })
+            .select(`
         escortId
         name
         city
@@ -3430,6 +3434,14 @@ export async function fetchCitySliderEscorts(request, response) {
             {
                 $match: {
                     ...filter
+                }
+            },
+
+            //  crated 1st 
+
+            {
+                $sort: {
+                    createdAt: -1
                 }
             },
 
@@ -3666,6 +3678,7 @@ export async function fetchFiltercityescortscontroller(request, response) {
             {
                 $match: query
             },
+
 
             // 2. Current subscription fetch
             {
@@ -3964,7 +3977,9 @@ export async function fetchFiltercityescortscontroller(request, response) {
             {
                 $sort: {
                     searchPosition: 1,
-                    boostedAt: -1
+                    boostedAt: -1,
+                    isBoosted: -1,
+                    createdAt: -1,
                 }
             }
         ]);
@@ -4367,6 +4382,8 @@ export async function fetchFilterHomescortscontroller(request, response) {
                 {
                     $sort: {
                         searchPosition: 1,
+                        isBoosted: -1,
+                        createdAt: -1,
                         boostedAt: -1
                     }
                 },
@@ -4884,6 +4901,8 @@ export const advanceSearchController = async (request, response) => {
         pipeline.push({
             $sort: {
                 searchPosition: 1,
+                isBoosted: -1,
+                createdAt: -1,
                 boostedAt: -1,
                 _id: 1
             }
