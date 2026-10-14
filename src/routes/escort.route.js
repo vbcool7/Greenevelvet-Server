@@ -216,7 +216,7 @@ escortRouter.get("/fetch-home-slider-escorts", fetchHomeSliderEscorts);
 escortRouter.get("/fetch-city-slider-escorts", fetchCitySliderEscorts);
 
 // Home Available , Weekly and Monthly Elite escort
-escortRouter.get("/fetch-home-banner-escorts", getExtraPlanedEscorts);
+escortRouter.get("/get-extra-planed-escorts", getExtraPlanedEscorts);
 
 
 // get Escort contact link by Decryp mobile

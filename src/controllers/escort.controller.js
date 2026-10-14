@@ -3189,7 +3189,7 @@ export async function fetchescortServicescontroller(request, response) {
 //----------------------------------------- < Fetch Available, Escort Weekly and Monthly Elite > --------------------------------------------------------//
 
 
-export const getExtraPlannedEscorts = async (req, res) => {
+export const getExtraPlanedEscorts = async (req, res) => {
     try {
         const now = new Date();
 
