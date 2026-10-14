@@ -4928,6 +4928,8 @@ export const advanceSearchController = async (request, response) => {
         pipeline.push({
             $sort: {
                 searchPosition: 1,
+                isBoosted: -1,
+                createdAt: -1,
                 boostedAt: -1,
                 _id: 1
             }
