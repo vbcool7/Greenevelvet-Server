@@ -3196,6 +3196,8 @@ export const getExtraPlanedEscorts = async (req, res) => {
 
         const now = new Date();
 
+        const hourAgo = new Date(now.getTime() - 4 * 60 * 60 * 1000);
+
         const escortFields = `
                             escortId
                             name
@@ -3231,7 +3233,7 @@ export const getExtraPlanedEscorts = async (req, res) => {
                     $lte: now
                 },
                 "availability.availabilityEnd": {
-                    $gt: now
+                    $gt: hourAgo
                 },
             })
             .select(escortFields)
