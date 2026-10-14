@@ -3191,6 +3191,9 @@ export async function fetchescortServicescontroller(request, response) {
 
 export const getExtraPlanedEscorts = async (req, res) => {
     try {
+
+        console.log("getExtraPlanedEscorts api call");
+        
         const now = new Date();
 
         const escortFields = `
