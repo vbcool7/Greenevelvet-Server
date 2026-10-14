@@ -1794,7 +1794,7 @@ export const oneTimeUpdateEscort = async (req, res) => {
     const subscriptionStart = new Date();
 
     const updatedEscort = await EscortModel.updateOne({
-        escortId: "ES-12"
+        escortId: "ES-162"
     }, {
         $set: {
             // Availability
@@ -1823,7 +1823,7 @@ export const oneTimeUpdateEscort = async (req, res) => {
 
     return res.status(200).json({
         success: true,
-        message: "Escort ES-12 updated successfully",
+        message: "Escort ES-162 updated successfully",
         result: updatedEscort
     });
 }
