@@ -3210,6 +3210,9 @@ export const getExtraPlanedEscorts = async (req, res) => {
                             isVerified
                             infmty
                             isFaceBlurred
+                            availability
+                            weeklyElite
+                            monthlyElite
                         `;
 
         const baseFilter = {
