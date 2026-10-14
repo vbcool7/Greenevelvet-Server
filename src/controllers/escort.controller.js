@@ -3207,6 +3207,7 @@ export const getExtraPlanedEscorts = async (req, res) => {
                             avatar
                             isVerified
                             infmty
+                            isFaceBlurred
                         `;
 
         const baseFilter = {
