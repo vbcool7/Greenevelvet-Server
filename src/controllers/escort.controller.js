@@ -3212,10 +3212,10 @@ export const getExtraPlanedEscorts = async (req, res) => {
         const baseFilter = {
             status: "Active",
             isVerified: true,
-            // "avatar.status": "Approved",
-            // "avatar.url": {
-            //     $ne: ""
-            // },
+            "avatar.status": "Approved",
+            "avatar.url": {
+                $ne: ""
+            },
         };
 
         const [

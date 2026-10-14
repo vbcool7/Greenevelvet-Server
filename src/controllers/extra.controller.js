@@ -1813,11 +1813,11 @@ export const oneTimeUpdateEscort = async (req, res) => {
 
             // Weekly Elite
             "weeklyElite.totalWeeklyElite": 1,
-            "weeklyElite.weeklyEliteExpiry": subscriptionStart,
+            "weeklyElite.weeklyEliteExpiry": new Date(subscriptionStart.getTime() + 7 * 24 * 60 * 60 * 1000),
 
             // Monthly Elite
             "monthlyElite.totalMonthlyElite": 1,
-            "monthlyElite.monthlyEliteExpiry": subscriptionStart,
+            "monthlyElite.monthlyEliteExpiry": new Date(subscriptionStart.getTime() + 30 * 24 * 60 * 60 * 1000),
         }
     });
 
