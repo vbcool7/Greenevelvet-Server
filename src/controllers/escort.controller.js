@@ -3503,7 +3503,7 @@ export async function fetchCitySliderEscorts(request, response) {
             }] : []),
             {
                 $project: {
-                    _id: 0,
+                    _id: 1,
                     escortId: 1,
                     name: 1,
                     city: 1,
