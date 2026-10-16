@@ -10,7 +10,7 @@ import {
     fetchEscortStories,
     fetchStoryEscorts,
 
-} from "../controllers/story.controller";
+} from "../controllers/story.controller.js";
 
 const storyRouter = Router();
 
