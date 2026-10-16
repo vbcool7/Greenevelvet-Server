@@ -8,7 +8,7 @@ import {
 
 
 // Create Story
-export const createStoryController = async (req, res) => {
+export const createStory = async (req, res) => {
     let uploadedPublicId = null;
     let uploadedResourceType = "image";
 
