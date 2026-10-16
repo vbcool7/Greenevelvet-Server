@@ -168,7 +168,7 @@ export const createStory = async (req, res) => {
 
 
 // fetch created active story escorts
-export const fetchCreatedActiveStoryEscorts = async (req, res) => {
+export const fetchStoryEscorts = async (req, res) => {
     try {
         const now = new Date();
 
@@ -220,7 +220,7 @@ export const fetchCreatedActiveStoryEscorts = async (req, res) => {
 
 
 // fetch selected escort story
-export const fetchSelectedEscortActiveStories = async (req, res) => {
+export const fetchEscortStories = async (req, res) => {
     try {
         const {
             id
@@ -286,7 +286,7 @@ export const fetchSelectedEscortActiveStories = async (req, res) => {
 
 
 // deleted selected story
-export const deleteSelectedStoryController = async (req, res) => {
+export const deleteStory = async (req, res) => {
     try {
         const {
             storyId

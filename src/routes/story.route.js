@@ -6,17 +6,18 @@ import {
 } from "../middleware/auth.js";
 import {
     createStory,
-    deleteSelectedStoryController,
-    fetchCreatedActiveStoryEscorts,
-    fetchSelectedEscortActiveStories
+    deleteStory,
+    fetchEscortStories,
+    fetchStoryEscorts,
+
 } from "../controllers/story.controller";
 
 const storyRouter = Router();
 
 storyRouter.post("/create-story", protect(["Escort"]), createStory);
-storyRouter.get("/get-active-story-escorts", fetchCreatedActiveStoryEscorts);
-storyRouter.get("/get-escort-stories", fetchSelectedEscortActiveStories);
-storyRouter.delete("/delete-story", protect(["Escort"]), deleteSelectedStoryController);
+storyRouter.get("/get-active-story-escorts", fetchStoryEscorts);
+storyRouter.get("/get-escort-stories", fetchEscortStories);
+storyRouter.delete("/delete-story", protect(["Escort"]), deleteStory);
 
 
 export default storyRouter;

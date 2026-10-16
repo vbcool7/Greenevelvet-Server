@@ -19,6 +19,7 @@ import notificationRouter from "./routes/notification.route.js";
 import chatRouter from "./routes/chatRoutes.js";
 import prioritySupportRouter from "./routes/prioritySupport.route.js";
 import reviewRouter from "./routes/review.route.js";
+import storyRouter from "./routes/story.route.js";
 
 const app = express();
 
@@ -80,6 +81,7 @@ app.use('/notification', notificationRouter);
 app.use('/chat', chatRouter);
 app.use('/support', prioritySupportRouter);
 app.use('/review', reviewRouter);
+app.use('/story', storyRouter);
 
 
 /* Global Error Handler */
