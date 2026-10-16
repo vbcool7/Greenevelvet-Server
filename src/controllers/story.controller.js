@@ -168,19 +168,31 @@ export const createStory = async (req, res) => {
 
 
 // fetch created active story escorts
+
 export const fetchStoryEscorts = async (req, res) => {
     try {
         const now = new Date();
 
-        // Find escort IDs that have active, unexpired stories
-        const activeStoryEscortIds = await StoryModel.distinct("escortId", {
-            status: "active",
-            expiresAt: {
-                $gt: now
+        // Count active, unexpired stories for each escort
+        const activeStoryCounts = await StoryModel.aggregate([{
+                $match: {
+                    status: "active",
+                    expiresAt: {
+                        $gt: now
+                    },
+                },
             },
-        });
+            {
+                $group: {
+                    _id: "$escortId",
+                    activeStoryCount: {
+                        $sum: 1
+                    },
+                },
+            },
+        ]);
 
-        if (!activeStoryEscortIds.length) {
+        if (!activeStoryCounts.length) {
             return res.status(200).json({
                 success: true,
                 error: false,
@@ -189,7 +201,19 @@ export const fetchStoryEscorts = async (req, res) => {
             });
         }
 
-        // Fetch only basic details of eligible escorts
+        // Create a map of escort ID and active story count
+        const storyCountMap = new Map(
+            activeStoryCounts.map((item) => [
+                item._id.toString(),
+                item.activeStoryCount,
+            ])
+        );
+
+        const activeStoryEscortIds = activeStoryCounts.map(
+            (item) => item._id
+        );
+
+        // Fetch eligible escorts
         const escorts = await EscortModel.find({
                 _id: {
                     $in: activeStoryEscortIds
@@ -201,11 +225,17 @@ export const fetchStoryEscorts = async (req, res) => {
             .select("_id name city avatar escortId")
             .lean();
 
+        // Add active story count to each escort
+        const data = escorts.map((escort) => ({
+            ...escort,
+            activeStoryCount: storyCountMap.get(escort._id.toString()) || 0,
+        }));
+
         return res.status(200).json({
             success: true,
             error: false,
             message: "Active story escorts fetched successfully.",
-            data: escorts,
+            data,
         });
     } catch (error) {
         console.error("Fetch active story escorts error:", error);
@@ -217,6 +247,7 @@ export const fetchStoryEscorts = async (req, res) => {
         });
     }
 };
+
 
 
 // fetch selected escort story
