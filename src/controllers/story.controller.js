@@ -168,7 +168,6 @@ export const createStory = async (req, res) => {
 
 
 // fetch created active story escorts
-
 export const fetchStoryEscorts = async (req, res) => {
     try {
         const now = new Date();
