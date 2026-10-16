@@ -4,7 +4,7 @@ import EscortModel from "../models/escortModel.js";
 import ClientModel from "../models/clientModel.js";
 import {
     uploadMediaCloudinary
-} from "../utils/uploadMediaCloudinary";
+} from "../utils/uploadMediaCloudinary.js";
 
 
 // Create Story
