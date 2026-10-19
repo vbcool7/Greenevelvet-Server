@@ -267,12 +267,12 @@ export const fetchEscortStories = async (req, res) => {
         const now = new Date();
 
         // Verify that the escort is approved and active
-        const escort = await EscortModel.findById({
+        const escort = await EscortModel.findOne({
             _id: id,
             isVerified: true,
             status: "Active",
             "avatar.status": "Approved",
-        }).select("_id");
+        }).select("_id name city avatar escortId");
 
         if (!escort) {
             return res.status(404).json({
@@ -284,7 +284,7 @@ export const fetchEscortStories = async (req, res) => {
 
         // Fetch only active and unexpired stories for this escort
         const stories = await StoryModel.find({
-                id,
+                escortId: id,
                 status: "active",
                 expiresAt: {
                     $gt: now
