@@ -1794,17 +1794,17 @@ export const oneTimeUpdateEscort = async (req, res) => {
     const subscriptionStart = new Date();
 
     const updatedEscort = await EscortModel.updateOne({
-        escortId: "ES-162"
+        escortId: "ES-12" // ES-162
     }, {
         $set: {
             // Availability
-            "availability.totalAvailability": 10,
+            "availability.totalAvailability": 100,
             "availability.availabilityStart": null,
             "availability.availabilityEnd": null,
 
             // Boost
             "boost.totalBoost": 15,
-            "boost.extraPlanBoost": 10,
+            "boost.extraPlanBoost": 100,
             "boost.subscriptionPlanBoost": 5,
             "boost.subscriptionPlanBoostExpiry": new Date(subscriptionStart.getTime() + 28 * 24 * 60 * 60 * 1000),
 
@@ -1813,17 +1813,17 @@ export const oneTimeUpdateEscort = async (req, res) => {
 
             // Weekly Elite
             "weeklyElite.totalWeeklyElite": 1,
-            "weeklyElite.weeklyEliteExpiry": new Date(subscriptionStart.getTime() + 7 * 24 * 60 * 60 * 1000),
+            "weeklyElite.weeklyEliteExpiry": new Date(subscriptionStart.getTime() +24 * 7 * 24 * 60 * 60 * 1000),
 
             // Monthly Elite
             "monthlyElite.totalMonthlyElite": 1,
-            "monthlyElite.monthlyEliteExpiry": new Date(subscriptionStart.getTime() + 30 * 24 * 60 * 60 * 1000),
+            "monthlyElite.monthlyEliteExpiry": new Date(subscriptionStart.getTime() + 6 * 30 * 24 * 60 * 60 * 1000),
         }
     });
 
     return res.status(200).json({
         success: true,
-        message: "Escort ES-162 updated successfully",
+        message: "Escort ES-12 updated successfully",
         result: updatedEscort
     });
 }
