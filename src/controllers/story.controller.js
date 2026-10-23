@@ -5,6 +5,7 @@ import ClientModel from "../models/clientModel.js";
 import {
     uploadMediaCloudinary
 } from "../utils/uploadMediaCloudinary.js";
+import cloudinary from "../config/cloudinary.js";
 
 
 // Create Story
