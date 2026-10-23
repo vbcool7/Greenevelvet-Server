@@ -1396,7 +1396,7 @@ export async function verifiedEscortcontroller(request, response) {
     }
 }
 
-
+// fetch incomplete registered escorts
 export async function getIncompleteRegistration(request, response) {
 
     try {
@@ -3194,6 +3194,22 @@ export async function sendRegistrationReminder(request, response) {
                 message: "Registration reminder email could not be sent.",
             });
         }
+
+
+        // Update escort email tracking after successful email send
+        await EscortModel.updateOne({
+            _id: user._id
+        }, {
+            $set: {
+                "incompleteProfileEmail.sendMail": true,
+                "incompleteProfileEmail.lastSentAt": new Date(),
+                "incompleteProfileEmail.lastSentAtStep": user.lastCompletedStep || 0,
+
+            },
+            $inc: {
+                "incompleteProfileEmail.sendCount": 1,
+            },
+        });
 
 
         return response.status(200).json({

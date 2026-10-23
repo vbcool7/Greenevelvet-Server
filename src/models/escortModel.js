@@ -635,6 +635,28 @@ const EscortSchema = new mongoose.Schema({
         type: String,
     },
 
+    // =====================< incomplete send email >==========================
+
+    incompleteProfileEmail: {
+        sendMail: {
+            type: Boolean,
+            default: false
+        },
+        lastSentAt: {
+            type: Date,
+            default: null
+        },
+        sendCount: {
+            type: Number,
+            default: 0
+        },
+        lastSentAtStep: {
+            type: Number,
+            default: null
+        },
+    },
+
+
 
 }, {
     timestamps: true
