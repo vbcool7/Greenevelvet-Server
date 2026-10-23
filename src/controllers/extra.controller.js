@@ -1803,7 +1803,7 @@ export const oneTimeUpdateEscort = async (req, res) => {
             "availability.availabilityEnd": null,
 
             // Boost
-            "boost.totalBoost": 15,
+            "boost.totalBoost": 105,
             "boost.extraPlanBoost": 100,
             "boost.subscriptionPlanBoost": 5,
             "boost.subscriptionPlanBoostExpiry": new Date(subscriptionStart.getTime() + 28 * 24 * 60 * 60 * 1000),
