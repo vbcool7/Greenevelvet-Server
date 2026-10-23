@@ -321,7 +321,10 @@ export const deleteStory = async (req, res) => {
         const {
             storyId
         } = req.params;
+
         const escortId = req.user?._id;
+
+        console.log("storyId and escortId  ", storyId, escortId)
 
         if (!escortId) {
             return res.status(401).json({
