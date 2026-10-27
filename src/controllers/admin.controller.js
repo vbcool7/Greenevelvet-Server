@@ -2960,7 +2960,7 @@ export async function verifyUploadImages(request, response) {
             : status === "Approved"
               ? "Your gallery photo has been approved by the admin."
               : "Your gallery photo status has been updated by the admin.",
-        link: "/modeldashboard/profile",
+        link: "/modeldashboard/gallery",
       });
     }
 
@@ -3021,7 +3021,7 @@ export async function verifyUploadImages(request, response) {
             : status === "Approved"
               ? "Your gallery video has been approved by the admin."
               : "Your gallery video status has been updated by the admin.",
-        link: "/modeldashboard/profile",
+        link: "/modeldashboard/gallery",
       });
     }
 
