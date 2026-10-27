@@ -2876,8 +2876,6 @@ export async function verifyUploadImages(request, response) {
           {
             $set: {
               pendingAvatar: {
-                url: "",
-                public_id: "",
                 status: "Rejected",
                 rejectionReason,
               },
@@ -2886,9 +2884,9 @@ export async function verifyUploadImages(request, response) {
           { new: true, runValidators: true },
         );
 
-        if (pendingAvatarPublicId) {
-          await deleteFromCloudinary(pendingAvatarPublicId);
-        }
+        // if (pendingAvatarPublicId) {
+        //   await deleteFromCloudinary(pendingAvatarPublicId);
+        // }
 
         await createAndSendNotification(request.app, {
           recipientId: updatedEscort._id,
