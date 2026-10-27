@@ -1,261 +1,267 @@
 import mongoose from "mongoose";
 
-const EscortSchema = new mongoose.Schema({
-
+const EscortSchema = new mongoose.Schema(
+  {
     /* ================= UserId ===================== */
     escortId: {
-        type: String,
-        unique: true,
-        index: true,
+      type: String,
+      unique: true,
+      index: true,
     },
 
     /* ================= BASIC DETAILS ================= */
     name: {
-        type: String,
-        required: [true, "Provide name"]
+      type: String,
+      required: [true, "Provide name"],
     },
     email: {
-        type: String,
-        unique: true,
-        required: [true, "Provide Email"],
-        lowercase: true
+      type: String,
+      unique: true,
+      required: [true, "Provide Email"],
+      lowercase: true,
     },
     password: {
-        type: String,
-        required: [true, "Provide password"],
-        select: false
+      type: String,
+      required: [true, "Provide password"],
+      select: false,
     },
     mobile: {
-        type: String,
+      type: String,
     },
     country: {
-        type: String,
+      type: String,
     },
     countryCode: {
-        type: String,
+      type: String,
     },
     city: {
-        type: String,
+      type: String,
     },
     additionalCities: {
-        type: [String],
-        default: []
+      type: [String],
+      default: [],
     },
     account_classification: {
-        type: String,
+      type: String,
     },
     account_type: {
-        type: String,
+      type: String,
     },
     adverties_category: {
-        type: String,
+      type: String,
     },
 
     role: {
-        type: String,
-        default: "Escort"
+      type: String,
+      default: "Escort",
     },
 
     /* ================= About and Highlights ================= */
     incall: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
 
     outcall: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
 
     infmty: {
-        type: Boolean,
-        default: false,
+      type: Boolean,
+      default: false,
     },
 
     rateFrom: {
-        type: Number
+      type: Number,
     },
 
     about: {
-        type: String,
-        default: ""
+      type: String,
+      default: "",
     },
 
     highlights: {
-        type: String,
-        default: ""
+      type: String,
+      default: "",
     },
 
-    address_details: [{
+    address_details: [
+      {
         type: mongoose.Schema.ObjectId,
-        ref: 'Address'
-    }],
-
+        ref: "Address",
+      },
+    ],
 
     /* ================= STATUS & VERIFICATION ================= */
     isEmailVerified: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
     emailVerifyToken: String,
 
     emailVerifyExpiry: Date,
 
     isMobileVerified: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
 
     lastCompletedStep: {
-        type: Number,
-        default: 0
+      type: Number,
+      default: 0,
     },
     /* ======================= Documents upload =========================== */
 
     verificationselfie: {
-        type: String
+      type: String,
     },
 
     selfieStatus: {
-        type: String,
-        enum: ["Pending", "Approved", "Rejected"],
+      type: String,
+      enum: ["Pending", "Approved", "Rejected"],
     },
 
     verificationgovtId: {
-        type: String
+      type: String,
     },
 
     govtId: {
-        type: String,
-        enum: ["Pending", "Approved", "Rejected"],
+      type: String,
+      enum: ["Pending", "Approved", "Rejected"],
     },
 
     hasAcceptedIdentity: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
-
 
     hasAcceptedDocsOwnership: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
     docsOwnershipAcceptedAt: {
-        type: Date
+      type: Date,
     },
     docsuploadStatus: {
-        type: String,
-        default: "Not uploaded"
+      type: String,
+      default: "Not uploaded",
     },
 
     status: {
-        type: String,
-        enum: ["Pending", "Active", "Inactive", "Suspended", "Rejected"],
-        default: "Pending"
+      type: String,
+      enum: ["Pending", "Active", "Inactive", "Suspended", "Rejected"],
+      default: "Pending",
     },
 
     isVerified: {
-        type: Boolean,
-        default: false,
+      type: Boolean,
+      default: false,
     },
 
     /* ============================== Hide / Visible ============================== */
     isVisible: {
-        type: Boolean,
-        default: true,
+      type: Boolean,
+      default: true,
     },
     onlineStatus: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
 
     last_login_date: {
-        type: Date,
-        default: "",
+      type: Date,
+      default: "",
     },
 
     searchableProfile: {
-        type: Boolean,
-        default: true
+      type: Boolean,
+      default: true,
     },
 
     contactVisible: {
-        type: Boolean,
-        default: true
+      type: Boolean,
+      default: true,
     },
 
     isOnline: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
     lastSeen: {
-        type: Date,
-        default: Date.now
+      type: Date,
+      default: Date.now,
     },
     currentSocketId: {
-        type: String,
-        default: null
+      type: String,
+      default: null,
     },
 
     /* ================= AVAILABILITY SYSTEM ================= */
     available: {
-        type: Boolean,
-        default: false,
+      type: Boolean,
+      default: false,
     },
 
-    availability_plan: [{
+    availability_plan: [
+      {
         type: mongoose.Schema.ObjectId,
-        ref: "Availability"
-    }],
+        ref: "Availability",
+      },
+    ],
     availability_start: {
-        type: Date,
-        default: null,
+      type: Date,
+      default: null,
     },
 
     availability_expiry: {
-        type: Date,
-        default: null
+      type: Date,
+      default: null,
     },
 
     numberOfAvailability: {
-        type: Number,
-        default: 0
+      type: Number,
+      default: 0,
     },
 
     /* ================= SUBSCRIPTION ================= */
     subscriptionActive: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
 
     currentSubscription: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "subcribedplans",
-        default: null
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "subcribedplans",
+      default: null,
     },
 
     subscriptionStatus: {
-        type: String,
-        default: "inactive"
+      type: String,
+      default: "inactive",
     },
 
-    subscribedplans: [{
+    subscribedplans: [
+      {
         type: mongoose.Schema.ObjectId,
-        ref: "subcribedplans"
-    }],
+        ref: "subcribedplans",
+      },
+    ],
 
     subscriptionplanexpiry: {
-        type: Date,
-        default: null
+      type: Date,
+      default: null,
     },
-    paymenthistory: [{
+    paymenthistory: [
+      {
         type: mongoose.Schema.ObjectId,
-        ref: "Payment"
-    }],
+        ref: "Payment",
+      },
+    ],
 
     totalAmountPaid: {
-        type: String,
-        default: null
+      type: String,
+      default: null,
     },
 
     /*=================== EXTRA PLAN ====================*/
@@ -263,309 +269,356 @@ const EscortSchema = new mongoose.Schema({
     //---- Availability ----//
 
     availability: {
-        totalAvailability: {
-            type: Number,
-            default: 0
-        },
-        availabilityStart: {
-            type: Date,
-            default: null
-        },
-        availabilityEnd: {
-            type: Date,
-            default: null
-        },
+      totalAvailability: {
+        type: Number,
+        default: 0,
+      },
+      availabilityStart: {
+        type: Date,
+        default: null,
+      },
+      availabilityEnd: {
+        type: Date,
+        default: null,
+      },
     },
 
     //---- Boost ----//
 
     boost: {
-        totalBoost: {
-            type: Number,
-            default: 0
-        },
-        extraPlanBoost: {
-            type: Number,
-            default: 0
-        },
-        subscriptionPlanBoost: {
-            type: Number,
-            default: 0
-        },
-        subscriptionPlanBoostExpiry: {
-            type: Date,
-            default: null
-        },
-        boostCycleDays: {
-            type: Number,
-            default: 0
-        },
-        profileBoostExpiry: {
-            type: Date,
-            default: null
-        },
-        subscriptionBoostIntervalDays: {
-            type: Number,
-            default: 0
-        },
-        nextSubscriptionBoostAt: {
-            type: Date,
-            default: null
-        },
-
+      totalBoost: {
+        type: Number,
+        default: 0,
+      },
+      extraPlanBoost: {
+        type: Number,
+        default: 0,
+      },
+      subscriptionPlanBoost: {
+        type: Number,
+        default: 0,
+      },
+      subscriptionPlanBoostExpiry: {
+        type: Date,
+        default: null,
+      },
+      boostCycleDays: {
+        type: Number,
+        default: 0,
+      },
+      profileBoostExpiry: {
+        type: Date,
+        default: null,
+      },
+      subscriptionBoostIntervalDays: {
+        type: Number,
+        default: 0,
+      },
+      nextSubscriptionBoostAt: {
+        type: Date,
+        default: null,
+      },
     },
 
     //---- Weekly Elite ----//
 
     weeklyElite: {
-        totalWeeklyElite: {
-            type: Number,
-            default: 0
-        },
-        weeklyEliteExpiry: {
-            type: Date,
-            default: null
-        },
+      totalWeeklyElite: {
+        type: Number,
+        default: 0,
+      },
+      weeklyEliteExpiry: {
+        type: Date,
+        default: null,
+      },
     },
 
     //---- Monthly Elite ----//
 
     monthlyElite: {
-        totalMonthlyElite: {
-            type: Number,
-            default: 0
-        },
-        monthlyEliteExpiry: {
-            type: Date,
-            default: null
-        },
+      totalMonthlyElite: {
+        type: Number,
+        default: 0,
+      },
+      monthlyEliteExpiry: {
+        type: Date,
+        default: null,
+      },
     },
 
     //============================================== //
 
-    extraPlanSubscriptions: [{
+    extraPlanSubscriptions: [
+      {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "ExtraPlanSubscription"
-    }],
+        ref: "ExtraPlanSubscription",
+      },
+    ],
 
     boostSource: {
-        type: String,
+      type: String,
     },
 
     isBoosted: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
 
     boostedAt: {
-        type: Date,
-        default: null,
+      type: Date,
+      default: null,
     },
 
     boostExpiry: {
-        type: Date,
-        default: null,
+      type: Date,
+      default: null,
     },
 
     /* ================= PASSWORD & OTP ================= */
     forgot_password: {
-        type: String,
-        default: null
+      type: String,
+      default: null,
     },
     forgot_password_expiry: {
-        type: Date,
-        default: null
+      type: Date,
+      default: null,
     },
     refresh_token: {
-        type: String,
-        default: ""
+      type: String,
+      default: "",
     },
 
     resetOtp: {
-        type: String,
-        default: null
+      type: String,
+      default: null,
     },
     otpResendTime: {
-        type: Date,
-        default: null
+      type: Date,
+      default: null,
     },
     otpAttempts: {
-        type: Number,
-        default: 0
+      type: Number,
+      default: 0,
     },
     otpExpiry: {
-        type: Date,
-        default: null
+      type: Date,
+      default: null,
     },
     changePassword: {
-        type: Date
+      type: Date,
     },
 
     /* ================= RELATIONS (REFERENCES) ================= */
-    bookings: [{
+    bookings: [
+      {
         type: mongoose.Schema.ObjectId,
-        ref: "Bookings"
-    }],
-    messages: [{
+        ref: "Bookings",
+      },
+    ],
+    messages: [
+      {
         type: mongoose.Schema.ObjectId,
-        ref: "Messages"
-    }],
-    reviews: [{
+        ref: "Messages",
+      },
+    ],
+    reviews: [
+      {
         type: mongoose.Schema.ObjectId,
-        ref: "Reviews"
-    }],
-    clients: [{
+        ref: "Reviews",
+      },
+    ],
+    clients: [
+      {
         type: mongoose.Schema.ObjectId,
-        ref: "client"
-    }],
-    blog: [{
+        ref: "client",
+      },
+    ],
+    blog: [
+      {
         type: mongoose.Schema.ObjectId,
-        ref: "blog"
-    }],
-    newsTour: [{
+        ref: "blog",
+      },
+    ],
+    newsTour: [
+      {
         type: mongoose.Schema.ObjectId,
-        ref: "newsandtour"
-    }],
-    notifications: [{
+        ref: "newsandtour",
+      },
+    ],
+    notifications: [
+      {
         type: mongoose.Schema.ObjectId,
-        ref: "Notifications"
-    }],
+        ref: "Notifications",
+      },
+    ],
     muteNotifications: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
-    rating: [{
+    rating: [
+      {
         type: mongoose.Schema.ObjectId,
-        ref: "Rating"
-    }],
+        ref: "Rating",
+      },
+    ],
 
     /* ================= SERVICES & RATES ================= */
 
-    services: [{
+    services: [
+      {
         type: mongoose.Schema.ObjectId,
-        ref: "Services"
-    }],
+        ref: "Services",
+      },
+    ],
 
-    rates: [{
+    rates: [
+      {
         type: mongoose.Schema.ObjectId,
-        ref: "Rates"
-    }],
-    tours: [{
+        ref: "Rates",
+      },
+    ],
+    tours: [
+      {
         type: mongoose.Schema.ObjectId,
-        ref: "tours"
-    }],
-
+        ref: "tours",
+      },
+    ],
 
     /* ================= GALLERY ================= */
     avatar: {
-        url: {
-            type: String,
-            default: ""
-        },
-        public_id: {
-            type: String,
-            default: ""
-        },
-        status: {
-            type: String,
-            enum: ['Pending', 'Approved', 'Rejected', ],
-            default: 'Pending'
-        }
+      url: {
+        type: String,
+        default: "",
+      },
+      public_id: {
+        type: String,
+        default: "",
+      },
+      status: {
+        type: String,
+        enum: ["Pending", "Approved", "Rejected"],
+        default: "Pending",
+      },
+      rejectionReason: {
+        type: String,
+        default: "",
+      },
     },
     pendingAvatar: {
-        url: {
-            type: String,
-            default: ""
-        },
-        public_id: {
-            type: String,
-            default: ""
-        },
-        status: {
-            type: String,
-            enum: ['Pending', 'Approved', 'Rejected'],
-            default: 'Pending'
-        }
+      url: {
+        type: String,
+        default: "",
+      },
+      public_id: {
+        type: String,
+        default: "",
+      },
+      status: {
+        type: String,
+        enum: ["Pending", "Approved", "Rejected"],
+        default: "Pending",
+      },
+      rejectionReason: {
+        type: String,
+        default: "",
+      },
     },
     isAvatarApproved: {
-        type: String,
-        enum: ['Pending', 'Approved', 'Rejected'],
-        default: 'Pending'
+      type: String,
+      enum: ["Pending", "Approved", "Rejected"],
+      default: "Pending",
     },
     hasAcceptedAvatarOwnership: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
     avatarOwnershipAcceptedAt: {
-        type: Date
+      type: Date,
     },
     isFaceBlurred: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
     gallery: {
-        photos: [{
-            public_id: {
-                type: String
-            },
-            url: {
-                type: String
-            },
-            status: {
-                type: String,
-                enum: ['Pending', 'Approved', 'Rejected'],
-                default: 'Pending'
-            }
-        }],
-        videos: [{
-            public_id: {
-                type: String
-            },
-            url: {
-                type: String
-            },
-            status: {
-                type: String,
-                enum: ['Pending', 'Approved', 'Rejected'],
-                default: 'Pending'
-            }
-        }]
+      photos: [
+        {
+          public_id: {
+            type: String,
+          },
+          url: {
+            type: String,
+          },
+          status: {
+            type: String,
+            enum: ["Pending", "Approved", "Rejected"],
+            default: "Pending",
+          },
+          rejectionReason: {
+            type: String,
+            default: "",
+          },
+        },
+      ],
+      videos: [
+        {
+          public_id: {
+            type: String,
+          },
+          url: {
+            type: String,
+          },
+          status: {
+            type: String,
+            enum: ["Pending", "Approved", "Rejected"],
+            default: "Pending",
+          },
+          rejectionReason: {
+            type: String,
+            default: "",
+          },
+        },
+      ],
     },
     hasAcceptedImageOwnership: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
     imageOwnershipAcceptedAt: {
-        type: Date
+      type: Date,
     },
     hasAcceptedVideoOwnership: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
     videoOwnershipAcceptedAt: {
-        type: Date
+      type: Date,
     },
 
     /* ================= ANALYTICS ================= */
     visits: {
-        type: Number,
-        default: 0
+      type: Number,
+      default: 0,
     },
 
     /* ================= FINANCIAL ================= */
-    tips: [{
+    tips: [
+      {
         type: mongoose.Schema.ObjectId,
-        ref: "Tips"
-    }],
-    earnings: [{
+        ref: "Tips",
+      },
+    ],
+    earnings: [
+      {
         type: mongoose.Schema.ObjectId,
-        ref: "Earnings"
-    }],
-    payout: [{
+        ref: "Earnings",
+      },
+    ],
+    payout: [
+      {
         type: mongoose.Schema.ObjectId,
-        ref: "Payouts"
-    }],
-
+        ref: "Payouts",
+      },
+    ],
 
     // =======================< details >=======================
     gender: String,
@@ -575,36 +628,35 @@ const EscortSchema = new mongoose.Schema({
     sexuality: String,
 
     showAge: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
 
     landline: String,
 
     displayLandNo: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
 
     displayContact: {
-        type: Boolean,
-        default: true
+      type: Boolean,
+      default: true,
     },
-
 
     website: String,
 
     social: String,
 
     preferredContact: {
-        phoneCall: {
-            type: Boolean,
-            default: false
-        },
-        sms: {
-            type: Boolean,
-            default: false
-        }
+      phoneCall: {
+        type: Boolean,
+        default: false,
+      },
+      sms: {
+        type: Boolean,
+        default: false,
+      },
     },
 
     // =======================< essentials >======================
@@ -620,57 +672,55 @@ const EscortSchema = new mongoose.Schema({
     // ======================< pefer >========================
 
     preferData: {
-        type: [String],
-        default: []
+      type: [String],
+      default: [],
     },
 
     // =====================< filetr >==========================
 
     escortFor: {
-        type: [String],
-        default: [],
+      type: [String],
+      default: [],
     },
 
     reason: {
-        type: String,
+      type: String,
     },
 
     // =====================< incomplete send email >==========================
 
     incompleteProfileEmail: {
-        sendMail: {
-            type: Boolean,
-            default: false
-        },
-        lastSentAt: {
-            type: Date,
-            default: null
-        },
-        sendCount: {
-            type: Number,
-            default: 0
-        },
-        lastSentAtStep: {
-            type: Number,
-            default: null
-        },
+      sendMail: {
+        type: Boolean,
+        default: false,
+      },
+      lastSentAt: {
+        type: Date,
+        default: null,
+      },
+      sendCount: {
+        type: Number,
+        default: 0,
+      },
+      lastSentAtStep: {
+        type: Number,
+        default: null,
+      },
     },
-
-
-
-}, {
-    timestamps: true
-});
-
+  },
+  {
+    timestamps: true,
+  },
+);
 
 EscortSchema.index({
-    role: 1,
-    country: 1,
-    isVerified: 1,
-    isVisible: 1,
-    status: 1
+  role: 1,
+  country: 1,
+  isVerified: 1,
+  isVisible: 1,
+  status: 1,
 });
 
-const EscortModel = mongoose.model("Escort", EscortSchema)
+const EscortModel = mongoose.model("Escort", EscortSchema);
 
 export default EscortModel;
