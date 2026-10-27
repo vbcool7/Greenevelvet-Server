@@ -2875,14 +2875,13 @@ export async function verifyUploadImages(request, response) {
           { escortId },
           {
             $set: {
-              pendingAvatar: {
-                status: "Rejected",
-                rejectionReason,
-              },
+              "pendingAvatar.status": "Rejected",
+              "pendingAvatar.rejectionReason": rejectionReason,
             },
           },
           { new: true, runValidators: true },
         );
+
 
         // if (pendingAvatarPublicId) {
         //   await deleteFromCloudinary(pendingAvatarPublicId);
