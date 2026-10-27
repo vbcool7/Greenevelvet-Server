@@ -1,0 +1,918 @@
+import bcryptjs from "bcryptjs";
+import crypto from "crypto";
+import jwt from "jsonwebtoken";
+import ClientModel from "../models/clientModel.js";
+import {
+    generatedclientId
+} from "../utils/generatedId.js";
+import uploadImageCloudinary from "../utils/uploadImageCloudinary.js";
+import EscortModel from "../models/escortModel.js";
+import {
+    sendVerificationEmail
+} from "../utils/emailService.js";
+import {
+    sendClientRegistrationNotification,
+    sendRegistrationNotification
+} from "../utils/sendRegistrationNotification.js";
+import {
+    encrypt
+} from "../utils/crypto.js";
+
+// client register controll
+export async function registerClientcontroller(request, response) {
+    try {
+        const {
+            name,
+            email,
+            password,
+            mobile
+        } = request.body;
+
+        if (!name || !email || !password || !mobile) {
+            return response.status(400).json({
+                message: "Provide name, email, password, mobile",
+                error: true,
+                success: false
+            });
+        }
+
+        const normalizedEmail = email.trim().toLowerCase();
+        const normalizedMobile = mobile.trim();
+
+        // =====================================================
+        // 1. CHECK EMAIL IN ESCORT
+        // =====================================================
+
+        const existingEscortEmail = await EscortModel.findOne({
+            email: normalizedEmail
+        });
+
+        if (existingEscortEmail) {
+            return response.status(409).json({
+                message: "This email is already registered as an Escort. You cannot register as a Client with this email.",
+                error: true,
+                success: false
+            });
+        }
+
+        // =====================================================
+        // 2. CHECK EXISTING CLIENT BY EMAIL
+        // =====================================================
+
+        const existingClient = await ClientModel.findOne({
+            email: normalizedEmail
+        });
+
+        // =====================================================
+        // EXISTING CLIENT
+        // =====================================================
+
+        if (existingClient) {
+
+            // -------------------------------------------------
+            // STEP 2 ALREADY COMPLETED
+            // -------------------------------------------------
+
+            if (
+                existingClient.lastCompletedStep === 2 ||
+                existingClient.isEmailVerified === true
+            ) {
+                return response.status(409).json({
+                    message: "This email is already registered.",
+                    error: true,
+                    success: false
+                });
+            }
+
+            // -------------------------------------------------
+            // STEP 1 COMPLETED, EMAIL VERIFICATION PENDING
+            // -------------------------------------------------
+
+            if (
+                existingClient.lastCompletedStep === 1 &&
+                existingClient.isEmailVerified === false
+            ) {
+
+                const token = crypto.randomBytes(32).toString("hex");
+
+                existingClient.emailVerifyToken = token;
+
+                existingClient.emailVerifyExpiry =
+                    new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+                await existingClient.save();
+
+                const verifyLink =
+                    `https://greenevelvet-server.onrender.com/client/verify-email?token=${token}`;
+
+                await sendVerificationEmail(
+                    existingClient.email,
+                    verifyLink,
+                    existingClient.clientId
+                );
+
+                return response.status(200).json({
+                    message: "Your registration is already submitted. A new email verification link has been sent to your email.",
+                    error: false,
+                    success: true,
+                    data: {
+                        email: existingClient.email,
+                        id: existingClient._id,
+                        lastCompletedStep: 1,
+                        verificationPending: true
+                    }
+                });
+            }
+
+            // -------------------------------------------------
+            // SAFETY FALLBACK
+            // -------------------------------------------------
+
+            return response.status(409).json({
+                message: "This email is already registered.",
+                error: true,
+                success: false
+            });
+        }
+
+        // =====================================================
+        // 3. CHECK MOBILE IN ESCORT
+        // =====================================================
+
+        const mobileEncrypted = "enc:" + encrypt(normalizedMobile);
+
+        const existingEscortMobile = await EscortModel.findOne({
+            mobile: mobileEncrypted
+        });
+
+        if (existingEscortMobile) {
+            return response.status(409).json({
+                message: "This mobile number is already registered.",
+                error: true,
+                success: false
+            });
+        }
+
+        // =====================================================
+        // 4. CHECK MOBILE IN CLIENT
+        // =====================================================
+
+        const existingClientMobile = await ClientModel.findOne({
+            mobile: normalizedMobile
+        });
+
+        if (existingClientMobile) {
+            return response.status(409).json({
+                message: "This mobile number is already registered.",
+                error: true,
+                success: false
+            });
+        }
+
+        // =====================================================
+        // 5. CREATE NEW CLIENT
+        // =====================================================
+
+        const clientId = await generatedclientId();
+
+        const token = crypto.randomBytes(32).toString("hex");
+
+        const salt = await bcryptjs.genSalt(10);
+
+        const hashPassword = await bcryptjs.hash(
+            password,
+            salt
+        );
+
+        const payload = {
+            clientId,
+            name,
+            email: normalizedEmail,
+            password: hashPassword,
+            mobile: normalizedMobile,
+
+            emailVerifyToken: token,
+
+            emailVerifyExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
+
+            isEmailVerified: false,
+
+            // STEP 1 COMPLETED
+            lastCompletedStep: 1
+        };
+
+        const newClient = new ClientModel(payload);
+
+        const save = await newClient.save();
+
+        // =====================================================
+        // 6. SEND VERIFICATION EMAIL
+        // =====================================================
+
+        const verifyLink =
+            `https://greenevelvet-server.onrender.com/client/verify-email?token=${token}`;
+
+        await sendVerificationEmail(
+            normalizedEmail,
+            verifyLink,
+            clientId
+        );
+
+        // =====================================================
+        // 7. ADMIN NOTIFICATION
+        // =====================================================
+
+        await sendClientRegistrationNotification({
+            email: process.env.ADMIN_RECEIVER_EMAIL,
+            modelName: name
+        });
+
+        // =====================================================
+        // 8. SUCCESS
+        // =====================================================
+
+        return response.status(200).json({
+            message: "Your details have been submitted successfully. Please check your email and click the verification link.",
+            error: false,
+            success: true,
+            data: {
+                email: save.email,
+                id: save._id,
+                lastCompletedStep: 1,
+                verificationPending: true
+            }
+        });
+
+    } catch (error) {
+
+        console.log("client registration error", error);
+
+        return response.status(500).json({
+            message: "Client registration failed!",
+            error: true,
+            success: false
+        });
+    }
+}
+
+// Client verify email controll
+export async function clientVerifyEmail(request, response) {
+    try {
+        const {
+            token
+        } = request.query;
+
+        const client = await ClientModel.findOne({
+            emailVerifyToken: token,
+            emailVerifyExpiry: {
+                $gt: Date.now()
+            },
+        }).select("+password");
+
+
+        if (!client) {
+
+            const expiredClient = await ClientModel.findOne({
+                emailVerifyToken: token
+            });
+
+            if (expiredClient) {
+                return response.redirect(
+                    `https://www.greenevelvet.com/link-expired/${expiredClient._id || ""}`
+                );
+            }
+
+            return response.redirect(
+                "https://www.greenevelvet.com/link-expired"
+            );
+        }
+
+
+        client.isEmailVerified = true;
+        client.emailVerifyToken = null;
+        client.emailVerifyExpiry = null;
+        client.lastCompletedStep = 2;
+
+        await client.save();
+
+
+        response.redirect(`https://www.greenevelvet.com/login`);
+
+
+    } catch (error) {
+        console.log("email verification error :", error);
+
+        return response.status(500).json({
+            message: "Email verification failed!",
+            success: false,
+            error: true,
+        })
+    }
+}
+
+// client logout controll
+export async function logoutClientcontroller(request, response) {
+    try {
+        const {
+            clientId,
+            role
+        } = request.body;
+
+        if (!clientId || !role) {
+            return response.status(400).json({
+                message: "Invalid token",
+                success: false,
+                error: true
+            });
+        }
+
+        const client = await ClientModel.findOne({
+            clientId: clientId
+        });
+
+        if (!client) {
+            return response.status(404).json({
+                message: "user not found",
+                success: false,
+                error: true,
+            })
+
+        }
+        client.refresh_token = "";
+        client.onlineStatus = false;
+        await client.save();
+
+        return response.status(200).json({
+            message: "Logged out successfully",
+            success: true,
+            error: false,
+        })
+
+    } catch (error) {
+        return response.status(500).json({
+            message: "Internal server error",
+            success: false,
+            error: true,
+        })
+    }
+}
+
+// fetch client details
+export async function fetchClientcontroller(request, response) {
+    try {
+        const {
+            clientId
+        } = request.query;
+
+        if (!clientId) {
+            return response.status(400).json({
+                message: "provide clientId",
+                success: false,
+                error: true
+            })
+        }
+
+        const clientDetails = await ClientModel.findOne({
+            clientId
+        }).select("-password");
+
+        if (clientDetails.length === 0) {
+            return response.status(400).json({
+                message: "client not found",
+                success: false,
+                error: true
+            })
+        }
+
+
+        return response.status(200).json({
+            message: "fetched success",
+            success: true,
+            error: false,
+            data: clientDetails
+        })
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || error,
+            success: false,
+            error: true
+        })
+    }
+}
+
+// upload Avatar
+export async function uploadAvatarcontroller(request, response) {
+    try {
+        const {
+            clientId
+        } = request.body;
+
+        if (!clientId) {
+            return response.status(400).json({
+                message: "clientId required",
+                success: false,
+                error: true
+            })
+        }
+
+        if (!request.files?.avatar) {
+            return response.status(401).json({
+                message: "avatar required",
+                success: false,
+                error: true
+            })
+        }
+
+        const avatarUpload = await uploadImageCloudinary(request.files.avatar[0], "profileImg/avatar");
+
+        const uploadClient = await ClientModel.findOneAndUpdate({
+            clientId
+        }, {
+            avatar: avatarUpload.secure_url,
+
+        }, {
+            new: true
+        });
+
+        if (!uploadClient) {
+            return response.status(404).json({
+                message: "Client not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: "avatar uploaded successfully",
+            success: true,
+            error: false,
+            data: {
+                avatar: avatarUpload.secure_url,
+            },
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || error,
+            error: true,
+            success: false
+        })
+    }
+
+}
+
+
+// edit and update Client account details 
+export async function updateClientProfile(request, response) {
+    try {
+        const {
+            _id,
+            onlineStatus,
+            contactVisible,
+            muteNotifications
+        } = request.body;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "User id required",
+                success: false,
+                error: true
+            });
+        }
+
+        // ✅ only defined fields
+        const updateData = {};
+        if (onlineStatus !== undefined) updateData.onlineStatus = onlineStatus;
+        if (contactVisible !== undefined) updateData.contactVisible = contactVisible;
+        if (muteNotifications !== undefined) updateData.muteNotifications = muteNotifications;
+
+        const updatedClient = await ClientModel.findByIdAndUpdate(
+            _id, {
+                $set: updateData
+            }, {
+                new: true,
+                runValidators: true
+            }
+        );
+
+        if (!updatedClient) {
+            return response.status(404).json({
+                message: "Client not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: "Profile updated successfully",
+            success: true,
+            error: false,
+            data: updatedClient
+        });
+
+    } catch (error) {
+        console.log("update error ", error);
+
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            error: true,
+            success: false
+        });
+    }
+}
+
+//  permanent delete Client profile
+export async function deleteClientProfile(request, response) {
+    try {
+        const {
+            _id
+        } = request.body;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "User id required",
+                success: false,
+                error: true
+            });
+        }
+
+        // ✅ delete escort
+        const deletedClient = await ClientModel.findByIdAndDelete(_id);
+
+        if (!deletedClient) {
+            return response.status(404).json({
+                message: "Client not found",
+                success: false,
+                error: true
+            });
+        }
+
+
+        return response.status(200).json({
+            message: "Client profile and related data deleted",
+            success: true,
+            error: false
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
+
+//  edit escort profile details 
+export async function editClientProfileDetails(request, response) {
+    try {
+        const {
+            _id,
+            name,
+            mobile,
+            country,
+            city
+        } = request.body;
+
+        // ✅ REQUIRED CHECK
+        if (!_id) {
+            return response.status(400).json({
+                message: "User id required",
+                success: false,
+                error: true
+            });
+        }
+
+        const updateData = {};
+
+        if (name !== undefined) updateData.name = name;
+        if (mobile !== undefined) updateData.mobile = mobile;
+        if (country !== undefined) updateData.country = country;
+        if (city !== undefined) updateData.city = city;
+
+        // ✅ UPDATE USER
+        const updatedClient = await ClientModel.findByIdAndUpdate(
+            _id, {
+                $set: updateData
+            }, {
+                new: true
+            }
+        );
+
+        if (!updatedClient) {
+            return response.status(404).json({
+                message: "Client not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: "Profile updated successfully",
+            success: true,
+            error: false,
+            data: updatedClient
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
+
+// change mobile
+export async function clientChangeMobile(request, response) {
+    try {
+        const {
+            clientId,
+            mobile,
+            countryCode
+        } = request.body;
+
+        if (!clientId || !mobile) {
+            return response.status(400).json({
+                message: "ClientId and mobile is required",
+                success: false,
+                error: true
+            })
+        }
+
+        const updateMobile = await ClientModel.findOneAndUpdate({
+            clientId
+        }, {
+            mobile: mobile,
+            isMobileVerified: false,
+            countryCode: countryCode,
+        })
+
+        if (!updateMobile) {
+            return response.status(404).json({
+                message: "User not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.json({
+            message: "Mobile number change successfully",
+            success: true,
+            error: false,
+            data: {
+                mobile: mobile,
+                countryCode: countryCode,
+            },
+        });
+
+    } catch (error) {
+        return response.json({
+            message: error.message || error,
+            success: false,
+            error: true
+        })
+    }
+}
+
+// change password
+export const clientChangePassword = async (request, response) => {
+    try {
+        const userId = request.user?._id;
+
+        const {
+            currentPassword,
+            newPassword,
+            confirmPassword
+        } = request.body;
+
+        // 1. Required check
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            return response.status(400).json({
+                message: "All fields are required",
+                success: false,
+                error: true
+            });
+        }
+
+        // 2. New & confirm match
+        if (newPassword !== confirmPassword) {
+            return response.status(400).json({
+                message: "New and Cinfirm Passwords do not match",
+                success: false,
+                error: true
+            });
+        }
+
+        // 3. Password strength
+        if (newPassword.length < 6) {
+            return response.status(400).json({
+                message: "Password must be at least 6 characters",
+                success: false,
+                error: true
+            });
+        }
+
+        // 4. Find user
+        const user = await ClientModel.findById(userId).select("+password");
+
+        if (!user) {
+            return response.status(404).json({
+                message: "User not found",
+                success: false,
+                error: true
+            });
+        }
+
+        // 5. Compare current password
+        const isMatch = await bcryptjs.compare(currentPassword, user.password);
+
+        if (!isMatch) {
+            return response.status(400).json({
+                message: "Current password is incorrect",
+                success: false,
+                error: true
+            });
+        }
+
+        // 6. Prevent same password reuse
+        const isSame = await bcryptjs.compare(newPassword, user.password);
+        if (isSame) {
+            return response.status(400).json({
+                message: "New password cannot be same as old password",
+                success: false,
+                error: true
+            });
+        }
+
+        // 7. Hash new password
+        const salt = await bcryptjs.genSalt(10);
+        const hashedPassword = await bcryptjs.hash(newPassword, salt);
+
+        await ClientModel.findByIdAndUpdate(userId, {
+            password: hashedPassword
+        });
+
+        return response.status(200).json({
+            message: "Password updated successfully",
+            success: true,
+            error: false
+        });
+
+    } catch (error) {
+        console.error("Change Password Error:", error);
+
+        return response.status(500).json({
+            message: "Something went wrong",
+            success: false,
+            error: true
+        });
+    }
+};
+
+
+// add favorites escort 
+export async function toggleFavoriteEscort(request, response) {
+    try {
+        const _id = request.user?._id;
+
+        const {
+            escortId
+        } = request.body;
+
+        if (!escortId) {
+            return response.status(400).json({
+                message: "Escort ID are required",
+                success: false,
+                error: true
+            });
+        }
+
+        const client = await ClientModel.findById(_id);
+
+        if (!client) {
+            return response.status(404).json({
+                message: "User not found",
+                success: false,
+                error: true
+            });
+        }
+
+        const escortExists = await EscortModel.findById(escortId);
+
+        if (!escortExists) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+        const alreadyFavorite = client.favorites.some(
+            (id) => id.toString() === escortId.toString()
+        );
+
+        if (alreadyFavorite) {
+            await ClientModel.updateOne({
+                _id
+            }, {
+                $pull: {
+                    favorites: escortId
+                }
+            });
+
+            return response.status(200).json({
+                message: "Escort removed from favorites",
+                success: true,
+                error: false,
+                isFavorite: false
+            });
+        }
+
+        await ClientModel.updateOne({
+            _id
+        }, {
+            $addToSet: {
+                favorites: escortId
+            }
+        });
+
+        return response.status(200).json({
+            message: "Escort added to favorites",
+            success: true,
+            error: false,
+            isFavorite: true
+        });
+
+    } catch (error) {
+        console.log("toggle favorite error", error);
+
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
+
+// fetch favorites escort 
+export async function getFavoriteEscorts(request, response) {
+    try {
+        const {
+            _id
+        } = request.user?._id;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "User not found",
+                success: false,
+                error: true
+            });
+        }
+
+        const client = await ClientModel.findOne({
+                _id
+            })
+            .populate({
+                path: "favorites",
+                select: `
+                    escortId
+                    name
+                    avatar
+                    city
+                    country
+                    age
+                    onlineStatus
+                    isVerified
+                    last_login_date
+                    isFaceBlurred
+                `
+            });
+
+        if (!client) {
+            return response.status(404).json({
+                message: "Client not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: "Favorite escorts fetched successfully",
+            success: true,
+            error: false,
+            count: client.favorites.length,
+            data: client.favorites
+        });
+
+    } catch (error) {
+        console.log("favorite escorts error", error);
+
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}

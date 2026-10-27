@@ -1,0 +1,1504 @@
+import mongoose from "mongoose";
+import axios from "axios";
+import subcribedModel from "../models/subcribedplanModel.js";
+import EscortModel from "../models/escortModel.js";
+import SubscriptionModel from "../models/subscriptionModel.js";
+import { runAutoBoostScheduler } from "../Cron/runAutoBoostScheduler.js";
+
+
+const activePaymentStatuses = [
+    "pending",
+    "waiting",
+    "confirming",
+    "confirmed",
+    "sending",
+    "partially_paid"
+];
+
+
+// create transaction 
+export const createTransaction = async (request, response) => {
+    try {
+
+        const userId = request?.user?._id;
+        const {
+            planId
+        } = request?.body;
+
+
+        // ✅ Basic validation
+        if (!userId) {
+            return response.status(400).json({
+                message: "Id is required",
+                success: false,
+                error: true
+            });
+        }
+
+        const escort = await EscortModel.findById(userId);
+
+
+        if (!escort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+        if (
+            escort.subscriptionActive &&
+            escort.subscriptionStatus === "active" &&
+            escort.subscriptionplanexpiry &&
+            new Date(escort.subscriptionplanexpiry) > new Date()
+        ) {
+            return response.status(400).json({
+                message: "You already have an active subscription.",
+                success: false,
+                error: true
+            });
+        }
+
+
+        // ✅ validation
+        if (!planId) {
+            return response.status(400).json({
+                message: "PlanId is required",
+                success: false,
+                error: true
+            });
+        }
+
+        // ✅ fetch from DB (IMPORTANT)
+        const plan = await SubscriptionModel.findById(planId);
+
+
+        if (!plan) {
+            return response.status(404).json({
+                message: "Plan not found",
+                success: false,
+                error: true
+            });
+        }
+
+
+        if (
+            plan.discountedPrice === null ||
+            plan.discountedPrice === undefined ||
+            Number(plan.discountedPrice) < 0
+        ) {
+            return response.status(400).json({
+                message: "Invalid plan amount",
+                success: false,
+                error: true
+            });
+        }
+
+        const existingPayment = await subcribedModel.findOne({
+            userId,
+            status: {
+                $in: activePaymentStatuses
+            }
+        });
+
+        if (existingPayment) {
+
+            return response.status(200).json({
+                success: true,
+                error: false,
+                type: "payment_in_progress",
+                message: "You already have a payment in progress. Please complete your existing payment before subscribing to another plan.",
+                paymentUrl: existingPayment.invoiceUrl,
+                transaction: existingPayment
+            });
+        }
+
+
+        const orderId = `SUB_${userId}_${plan._id}_${Date.now()}`;
+
+        //--------------------------------------------------------------------------------------//
+        //------------------------ Free plan direct subscription activation --------------------//
+        //--------------------------------------------------------------------------------------//
+
+        if (Number(plan.discountedPrice) === 0) {
+
+            let days = 30;
+
+            if (plan.duration) {
+                const match = plan.duration.match(/\d+/);
+
+                if (match) {
+                    const value = parseInt(match[0]);
+
+                    if (plan.duration.includes("DAY")) {
+                        days = value;
+                    } else if (plan.duration.includes("WEEK")) {
+                        days = value * 7;
+                    } else if (plan.duration.includes("MONTH")) {
+                        days = value * 30;
+                    } else if (plan.duration.includes("YEAR")) {
+                        days = value * 365;
+                    }
+                }
+
+            }
+
+            const subscriptionStart = new Date();
+
+            const subscriptionExpiry = new Date(
+                subscriptionStart.getTime() +
+                days * 24 * 60 * 60 * 1000
+            );
+
+            const permissions = plan.permissions || {};
+
+            const planLimits = plan.limits || {};
+
+            const manualBoosts = Number(planLimits.manualBoosts || 0);
+            const boostCycleDays = Number(planLimits.boostCycleDays || 28);
+
+            const boostExpiry = new Date(
+                subscriptionStart.getTime() +
+                boostCycleDays * 24 * 60 * 60 * 1000
+            );
+
+            const limits = {
+                ...planLimits,
+                manualBoosts,
+                remainingBoosts: manualBoosts,
+                boostExpiry: manualBoosts > 0 ? boostExpiry : null,
+                boostCycleDays
+            };
+
+            const freeSubscription = await subcribedModel.create({
+                userId,
+                planId: plan._id,
+                planName: plan.title,
+                title: plan.title,
+                duration: plan.duration,
+                originalPrice: plan.originalPrice,
+                discountedPrice: 0,
+                amount: 0,
+                features: plan.features,
+                currency: "AUD",
+                orderId,
+                isActive: true,
+                status: "finished",
+                subscriptionStart,
+                subscriptionExpiry,
+                permissions,
+                limits,
+
+            });
+
+            await EscortModel.findByIdAndUpdate(userId, {
+                subscriptionActive: true,
+                subscriptionStatus: "active",
+                subscriptionplanexpiry: subscriptionExpiry,
+                currentSubscription: freeSubscription._id,
+                $addToSet: {
+                    subscribedplans: freeSubscription._id
+                }
+            });
+
+            const updatedPlan = await SubscriptionModel.findOneAndUpdate({
+                    _id: plan._id,
+                    totalSpots: {
+                        $gt: 0
+                    },
+                },
+                [{
+                        $set: {
+                            totalSpots: {
+                                $subtract: ["$totalSpots", 1]
+                            },
+                        },
+                    },
+                    {
+                        $set: {
+                            duration: {
+                                $cond: [{
+                                        $eq: ["$totalSpots", 0]
+                                    },
+                                    "1 WEEK",
+                                    "$duration",
+                                ],
+                            },
+                        },
+                    },
+                ], {
+                    new: true,
+                    updatePipeline: true,
+                }
+            );
+
+            return response.status(200).json({
+                message: `${plan.title} plan subscribed successfully`,
+                success: true,
+                error: false,
+                type: "free",
+                transaction: freeSubscription,
+                paymentUrl: null
+            });
+        }
+
+
+        const successUrl =
+            `${process.env.PAYMENT_SUCCESS_URL}?orderId=${encodeURIComponent(orderId)}`;
+
+        const cancelUrl =
+            `${process.env.PAYMENT_CANCEL_URL}?orderId=${encodeURIComponent(orderId)}`;
+
+
+        // ✅ nowPayments payload
+        const paymentData = {
+            price_amount: Number(plan.discountedPrice),
+            price_currency: "AUD",
+            order_id: orderId,
+            order_description: `Subscription - ${plan.title}`,
+            ipn_callback_url: process.env.NOWPAYMENTS_IPN_URL,
+            success_url: successUrl,
+            cancel_url: cancelUrl
+        };
+
+        const nowPaymentRes = await axios.post(
+            `${process.env.NOWPAYMENTS_API_URL}/invoice`,
+            paymentData, {
+                headers: {
+                    "x-api-key": process.env.NOWPAYMENTS_API_KEY,
+                    "Content-Type": "application/json"
+                },
+                timeout: 30000,
+            }
+        );
+
+        console.log("NOWPAYMENTS FULL RESPONSE:", nowPaymentRes.data);
+
+
+        const paymentUrl = nowPaymentRes.data.invoice_url;
+
+        if (!paymentUrl) {
+            return response.status(400).json({
+                message: "Invoice URL not found in NOWPayments response",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: "Payment invoice created successfully. Please proceed to the payment page to complete your payment.",
+            success: true,
+            error: false,
+            type: "paid",
+            paymentUrl: paymentUrl,
+        });
+
+
+    } catch (error) {
+        console.log("CATCH ERROR:", error?.response?.data?.message || error?.message);
+        console.log("DETAILED ERROR:", JSON.stringify(error?.response?.data, null, 2));
+        return response.status(500).json({
+            message: "Failed to create transaction",
+            success: false,
+            error: true,
+            details: error?.response?.data || error?.message
+        });
+    }
+};
+
+
+// NOWPayments Webhook
+export const nowPaymentsWebhook = async (request, response) => {
+    try {
+
+        // const rawBody = request.body;
+
+        // const signature = request.headers["x-nowpayments-sig"];
+        // console.log("Signature =", signature);
+
+        // const expectedSignature = crypto
+        //     .createHmac("sha512", process.env.NOWPAYMENTS_IPN_SECRET)
+        //     .update(rawBody)
+        //     .digest("hex");
+
+        // if (signature !== expectedSignature) {
+        //     return response.sendStatus(401);
+        // }
+
+        // const event = JSON.parse(rawBody.toString());
+
+        const event = request.body;
+
+        console.log("NOWPAYMENTS WEBHOOK:", event);
+
+        const {
+            invoice_id,
+            payment_id,
+            payment_status,
+            pay_amount,
+            pay_currency,
+            order_id
+        } = event;
+
+
+        // ============================================
+        // 1. BASIC VALIDATION
+        // ============================================
+
+        if (!order_id || !payment_status) {
+            console.log("Missing order_id or payment_status");
+
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "order_id and payment_status are required"
+            });
+        }
+
+
+        // ============================================
+        // 2. GET USER ID + PLAN ID FROM ORDER ID
+        // ============================================
+
+        const orderParts = order_id.split("_");
+
+        if (orderParts.length < 4 || orderParts[0] !== "SUB") {
+
+            console.log("Invalid order_id:", order_id);
+
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "Invalid order_id"
+            });
+        }
+
+
+        const userId = orderParts[1];
+        const planId = orderParts[2];
+
+
+        console.log("Webhook User ID:", userId);
+        console.log("Webhook Plan ID:", planId);
+        console.log("Webhook Status:", payment_status);
+
+
+        // ============================================
+        // 3. VALIDATE USER
+        // ============================================
+
+        const escort = await EscortModel.findById(userId);
+
+        if (!escort) {
+
+            console.log("Escort not found:", userId);
+
+            return response.status(404).json({
+                success: false,
+                error: true,
+                message: "Escort not found"
+            });
+        }
+
+
+        // ============================================
+        // 4. GET PLAN FROM DATABASE
+        // ============================================
+
+        const plan = await SubscriptionModel.findById(planId);
+
+        if (!plan) {
+
+            console.log("Subscription plan not found:", planId);
+
+            return response.status(404).json({
+                success: false,
+                error: true,
+                message: "Subscription plan not found"
+            });
+        }
+
+
+        // ============================================
+        // 5. VALID PAYMENT STATUSES
+        // ============================================
+
+        const validStatuses = [
+            "pending",
+            "waiting",
+            "confirming",
+            "confirmed",
+            "sending",
+            "partially_paid",
+            "finished",
+            "failed",
+            "expired",
+            "refunded"
+        ];
+
+
+        if (!validStatuses.includes(payment_status)) {
+
+            console.log(
+                "Unknown NOWPayments status:",
+                payment_status
+            );
+
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: `Unsupported payment status: ${payment_status}`
+            });
+        }
+
+
+        // ============================================
+        // 6. FIND EXISTING TRANSACTION
+        // ============================================
+
+        let payment = await subcribedModel.findOne({
+            orderId: order_id
+        });
+
+
+        // ============================================
+        // 7. DUPLICATE WEBHOOK PROTECTION
+        // ============================================
+
+        if (
+            payment &&
+            payment.status === payment_status
+        ) {
+
+            console.log(
+                "Duplicate webhook received:",
+                order_id,
+                payment_status
+            );
+
+            return response.sendStatus(200);
+        }
+
+
+        // ============================================
+        // 8. CREATE TRANSACTION IF NOT EXISTS
+        // ============================================
+
+        let permissions = plan.permissions;
+
+        const planLimits = plan.limits || {};
+
+        const manualBoosts = Number(planLimits.manualBoosts || 0);
+        const boostCycleDays = Number(planLimits.boostCycleDays || 28);
+
+        const boostExpiry = new Date(
+            subscriptionStart.getTime() +
+            boostCycleDays * 24 * 60 * 60 * 1000
+        );
+
+        const limits = {
+            ...planLimits,
+            manualBoosts,
+            remainingBoosts: manualBoosts,
+            boostExpiry: manualBoosts > 0 ? boostExpiry : null,
+            boostCycleDays
+        };
+
+
+
+        const invoiceUrl =
+            `https://nowpayments.io/payment?iid=${invoice_id}`;
+
+        if (!payment) {
+
+            payment = new subcribedModel({
+                userId: userId,
+                planId: plan._id,
+                planName: plan.title,
+                title: plan.title,
+                duration: plan.duration,
+
+                originalPrice: plan.originalPrice,
+                discountedPrice: plan.discountedPrice,
+                amount: plan.discountedPrice,
+
+                features: plan.features,
+
+                permissions: plan.permissions,
+                limits: plan.limits,
+
+                currency: "AUD",
+
+                nowPaymentInvoiceId: invoice_id,
+                invoiceUrl: invoiceUrl,
+
+                orderId: order_id,
+
+                paymentId: payment_id,
+                payAmount: pay_amount,
+                payCurrency: pay_currency,
+
+                status: payment_status,
+
+                subscriptionStart: null,
+                subscriptionExpiry: null,
+
+                isActive: false,
+
+                permissions,
+                limits,
+            });
+
+            console.log(
+                "New payment transaction created:",
+                order_id
+            );
+
+        } else {
+
+            // ========================================
+            // 9. UPDATE EXISTING TRANSACTION
+            // ========================================
+
+            payment.status = payment_status;
+
+            payment.permissions = plan.permissions;
+            payment.limits = plan.limits;
+
+            if (invoice_id) {
+                payment.nowPaymentInvoiceId = invoice_id;
+            }
+
+            if (payment_id) {
+                payment.paymentId = payment_id;
+            }
+
+            if (pay_amount !== undefined) {
+                payment.payAmount = String(pay_amount);
+            }
+
+            if (pay_currency) {
+                payment.payCurrency = pay_currency;
+            }
+
+            console.log(
+                "Existing payment updated:",
+                order_id
+            );
+        }
+
+
+        // ============================================
+        // 10. PAYMENT FINISHED
+        // ============================================
+
+        if (payment_status === "finished") {
+
+            console.log(
+                "PAYMENT FINISHED:",
+                order_id
+            );
+
+
+            const subscriptionStart = new Date();
+
+            let days = 30;
+
+            if (plan.duration) {
+
+                const match = plan.duration.match(/\d+/);
+
+                if (match) {
+                    const value = parseInt(match[0]);
+
+                    if (plan.duration.includes("DAY")) {
+                        days = value;
+                    } else if (plan.duration.includes("WEEK")) {
+                        days = value * 7;
+                    } else if (plan.duration.includes("MONTH")) {
+                        days = value * 30;
+                    } else if (plan.duration.includes("YEAR")) {
+                        days = value * 365;
+                    }
+                }
+            }
+
+
+            const subscriptionExpiry = new Date(
+                subscriptionStart.getTime() +
+                days * 24 * 60 * 60 * 1000
+            );
+
+
+            payment.subscriptionStart = subscriptionStart;
+            payment.subscriptionExpiry = subscriptionExpiry;
+            payment.isActive = true;
+            payment.status = "finished";
+
+
+            // ========================================
+            // ACTIVATE ESCORT SUBSCRIPTION
+            // ========================================
+
+
+            const autoBoosts = Number(plan.limits?.autoBoosts ?? 0);
+            const boostCycleDays = Number(plan.limits?.boostCycleDays ?? 28);
+
+            await EscortModel.findByIdAndUpdate(
+                userId, {
+                    $set: {
+                        subscriptionActive: true,
+                        subscriptionStatus: "active",
+                        subscriptionplanexpiry: subscriptionExpiry,
+                        currentSubscription: plan._id,
+
+                        "boost.subscriptionPlanBoost": autoBoosts,
+                        "boost.subscriptionPlanBoostExpiry": new Date(
+                            subscriptionStart.getTime() + 28 * 24 * 60 * 60 * 1000
+                        ),
+                        "boost.boostCycleDays": boostCycleDays,
+                        "boost.subscriptionBoostIntervalDays": autoBoosts > 0 ? boostCycleDays / autoBoosts : 0,
+                        "boost.nextSubscriptionBoostAt": null
+                    },
+                    $addToSet: {
+                        subscribedplans: payment._id
+                    },
+                    $inc: {
+                        "boost.totalBoost": autoBoosts
+                    }
+                }
+            );
+
+
+            await runAutoBoostScheduler();
+
+
+
+
+
+
+
+
+
+            console.log(
+                "Subscription activated:",
+                userId
+            );
+
+            //--------------- Total Spot count down ------------//
+
+            if (plan.discountedPrice === 0) {
+                // FREE PLAN
+                const updatedPlan = await SubscriptionModel.findOneAndUpdate({
+                        _id: plan._id,
+                        totalSpots: {
+                            $gt: 0
+                        },
+                    },
+                    [{
+                            $set: {
+                                totalSpots: {
+                                    $subtract: ["$totalSpots", 1]
+                                },
+                            },
+                        },
+                        {
+                            $set: {
+                                duration: {
+                                    $cond: [{
+                                            $eq: ["$totalSpots", 0]
+                                        },
+                                        "1 WEEK",
+                                        "$duration",
+                                    ],
+                                },
+                            },
+                        },
+                    ], {
+                        new: true,
+                        updatePipeline: true,
+                    }
+                );
+            } else {
+                // PAID PLAN
+                const updatedPlan = await SubscriptionModel.findOneAndUpdate({
+                    _id: plan._id,
+                    totalSpots: {
+                        $gt: 0
+                    },
+                }, {
+                    $inc: {
+                        totalSpots: -1,
+                    },
+                }, {
+                    new: true,
+                    updatePipeline: true,
+                });
+            }
+        }
+
+
+        // ============================================
+        // 11. PAYMENT STILL PROCESSING
+        // ============================================
+
+        if (
+            payment_status === "pending" ||
+            payment_status === "waiting" ||
+            payment_status === "confirming" ||
+            payment_status === "confirmed" ||
+            payment_status === "sending" ||
+            payment_status === "partially_paid"
+        ) {
+
+            payment.isActive = false;
+
+            payment.subscriptionStart = null;
+            payment.subscriptionExpiry = null;
+
+            console.log(
+                "Payment still processing:",
+                payment_status
+            );
+        }
+
+
+        // ============================================
+        // 12. PAYMENT FAILED / EXPIRED / REFUNDED
+        // ============================================
+
+        if (
+            payment_status === "failed" ||
+            payment_status === "expired" ||
+            payment_status === "refunded"
+        ) {
+
+            payment.isActive = false;
+
+            payment.subscriptionStart = null;
+            payment.subscriptionExpiry = null;
+
+            console.log(
+                "Payment unsuccessful:",
+                payment_status
+            );
+        }
+
+
+        // ============================================
+        // 13. SAVE PAYMENT
+        // ============================================
+
+        await payment.save();
+
+
+        // ============================================
+        // 14. RESPONSE
+        // ============================================
+
+        return response.status(200).json({
+            success: true,
+            error: false,
+            message: "NOWPayments webhook processed successfully"
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "NOWPAYMENTS WEBHOOK ERROR:",
+            error?.response?.data || error?.message
+        );
+
+        return response.status(500).json({
+            success: false,
+            error: true,
+            message: "Webhook processing failed"
+        });
+    }
+};
+
+
+// check active subscription
+export const checkSubscription = async (request, response, next) => {
+    try {
+        const user = request.user?._id;
+
+        if (!user) {
+            return response.status(401).json({
+                message: "Unauthorized",
+                success: false,
+                error: true
+            });
+        }
+
+        const now = new Date();
+
+        // ❗ expiry null or missing case
+        if (!user.subscriptionplanexpiry) {
+            return response.status(403).json({
+                message: "Subscription required",
+                success: false,
+                error: true
+            });
+        }
+
+        // ❗ expired case (auto update)
+        if (new Date(user.subscriptionplanexpiry) < now) {
+
+
+            await EscortModel.findByIdAndUpdate(user._id, {
+                subscriptionActive: false,
+                subscriptionStatus: "expired"
+            });
+
+            return response.status(403).json({
+                message: "Subscription expired",
+                success: false,
+                error: true
+            });
+        }
+
+        // ❗ inactive case
+        if (!user.subscriptionActive || user.subscriptionStatus !== "active") {
+            return response.status(403).json({
+                message: "Subscription inactive",
+                success: false,
+                error: true
+            });
+        }
+
+        next();
+
+    } catch (error) {
+        console.error("CHECK SUBSCRIPTION ERROR:", error.message);
+
+        return response.status(500).json({
+            message: "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+};
+
+
+// Escort current plan details
+export const fetchEscortCurrentPlan = async (request, response) => {
+    try {
+        const userId = request?.user?._id;
+
+        if (!userId) {
+            return response.status(401).json({
+                message: "User not authenticated",
+                success: false,
+                error: true
+            });
+        }
+
+        const escort = await EscortModel
+            .findById(userId)
+            .populate("currentSubscription");
+
+        if (!escort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+        if (!escort.currentSubscription) {
+            return response.status(200).json({
+                message: "No current subscription found",
+                success: true,
+                error: false,
+                status: "no_subscription",
+                data: null
+            });
+        }
+
+        const currentPlan = escort.currentSubscription;
+
+        return response.status(200).json({
+            message: "Current subscribed plan details",
+            success: true,
+            error: false,
+            status: "active",
+            data: currentPlan
+        });
+
+    } catch (error) {
+        console.log(
+            "FETCH ESCORT CURRENT PLAN ERROR:",
+            error?.response?.data?.message || error?.message
+        );
+
+        console.log(
+            "DETAILED ERROR:",
+            JSON.stringify(error?.response?.data, null, 2)
+        );
+
+        return response.status(500).json({
+            message: "Failed to fetch current subscription",
+            success: false,
+            error: true,
+            details: error?.response?.data || error?.message
+        });
+    }
+};
+
+
+
+// Admin get all subscribed plan
+
+// * Get all subscribed plans with filtering, searching, and pagination for Admin Dashboard *//
+
+export async function getAllSubscribedPlan(request, response) {
+    try {
+
+        let {
+            page = 1,
+                limit = 10,
+                search = "",
+                status = "",
+                isActive,
+                planName = "",
+                sortBy = "createdAt",
+                sortOrder = "desc"
+        } = request.query;
+
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const currentDate = new Date();
+
+        // Base Filter Query (Non-search filters)
+        let baseQuery = {};
+
+        // 1. Status Filter
+        if (status) {
+            baseQuery.status = status;
+        }
+
+        // 2. Plan Name Filter
+        if (planName) {
+            baseQuery.planName = {
+                $regex: planName,
+                $options: "i"
+            };
+        }
+
+        // 3. Aggregate Pipeline Sequence
+        let aggregatePipeline = [
+            // Step 1: Apply Base Filters First (fast indexing)
+            {
+                $match: baseQuery
+            },
+
+            // Step 2: Populate Escort Details
+            {
+                $lookup: {
+                    from: "escorts", // Escort collection name
+                    localField: "userId",
+                    foreignField: "_id",
+                    as: "escort"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$escort",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+
+            // Step 3: Compute Dynamic Active Status Based on Expiry Date ⚡
+            {
+                $addFields: {
+                    computedIsActive: {
+                        $and: [{
+                                $eq: ["$isActive", true]
+                            },
+                            {
+                                $ne: ["$subscriptionExpiry", null]
+                            },
+                            {
+                                $gt: ["$subscriptionExpiry", currentDate]
+                            } // Expiry > Current Date
+                        ]
+                    }
+                }
+            }
+        ];
+
+        // Step 4: Filter by Active State if provided in query (using computedIsActive)
+        if (isActive !== undefined && isActive !== "") {
+            const isActBool = isActive === "true";
+            aggregatePipeline.push({
+                $match: {
+                    computedIsActive: isActBool
+                }
+            });
+        }
+
+        // Step 5: Apply Search Filter (ONLY ONCE) after Lookup
+        if (search && search.trim() !== "") {
+            const searchRegex = new RegExp(search.trim(), "i");
+            aggregatePipeline.push({
+                $match: {
+                    $or: [{
+                            title: searchRegex
+                        },
+                        {
+                            planName: searchRegex
+                        },
+                        {
+                            orderId: searchRegex
+                        },
+                        {
+                            paymentId: searchRegex
+                        },
+                        {
+                            nowPaymentInvoiceId: searchRegex
+                        },
+                        {
+                            "escort.name": searchRegex
+                        },
+                        {
+                            "escort.email": searchRegex
+                        }
+                    ]
+                }
+            });
+        }
+
+        // Build Sort Object
+        const sortOptions = {};
+        sortOptions[sortBy] = sortOrder === "asc" ? 1 : -1;
+
+        // Step 6: Count Total Documents Matching Filters
+        const totalDocsPipeline = [...aggregatePipeline, {
+            $count: "total"
+        }];
+        const totalResult = await subcribedModel.aggregate(totalDocsPipeline);
+        const totalSubscriptions = totalResult.length > 0 ? totalResult[0].total : 0;
+
+        // Step 7: Pagination and Field Projection
+        aggregatePipeline.push({
+            $sort: sortOptions
+        }, {
+            $skip: skip
+        }, {
+            $limit: limit
+        }, {
+            $project: {
+                _id: 1,
+                title: 1,
+                planName: 1,
+                duration: 1,
+                originalPrice: 1,
+                discountedPrice: 1,
+                amount: 1,
+                currency: 1,
+                features: 1,
+                isActive: "$computedIsActive",
+                subscriptionStart: 1,
+                subscriptionExpiry: 1,
+                orderId: 1,
+                paymentId: 1,
+                nowPaymentInvoiceId: 1,
+                payAmount: 1,
+                payCurrency: 1,
+                permissions: 1,
+                limits: 1,
+                status: 1,
+                createdAt: 1,
+                updatedAt: 1,
+                escort: {
+                    _id: "$escort._id",
+                    name: "$escort.name",
+                    email: "$escort.email",
+                    escortId: "$escort.escortId",
+                    profileImage: "$escort.avatar",
+                    phone: "$escort.mobile"
+                }
+            }
+        });
+
+        const subscriptions = await subcribedModel.aggregate(aggregatePipeline);
+        const totalPages = Math.ceil(totalSubscriptions / limit);
+
+        return response.status(200).json({
+            message: "Subscribed plans fetched successfully",
+            success: true,
+            error: false,
+            data: subscriptions,
+            pagination: {
+                total: totalSubscriptions,
+                page,
+                limit,
+                totalPages,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1
+            }
+        });
+
+    } catch (error) {
+        console.error("Error in getAllSubscribedPlan:", error);
+        return response.status(500).json({
+            message: error.message || "Failed to fetch subscribed plans!",
+            error: true,
+            success: false
+        });
+    }
+}
+
+
+export const fetchEscortAllPurchasedPlan = async (request, response) => {
+    try {
+        const userId = request?.user?._id;
+
+        if (!userId) {
+            return response.status(401).json({
+                message: "User not authenticated",
+                success: false,
+                error: true
+            });
+        }
+
+        const {
+            planName,
+            duration,
+            currency,
+            isActive,
+            status,
+            subscriptionStatus,
+            subscriptionStartFrom,
+            subscriptionStartTo,
+            subscriptionExpiryFrom,
+            subscriptionExpiryTo,
+            sortBy = "newest",
+            page = 1,
+            limit = 10,
+        } = request.query;
+
+        const pageNumber = Math.max(Number(page) || 1, 1);
+        const limitNumber = Math.min(
+            Math.max(Number(limit) || 10, 1),
+            100
+        );
+
+        const skip = (pageNumber - 1) * limitNumber;
+
+        const escort = await EscortModel
+            .findById(userId)
+            .select("currentSubscription")
+            .lean();
+
+        if (!escort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+        const currentPlanId = escort.currentSubscription ?
+            escort.currentSubscription.toString() :
+            null;
+
+        const query = {
+            userId: new mongoose.Types.ObjectId(userId)
+        };
+
+        // Plan Name Filter
+        if (
+            planName &&
+            planName !== "all" &&
+            planName !== "undefined"
+        ) {
+            query.planName = planName;
+        }
+
+        // Duration Filter
+        if (
+            duration &&
+            duration !== "all" &&
+            duration !== "undefined"
+        ) {
+            query.duration = duration;
+        }
+
+        // Currency Filter
+        if (
+            currency &&
+            currency !== "all" &&
+            currency !== "undefined"
+        ) {
+            query.currency = currency;
+        }
+
+        // isActive Filter
+        if (
+            isActive !== undefined &&
+            isActive !== "" &&
+            isActive !== "all" &&
+            isActive !== "undefined"
+        ) {
+            query.isActive = isActive === "true";
+        }
+
+        // Payment / Subscription Status Filter
+        if (
+            status &&
+            status !== "all" &&
+            status !== "undefined"
+        ) {
+            query.status = status;
+        }
+
+        // Active / Expired Filter
+        if (
+            subscriptionStatus &&
+            subscriptionStatus !== "all" &&
+            subscriptionStatus !== "undefined"
+        ) {
+            const currentDate = new Date();
+
+            if (subscriptionStatus === "active") {
+                query.subscriptionExpiry = {
+                    $gte: currentDate
+                };
+            }
+
+            if (subscriptionStatus === "expired") {
+                query.subscriptionExpiry = {
+                    $lt: currentDate
+                };
+            }
+
+            if (subscriptionStatus === "no_expiry") {
+                query.$or = [{
+                        subscriptionExpiry: null
+                    },
+                    {
+                        subscriptionExpiry: {
+                            $exists: false
+                        }
+                    }
+                ];
+            }
+        }
+
+        // Subscription Start Date Filter
+        if (
+            subscriptionStartFrom ||
+            subscriptionStartTo
+        ) {
+            query.subscriptionStart = {};
+
+            if (subscriptionStartFrom) {
+                query.subscriptionStart.$gte = new Date(
+                    subscriptionStartFrom
+                );
+            }
+
+            if (subscriptionStartTo) {
+                const endDate = new Date(subscriptionStartTo);
+                endDate.setHours(23, 59, 59, 999);
+
+                query.subscriptionStart.$lte = endDate;
+            }
+        }
+
+        // Subscription Expiry Date Filter
+        if (
+            subscriptionExpiryFrom ||
+            subscriptionExpiryTo
+        ) {
+            query.subscriptionExpiry = {};
+
+            if (subscriptionExpiryFrom) {
+                query.subscriptionExpiry.$gte = new Date(
+                    subscriptionExpiryFrom
+                );
+            }
+
+            if (subscriptionExpiryTo) {
+                const endDate = new Date(subscriptionExpiryTo);
+                endDate.setHours(23, 59, 59, 999);
+
+                query.subscriptionExpiry.$lte = endDate;
+            }
+        }
+
+        // Sorting
+        let sortOptions = {
+            createdAt: -1
+        };
+
+        switch (sortBy) {
+            case "oldest":
+                sortOptions = {
+                    createdAt: 1
+                };
+                break;
+
+            case "price_high":
+                sortOptions = {
+                    amount: -1,
+                    createdAt: -1
+                };
+                break;
+
+            case "price_low":
+                sortOptions = {
+                    amount: 1,
+                    createdAt: -1
+                };
+                break;
+
+            case "original_price_high":
+                sortOptions = {
+                    originalPrice: -1,
+                    createdAt: -1
+                };
+                break;
+
+            case "original_price_low":
+                sortOptions = {
+                    originalPrice: 1,
+                    createdAt: -1
+                };
+                break;
+
+            case "discount_high":
+                sortOptions = {
+                    discountedPrice: -1,
+                    createdAt: -1
+                };
+                break;
+
+            case "start_newest":
+                sortOptions = {
+                    subscriptionStart: -1
+                };
+                break;
+
+            case "start_oldest":
+                sortOptions = {
+                    subscriptionStart: 1
+                };
+                break;
+
+            case "expiry_latest":
+                sortOptions = {
+                    subscriptionExpiry: -1
+                };
+                break;
+
+            case "expiry_soonest":
+                sortOptions = {
+                    subscriptionExpiry: 1
+                };
+                break;
+
+            case "newest":
+            default:
+                sortOptions = {
+                    createdAt: -1
+                };
+                break;
+        }
+
+        /*
+         * Current plan ko pagination se pehle top par rakhne ke liye
+         * aggregation use kar rahe hain.
+         */
+        const currentPlanObjectId = currentPlanId ?
+            new mongoose.Types.ObjectId(currentPlanId) :
+            null;
+
+        const aggregationPipeline = [{
+                $match: query
+            },
+            {
+                $addFields: {
+                    isCurrentPlan: currentPlanObjectId ? {
+                        $cond: [{
+                                $eq: [
+                                    "$_id",
+                                    currentPlanObjectId
+                                ]
+                            },
+                            1,
+                            0
+                        ]
+                    } : 0
+                }
+            },
+            {
+                $sort: {
+                    isCurrentPlan: -1,
+                    ...sortOptions
+                }
+            },
+            {
+                $facet: {
+                    plans: [{
+                            $skip: skip
+                        },
+                        {
+                            $limit: limitNumber
+                        }
+                    ],
+                    totalCount: [{
+                        $count: "count"
+                    }]
+                }
+            }
+        ];
+
+        const result = await subcribedModel.aggregate(
+            aggregationPipeline
+        );
+
+        const plans = result?. [0]?.plans || [];
+        const totalPlans = result?. [0]?.totalCount?. [0]?.count || 0;
+
+        const totalPages =
+            Math.ceil(totalPlans / limitNumber) || 1;
+
+        return response.status(200).json({
+            message: "All purchased plans fetched successfully",
+            success: true,
+            error: false,
+
+            data: plans,
+
+            currentPlanId,
+
+            pagination: {
+                totalFilteredPlans: totalPlans,
+                currentPage: pageNumber,
+                totalPages,
+                limit: limitNumber,
+                hasNextPage: pageNumber < totalPages,
+                hasPreviousPage: pageNumber > 1
+            }
+        });
+
+    } catch (error) {
+        console.log(
+            "FETCH ESCORT ALL PURCHASED PLANS ERROR:",
+            error?.message
+        );
+
+        return response.status(500).json({
+            message: "Failed to fetch purchased plans",
+            success: false,
+            error: true,
+            details: error?.message
+        });
+    }
+};

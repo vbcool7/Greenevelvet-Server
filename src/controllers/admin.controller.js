@@ -1,0 +1,3237 @@
+import bcryptjs from 'bcryptjs';
+import jwt from "jsonwebtoken";
+import AdminModel from "../models/adminModel.js";
+import EscortModel from "../models/escortModel.js";
+import ClientModel from "../models/clientModel.js";
+import {
+    sendMail
+} from "../utils/sendMail.js";
+import {
+    sendRegistrationReminderEmail
+} from '../utils/sendRegistrationNotification.js';
+
+import TourModel from '../models/tourModel.js';
+import BlogModel from '../models/blogModel.js';
+import BlogCommentsModel from '../models/blogCommentsModel.js';
+import BlogLikesModel from '../models/blogLikesModel.js';
+import cloudinary from '../config/cloudinary.js';
+import NewsAndTourModel from '../models/newsandtourModel.js';
+import NewstourCommentsModel from '../models/newstourCommentsModel.js';
+import NewstourLikesModel from '../models/newstourLikesModel.js';
+import {
+    decrypt
+} from '../utils/crypto.js';
+
+import ServiceModel from '../models/escortserviceModel.js';
+import BookingModel from '../models/bookingModel.js';
+import RatesModel from '../models/escortratesModel.js';
+import NotificationModel from '../models/notificationModel.js';
+import {
+    createAndSendNotification
+} from '../utils/notificationHelper.js';
+import {
+    deleteFromCloudinary
+} from '../utils/deleteFromCloudinary.js';
+import subcribedModel from '../models/subcribedplanModel.js';
+
+// Admin login
+export async function adminlogincontroller(request, response) {
+    try {
+        const {
+            username,
+            password
+        } = request.body;
+
+        if (!username || !password) {
+            return response.status(400).json({
+                message: "Username or Password required",
+                success: false,
+                error: true
+            })
+        }
+        const admin = await AdminModel.findOne({
+            username
+        }).select("+password");
+
+        if (!admin) {
+            return response.status(401).json({
+                message: "Unauthorised access",
+                success: false,
+                error: true
+            })
+        }
+
+        if (admin.role !== "Admin") {
+            return response.status(403).json({
+                message: "Access denied",
+                success: false,
+                error: true
+            });
+        }
+
+        const checkPassword = await bcryptjs.compare(password, admin.password)
+        if (!checkPassword) {
+            return response.status(401).json({
+                message: "check your password",
+                success: false,
+                error: true
+            })
+        }
+
+        const token = jwt.sign({
+                _id: admin._id,
+                role: admin.role || "Admin"
+            },
+            process.env.JWT_SECRET, {
+                expiresIn: "3d"
+            }
+        );
+
+        admin.refresh_token = token;
+        admin.last_login_date = new Date();
+        admin.onlineStatus = true;
+
+        await admin.save();
+
+        response.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 3 * 24 * 60 * 60 * 1000 // 3 days
+        });
+
+        return response.json({
+            message: "Login successful",
+            success: true,
+            error: false,
+            data: {
+                token: token,
+                admin: {
+                    _id: admin._id,
+                    username: admin.username,
+                    role: admin.role
+                }
+            }
+        });
+
+    } catch (error) {
+        console.log("admin login error ", error);
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        })
+    }
+}
+
+// logout controll
+export async function adminlogoutcontroller(request, response) {
+    try {
+        const adminId = request.user?._id;
+
+        if (!adminId) {
+            return response.status(401).json({
+                message: "Unauthorized",
+                success: false,
+                error: true
+            });
+        }
+
+        const admin = await AdminModel.findById(adminId);
+
+        if (!admin) {
+            return response.status(404).json({
+                message: "Admin not found",
+                success: false,
+                error: true
+            });
+        }
+
+        await AdminModel.findByIdAndUpdate(adminId, {
+            $set: {
+                onlineStatus: false,
+                refresh_token: ""
+            }
+        });
+
+        response.clearCookie("token");
+
+        return response.status(200).json({
+            message: "Logged out successfully",
+            success: true,
+            error: false
+        });
+
+    } catch (error) {
+        console.log("LOGOUT ERROR FULL:", error);
+
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
+
+// fetch account details
+export const getAdminDetails = async (request, response) => {
+    try {
+        // 👉 JWT middleware
+        const adminId = request.user?._id;
+
+        if (!adminId) {
+            return response.status(401).json({
+                message: "Unauthorized access",
+                success: false,
+                error: true,
+            });
+        }
+
+        const admin = await AdminModel
+            .findById(adminId)
+            .select("-password -__v");
+
+        if (!admin) {
+            return response.status(404).json({
+                message: "Admin not found",
+                success: false,
+                error: true,
+            });
+        }
+
+        return response.status(200).json({
+            message: "Admin fetched successfully",
+            success: true,
+            error: false,
+            data: admin,
+        });
+
+    } catch (error) {
+        console.log("admin fetch error:", error);
+
+        return response.status(500).json({
+            message: error.message,
+            success: false,
+            error: true,
+        });
+    }
+};
+
+// name update
+export const updateAdminName = async (request, response) => {
+    try {
+        const {
+            name
+        } = request.body;
+
+        // ❗ Validation
+        if (!name || name.trim() === "") {
+            return response.status(400).json({
+                message: "Name is required",
+                success: false,
+                error: true,
+            });
+        }
+
+        // 👉 JWT use
+        const adminId = request.user?._id;
+
+        const updatedAdmin = await AdminModel.findByIdAndUpdate(
+            adminId, {
+                $set: {
+                    name: name.trim()
+                }
+            }, {
+                new: true,
+                runValidators: true
+            }
+        ).select("-password");
+
+        if (!updatedAdmin) {
+            return response.status(404).json({
+                message: "Admin not found",
+                success: false,
+                error: true,
+            });
+        }
+
+        return response.status(200).json({
+            message: "Name updated successfully",
+            success: true,
+            error: false,
+            data: updatedAdmin,
+        });
+
+    } catch (error) {
+        console.log("update name error:", error);
+        return response.status(500).json({
+            message: error.message,
+            success: false,
+            error: true,
+        });
+    }
+};
+
+
+export const changePassword = async (request, response) => {
+    try {
+        const userId = request.user?._id;
+
+        const {
+            currentPassword,
+            newPassword,
+            confirmPassword
+        } = request.body;
+
+        // 1. Required check
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            return response.status(400).json({
+                message: "All fields are required",
+                success: false,
+                error: true
+            });
+        }
+
+        // 2. New & confirm match
+        if (newPassword !== confirmPassword) {
+            return response.status(400).json({
+                message: "New and Cinfirm Passwords do not match",
+                success: false,
+                error: true
+            });
+        }
+
+        // 3. Password strength
+        if (newPassword.length < 6) {
+            return response.status(400).json({
+                message: "Password must be at least 6 characters",
+                success: false,
+                error: true
+            });
+        }
+
+        // 4. Find user
+        const user = await AdminModel.findById(userId).select("+password");
+
+        if (!user) {
+            return response.status(404).json({
+                message: "User not found",
+                success: false,
+                error: true
+            });
+        }
+
+        // 5. Compare current password
+        const isMatch = await bcryptjs.compare(currentPassword, user.password);
+
+        if (!isMatch) {
+            return response.status(400).json({
+                message: "Current password is incorrect",
+                success: false,
+                error: true
+            });
+        }
+
+        // 6. Prevent same password reuse
+        const isSame = await bcryptjs.compare(newPassword, user.password);
+        if (isSame) {
+            return response.status(400).json({
+                message: "New password cannot be same as old password",
+                success: false,
+                error: true
+            });
+        }
+
+        // 7. Hash new password
+        const salt = await bcryptjs.genSalt(10);
+        const hashedPassword = await bcryptjs.hash(newPassword, salt);
+
+        await AdminModel.findByIdAndUpdate(userId, {
+            password: hashedPassword
+        });
+
+        return response.status(200).json({
+            message: "Password updated successfully",
+            success: true,
+            error: false
+        });
+
+    } catch (error) {
+        console.error("Change Password Error:", error);
+
+        return response.status(500).json({
+            message: "Something went wrong",
+            success: false,
+            error: true
+        });
+    }
+};
+
+// forgot passwor send otp
+export const forgotPassword = async (request, response) => {
+    try {
+        const {
+            email
+        } = request.body;
+
+        if (!email) {
+            return response.status(400).json({
+                message: "Email is required",
+                success: false,
+                error: true
+            });
+        }
+
+        const admin = await AdminModel.findOne({
+            email
+        });
+
+        if (!admin) {
+            return response.status(200).json({
+                message: "If account exists, OTP sent",
+                success: true,
+                error: false
+            });
+        }
+
+        // cooldown check (30 sec)
+        if (admin.otpResendTime && admin.otpResendTime > Date.now()) {
+            return response.status(429).json({
+                message: "Please wait before requesting a new OTP",
+                success: false,
+                error: true
+            });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const hashedOtp = await bcryptjs.hash(otp, 10);
+        const expiry = Date.now() + 5 * 60 * 1000;
+        const resendCooldown = Date.now() + 30 * 1000; // 30 sec
+
+        console.log("otp", otp);
+
+        const updated = await AdminModel.findOneAndUpdate({
+            email,
+        }, {
+            resetOtp: hashedOtp,
+            otpExpiry: expiry,
+            otpResendTime: resendCooldown,
+            otpAttempts: 0
+        }, {
+            new: true
+        });
+
+        if (!updated) {
+            return response.status(429).json({
+                message: "OTP already generated. Please wait",
+                success: false,
+                error: true
+            });
+        }
+
+        const subject = "Password Reset OTP";
+
+        const html = `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background-color:#f9f9f9;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="padding:40px 0;">
+  <tr>
+    <td align="center">
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:460px;background:#ffffff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.05);border:1px solid #eeeeee;overflow:hidden;">
+        
+        <!-- Header Decor -->
+        <tr>
+          <td height="5" style="background-color:#00A68F;"></td>
+        </tr>
+
+        <!-- Logo Section -->
+        <tr>
+          <td style="padding:35px 40px 10px 40px;text-align:center;">
+            <h1 style="margin:0;color:#00A68F;font-size:24px;font-weight:800;letter-spacing:1px;">
+              GREENE VELVET
+            </h1>
+          </td>
+        </tr>
+
+        <!-- Content -->
+        <tr>
+          <td style="padding:20px 40px 40px 40px;text-align:center;">
+            <h2 style="margin:0 0 12px 0;color:#1a1a1a;font-size:20px;font-weight:600;">Verification Code</h2>
+            <p style="margin:0;color:#555555;font-size:15px;line-height:22px;">
+              Please use the one-time password (OTP) below to securely sign in or reset your password.
+            </p>
+
+            <!-- OTP Highlight -->
+            <div style="margin:30px 0;background-color:#f0faf9;border-radius:10px;padding:20px;border:1px solid #d1efea;">
+              <span style="display:block;font-size:12px;color:#00A68F;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Your OTP Code</span>
+              <span style="font-family:'Courier New',Courier,monospace;font-size:38px;font-weight:bold;color:#00A68F;letter-spacing:10px;">
+                ${otp}
+              </span>
+            </div>
+
+            <p style="margin:0;color:#888888;font-size:13px;">
+              This code is valid for <b style="color:#333;">5 minutes</b>. <br>
+              Security Note: Never share this code with anyone.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:25px 40px;background-color:#fcfcfc;border-top:1px solid #eeeeee;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#aaaaaa;line-height:18px;">
+              &copy; ${new Date().getFullYear()} <b>Greene Velvet</b> Solutions. <br>
+              Automatic security email, please do not reply.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+`;
+        try {
+            await sendMail(email, subject, html);
+        } catch (err) {
+            console.log("email send error", err);
+
+            await AdminModel.findByIdAndUpdate(admin._id, {
+                resetOtp: null,
+                otpExpiry: null
+            });
+
+            return response.status(500).json({
+                message: "Failed to send OTP",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: "OTP sent",
+            success: true,
+            error: false
+        });
+
+    } catch (error) {
+        console.error(error);
+
+        return response.status(500).json({
+            message: "Something went wrong",
+            success: false,
+            error: true
+        });
+    }
+};
+
+// verify otp
+export const verifyOtp = async (request, response) => {
+    try {
+        const {
+            email,
+            otp
+        } = request.body;
+
+        // 1. validation
+        if (!email || !otp) {
+            return response.status(400).json({
+                success: false,
+                message: "Email and OTP required"
+            });
+        }
+
+        // 2. find admin
+        const admin = await AdminModel.findOne({
+            email
+        });
+
+        if (!admin || !admin.resetOtp) {
+            return response.status(400).json({
+                success: false,
+                message: "Invalid request"
+            });
+        }
+
+        // 3. expiry check (safe)
+        if (!admin.otpExpiry || admin.otpExpiry < Date.now()) {
+            return response.status(400).json({
+                success: false,
+                message: "OTP expired"
+            });
+        }
+
+        // 4. attempts limit check
+        if (admin.otpAttempts >= 5) {
+            return response.status(429).json({
+                success: false,
+                message: "Too many attempts. Try again later"
+            });
+        }
+
+        // 5. OTP match
+        const isMatch = await bcryptjs.compare(otp, admin.resetOtp);
+
+        // ❌ WRONG OTP
+        if (!isMatch) {
+            await AdminModel.updateOne({
+                email
+            }, {
+                $inc: {
+                    otpAttempts: 1
+                }
+            });
+
+            return response.status(400).json({
+                success: false,
+                message: "Invalid OTP"
+            });
+        }
+
+        // 6. SUCCESS → clear OTP (NO save used)
+        await AdminModel.updateOne({
+            email
+        }, {
+            $unset: {
+                resetOtp: "",
+                otpExpiry: ""
+            },
+            $set: {
+                otpAttempts: 0
+            }
+        });
+
+        return response.status(200).json({
+            success: true,
+            message: "OTP verified successfully"
+        });
+
+    } catch (error) {
+        console.error("Verify OTP Error:", error);
+
+        return response.status(500).json({
+            success: false,
+            message: "Something went wrong"
+        });
+    }
+};
+
+// reset password
+export const resetPassword = async (request, response) => {
+    try {
+        const {
+            email,
+            newPassword,
+            confirmPassword
+        } = request.body;
+
+        // 1. validation
+        if (!email || !newPassword || !confirmPassword) {
+            return response.status(400).json({
+                message: "All fields are required",
+                success: false,
+                error: true
+            });
+        }
+
+        // 2. New & confirm match
+        if (newPassword !== confirmPassword) {
+            return response.status(400).json({
+                message: "New and Cinfirm Passwords do not match",
+                success: false,
+                error: true
+            });
+        }
+
+        // 3. Password strength
+        if (newPassword.length < 6) {
+            return response.status(400).json({
+                message: "Password must be at least 6 characters",
+                success: false,
+                error: true
+            });
+        }
+
+
+        // 4. find admin
+        const admin = await AdminModel.findOne({
+            email
+        });
+
+        if (!admin) {
+            return response.status(400).json({
+                message: "Invalid request",
+                success: false,
+                error: true
+            });
+        }
+
+        // 5. security check → OTP must be verified already
+        if (admin.resetOtp || admin.otpExpiry) {
+            return response.status(403).json({
+                message: "OTP not verified",
+                success: false,
+                error: true
+            });
+        }
+
+        // 6. hash new password
+        const hashedPassword = await bcryptjs.hash(newPassword, 10);
+
+        // 7. update password + clear any leftover fields (NO save)
+        await AdminModel.updateOne({
+            email
+        }, {
+            $set: {
+                password: hashedPassword
+            },
+            $unset: {
+                resetOtp: "",
+                otpExpiry: ""
+            },
+            $setOnInsert: {
+                otpAttempts: 0
+            }
+        });
+
+        return response.status(200).json({
+            success: true,
+            message: "Password reset successfully"
+        });
+
+    } catch (error) {
+        console.error("Reset Password Error:", error);
+
+        return response.status(500).json({
+            success: false,
+            message: "Something went wrong"
+        });
+    }
+};
+
+
+//============================================================< Escorts >======================================================================
+
+// fetch awaiting verification (old) escorts
+export async function fetchEscortcontroller(request, response) {
+    try {
+        const {
+            role
+        } = request.query;
+
+        let filter = {};
+
+        if (role) filter.role = role;
+
+        filter.isVerified = false;
+
+        filter.status = {
+            $ne: "Active"
+        };
+
+
+        filter.isEmailVerified = true;
+
+        filter.verificationSelfie = {
+            $ne: ""
+        };
+
+        filter.verificationgovtId = {
+            $ne: ""
+        };
+
+
+        filter["gallery.photos.2"] = {
+            $exists: true
+        };
+
+        const escorts = await EscortModel.find(filter)
+            .sort({
+                createdAt: -1
+            });
+
+        escorts.forEach((escort) => {
+            try {
+                if (escort.mobile?.startsWith("enc:")) {
+                    escort.mobile = decrypt(escort.mobile.replace("enc:", ""));
+                } else if (escort.mobile) {
+                    escort.mobile = decrypt(escort.mobile);
+                }
+            } catch {
+                escort.mobile = "";
+            }
+        });
+
+        return response.status(200).json({
+            message: escorts?.length ? "Escort list fetched" : "No escorts found",
+            error: false,
+            success: true,
+            data: escorts || [],
+        })
+
+    } catch (error) {
+        console.log("fetch awaiting verification escorts", error);
+        return response.status(500).json({
+            message: error.message || error,
+            error: true,
+            success: false
+        })
+    }
+}
+
+// fetch escort-details
+export async function fetchEscortdetailscontroller(request, response) {
+    try {
+        const {
+            escortId
+        } = request.query;
+
+        if (!escortId) {
+            return response.status(400).json({
+                message: "EscortId is missing",
+                success: false,
+                error: true
+            })
+        }
+
+        const escort = await EscortModel.findOne({
+            escortId
+        });
+
+        if (!escort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            });
+        }
+
+        let mobile = escort.mobile;
+
+        try {
+            if (mobile?.startsWith("enc:")) {
+                mobile = decrypt(mobile.replace("enc:", ""));
+            } else {
+                mobile = decrypt(mobile);
+            }
+        } catch {
+            mobile = "";
+        }
+
+        escort.mobile = mobile;
+
+
+        return response.status(200).json({
+            message: "Escort details fetched",
+            success: true,
+            error: false,
+            data: escort
+        })
+
+    } catch (error) {
+        console.log("fetch escorts details", error);
+
+        return response.status(500).json({
+            message: error.message || error,
+            success: false,
+            error: true
+        })
+    }
+}
+
+// escort profile full details with fetch all related schema details
+export async function escortProfileDetails(request, response) {
+    try {
+        const {
+            id
+        } = request.query;
+
+        if (!id) {
+            return response.status(400).json({
+                message: "Escort Id is missing",
+                success: false,
+                error: true
+            })
+        }
+
+        const escort = await EscortModel.findById(id);
+
+
+        let mobile = escort.mobile;
+
+        try {
+            if (mobile?.startsWith("enc:")) {
+                mobile = decrypt(mobile.replace("enc:", ""));
+            } else {
+                mobile = decrypt(mobile);
+            }
+        } catch {
+            mobile = "";
+        }
+
+        escort.mobile = mobile;
+
+
+        return response.status(200).json({
+            message: "Escort profile details fetched",
+            success: true,
+            error: false,
+            data: escort
+        })
+
+    } catch (error) {
+        console.log("Escort profile details Error: ", error);
+        return response.status(500).json({
+            message: error.message || error,
+            success: false,
+            error: true
+        })
+    }
+}
+
+export async function escortFullDetails(request, response) {
+    try {
+        const {
+            id
+        } = request.query;
+
+        if (!id) {
+            return response.status(400).json({
+                message: "Escort Id is missing",
+                success: false,
+                error: true
+            })
+        }
+
+        const escort = await EscortModel.findById(id)
+            .populate("tours")
+            .populate("blog")
+            .populate("newsTour")
+            .populate("services")
+            .populate("rates")
+            .populate("bookings")
+            .populate("currentSubscription");;
+
+
+        let mobile = escort.mobile;
+
+        try {
+            if (mobile?.startsWith("enc:")) {
+                mobile = decrypt(mobile.replace("enc:", ""));
+            } else {
+                mobile = decrypt(mobile);
+            }
+        } catch {
+            mobile = "";
+        }
+
+        escort.mobile = mobile;
+
+
+        return response.status(200).json({
+            message: "Escort profile details fetched",
+            success: true,
+            error: false,
+            data: escort
+        })
+
+    } catch (error) {
+        console.log("Escort profile details Error: ", error);
+        return response.status(500).json({
+            message: error.message || error,
+            success: false,
+            error: true
+        })
+    }
+}
+
+// update escort
+export async function updateEscortcontroller(request, response) {
+    try {
+        const {
+            escortId,
+            action,
+            reason
+        } = request.body;
+
+        let updateData = {};
+        let emailSubject = "";
+        let emailHtml = "";
+
+        const escort = await EscortModel.findOne({
+            escortId
+        });
+
+        if (!escort) {
+            return response.status(400).json({
+                message: "escortId not found",
+                success: false,
+                error: true
+            })
+        }
+
+        const verifyLink = `https://www.greenevelvet.com/login`
+        const resubmitLink = `https://www.greenevelvet.com/registration-resubmit/${escort.escortId}`;
+
+        const verifyHtml = `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background-color:#f9f9f9;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="padding:40px 0;">
+  <tr>
+    <td align="center">
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:460px;background:#ffffff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.05);border:1px solid #eeeeee;overflow:hidden;">
+        
+        <!-- Top Success Bar -->
+        <tr>
+          <td height="5" style="background-color:#00A68F;"></td>
+        </tr>
+
+        <!-- Header -->
+        <tr>
+          <td style="padding:35px 40px 10px 40px;text-align:center;">
+            <h1 style="margin:0;color:#00A68F;font-size:24px;font-weight:800;letter-spacing:1px;">
+              GREENE VELVET
+            </h1>
+          </td>
+        </tr>
+
+        <!-- Content -->
+        <tr>
+          <td style="padding:20px 40px 40px 40px;text-align:center;">
+            <div style="margin-bottom: 20px;">
+                <span style="font-size: 40px;">🎉</span>
+            </div>
+            <h2 style="margin:0 0 12px 0;color:#1a1a1a;font-size:22px;font-weight:600;">Welcome Aboard, ${escort.name}!</h2>
+            <p style="margin:0 0 25px 0;color:#555555;font-size:15px;line-height:22px;">
+              Great news! Your account has been <b>successfully verified</b> by our admin team. You now have full access to your dashboard and features.
+            </p>
+
+
+            <div style="background-color: #f0faf8; border-left: 4px solid #00A68F; padding: 15px; margin: 25px 0; text-align: left; border-radius: 4px;">
+              <p style="margin: 0 0 6px 0; color: #00A68F; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                💡 Quick Tip to Get More Bookings:
+              </p>
+              <p style="margin: 0; color: #333333; font-size: 13.5px; line-height: 20px;">
+                Please complete your profile by adding <b>photos/videos</b> to your gallery and updating your <b>rates & services</b>. A complete profile builds trust and attracts more clients instantly!
+              </p>
+            </div>
+
+            <!-- Login Button -->
+            <div style="margin:30px 0;">
+              <a href="${verifyLink}" 
+                 style="display:inline-block; background-color:#00A68F; color:#ffffff; padding:16px 45px; font-size:16px; font-weight:700; text-decoration:none; border-radius:8px; box-shadow: 0 4px 12px rgba(0, 166, 143, 0.2);">
+                Login to Your Account
+              </a>
+            </div>
+
+            <p style="margin:20px 0 0 0; color:#888888; font-size:13px; line-height:20px;">
+              We are excited to have you with us. If you have any questions, feel free to reach out to our support team.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:25px 40px;background-color:#fcfcfc;border-top:1px solid #eeeeee;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#aaaaaa;line-height:18px;">
+              © ${new Date().getFullYear()} <b>Greene Velvet</b> Solutions. <br>
+              Empowering your professional journey.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+`;
+
+        const rejectedHtml = `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background-color:#f9f9f9;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="padding:40px 0;">
+  <tr>
+    <td align="center">
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:460px;background:#ffffff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.05);border:1px solid #eeeeee;overflow:hidden;">
+        
+        <!-- Red Top Bar -->
+        <tr>
+          <td height="5" style="background-color:#e74c3c;"></td>
+        </tr>
+
+        <!-- Header -->
+        <tr>
+          <td style="padding:35px 40px 10px 40px;text-align:center;">
+            <h1 style="margin:0;color:#00A68F;font-size:24px;font-weight:800;letter-spacing:1px;">
+              GREENE VELVET
+            </h1>
+          </td>
+        </tr>
+
+        <!-- Content -->
+        <tr>
+          <td style="padding:20px 40px 40px 40px;">
+
+            <h2 style="margin:0 0 12px 0;color:#1a1a1a;font-size:20px;font-weight:600;text-align:center;">
+              Account Status Update
+            </h2>
+
+            <p style="margin:0 0 20px 0;color:#555555;font-size:15px;line-height:22px;text-align:center;">
+              Hello <strong>${escort.name}</strong>, we reviewed your profile verification request. Unfortunately, it could not be approved at this time.
+            </p>
+
+            <!-- Reason Box -->
+            <div style="margin:25px 0;background-color:#fff5f5;border-left:4px solid #e74c3c;padding:15px 20px;">
+              
+              <span style="display:block;font-size:12px;color:#e74c3c;font-weight:700;margin-bottom:5px;text-transform:uppercase;">
+                Reason for Rejection:
+              </span>
+
+              <p style="margin:0;color:#2d3436;font-size:15px;font-weight:500;">
+                ${reason || "Incomplete or unclear documentation provided."}
+              </p>
+
+            </div>
+
+            <p style="margin:20px 0 10px 0;color:#555555;font-size:14px;line-height:21px;text-align:center;">
+              Please update the required information and submit your profile again for verification.
+            </p>
+
+            <!-- Resubmit Button -->
+            <div style="text-align:center;margin:30px 0;">
+
+              <a
+                href="${resubmitLink}"
+                target="_blank"
+                style="
+                  display:inline-block;
+                  background-color:#00A68F;
+                  color:#ffffff;
+                  padding:15px 32px;
+                  font-size:15px;
+                  font-weight:700;
+                  text-decoration:none;
+                  border-radius:8px;
+                  box-shadow:0 4px 12px rgba(0,166,143,0.20);
+                "
+              >
+                Update & Re-submit Profile
+              </a>
+
+            </div>
+
+            <!-- Direct Link -->
+            <p style="margin:15px 0 0 0;color:#999999;font-size:11px;line-height:18px;text-align:center;">
+              If the button above does not work, copy and open this link:
+            </p>
+
+            <p style="margin:5px 0 0 0;text-align:center;word-break:break-all;">
+              <a
+                href="${resubmitLink}"
+                target="_blank"
+                style="color:#00A68F;font-size:11px;text-decoration:none;"
+              >
+                ${resubmitLink}
+              </a>
+            </p>
+
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:25px 40px;background-color:#fcfcfc;border-top:1px solid #eeeeee;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#aaaaaa;line-height:18px;">
+              © ${new Date().getFullYear()} <b>Greene Velvet</b> Solutions. <br>
+              Need help? Please contact our support team.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+`;
+
+
+        if (escort?.isVerified) {
+
+            if (action === "Active") {
+                updateData = {
+                    isVerified: true,
+                    status: "Active",
+                };
+
+                emailSubject = "Your account has been Activated ✅ - Greene Velvet";
+                emailHtml = verifyHtml;
+            } else if (action === "Suspended") {
+                updateData = {
+                    isVerified: true,
+                    status: "Suspended",
+                    reason
+                };
+
+                emailSubject = "Your account has been Deactivated - Greene Velvet";
+                emailHtml = rejectedHtml;
+            } else {
+                return response.status(400).json({
+                    message: "action is undefined!",
+                    success: false,
+                    error: true
+                });
+            }
+        } else {
+
+            if (action === "Active") {
+                updateData = {
+                    isVerified: true,
+                    status: "Active",
+                    docsuploadStatus: "approved"
+                };
+
+                emailSubject = "Your account has been verified ✅ - Greene Velvet";
+                emailHtml = verifyHtml;
+            } else if (action === "Rejected") {
+                updateData = {
+                    isVerified: false,
+                    status: "Rejected",
+                    docsuploadStatus: "failed",
+                    reason
+
+                };
+
+                emailSubject = "Your verification was rejected - Greene Velvet";
+                emailHtml = rejectedHtml;
+            } else {
+                return response.status(400).json({
+                    message: "action is undefined!",
+                    success: false,
+                    error: true
+                });
+            }
+        }
+
+        console.log("updateData", updateData);
+
+        const updatedEscort = await EscortModel.findOneAndUpdate({
+                escortId: escortId
+            },
+            updateData, {
+                new: true
+            }
+        )
+
+        if (!updatedEscort) {
+            return response.status(404).json({
+                message: "Escort updation failed",
+                success: false,
+                error: true
+            });
+        }
+
+        if (escort.email) {
+            await sendMail(escort.email, emailSubject, emailHtml);
+        }
+
+        return response.status(200).json({
+            message: `Escort ${action} successful and email sent`,
+            success: true,
+            error: false,
+            data: updatedEscort
+        })
+
+    } catch (error) {
+        console.log("update escort error", error);
+
+        return response.status(500).json({
+            message: error.message || error,
+            success: false,
+            error: true
+        })
+    }
+}
+
+//  delete escort 
+export async function deleteEscortcontroller(request, response) {
+    try {
+        const {
+            escortId
+        } = request.body;
+
+        if (!escortId) {
+            return response.status(400).json({
+                message: "escortId is required",
+                success: false,
+                error: true
+            })
+        }
+
+
+        const escort = await EscortModel.findOne({
+            escortId
+        });
+
+        if (!escort) {
+            return response.status(404).json({
+                message: "Escort not found",
+                success: false,
+                error: true
+            })
+        }
+
+        await Promise.all([
+            TourModel.deleteMany({
+                userId: escort._id
+            }),
+            ServiceModel.deleteMany({
+                userId: escort._id
+            }),
+            RatesModel.deleteMany({
+                userId: escort._id
+            }),
+            BlogModel.deleteMany({
+                userId: escort._id
+            }),
+            NewsAndTourModel.deleteMany({
+                userId: escort._id
+            }),
+            BookingModel.deleteMany({
+                userId: escort._id
+            }),
+            await NotificationModel.deleteMany({
+                $or: [{
+                        recipient: escort._id,
+                        recipientModel: "Escort"
+                    },
+                    {
+                        sender: escort._id,
+                        senderModel: "Escort"
+                    }
+                ]
+            })
+        ]);
+
+        const escortDeleted = await EscortModel.deleteOne({
+            _id: escort._id
+        });
+
+        if (!escortDeleted) {
+            return response.status(404).json({
+                message: "Escort delete failed",
+                success: false,
+                error: true
+            })
+        }
+
+        return response.status(200).json({
+            message: "Escort account and its related details deleted successfull",
+            success: true,
+            error: false,
+            data: escortDeleted
+        })
+
+    } catch (error) {
+        console.log("delete escorts", error);
+
+        return response.status(500).json({
+            message: error.message || error,
+            success: false,
+            error: true,
+        })
+    }
+}
+
+// fecth verified escorts (*--ye ab kam me nahi le rahe h--*)
+export async function verifiedEscortcontroller(request, response) {
+    try {
+        const {
+            role,
+            isVerified,
+        } = request.query;
+
+        let filter = {
+            status: {
+                $in: ["Active", "Suspended", "Rejected"]
+            }
+        };
+
+        if (role) filter.role = role;
+
+        if (isVerified !== undefined)
+            filter.isVerified = isVerified === "true";
+
+        const escorts = await EscortModel.find(filter)
+            .sort({
+                createdAt: -1
+            });
+
+        return response.status(200).json({
+            message: "Escort list fetched",
+            error: false,
+            success: true,
+            data: escorts || [],
+        })
+
+    } catch (error) {
+        console.log("verified escort error", error);
+        return response.status(500).json({
+            message: error.message || error,
+            error: true,
+            success: false
+        })
+    }
+}
+
+// fetch incomplete registered escorts
+export async function getIncompleteRegistration(request, response) {
+
+    try {
+
+        const escorts = await EscortModel.find({
+                lastCompletedStep: {
+                    $lte: 6
+                }
+            })
+            .select("-password")
+            .sort({
+                createdAt: -1
+            });
+
+        return response.status(200).json({
+            success: true,
+            error: false,
+            message: `fetch Escort data successfully`,
+            data: escorts || [],
+        });
+
+    } catch (error) {
+        console.log("get escorts data error ", error);
+
+        return response.status(500).json({
+            success: false,
+            error: true,
+            message: error.message || error
+        });
+
+    }
+
+}
+
+
+//-------------------- fetch new registration escorts for new verfication approval ----------------------//
+export const getAwaitingVerificationEscorts = async (req, res) => {
+    try {
+        const {
+            search = "",
+                country = "",
+                city = "",
+                status = "",
+                register = "",
+                page = 1,
+                limit = 10
+        } = req.query;
+
+
+        const currentPage = Math.max(Number(page) || 1, 1);
+        const pageLimit = Math.min(Number(limit) || 10, 500);
+        const skip = (currentPage - 1) * pageLimit;
+
+        const filter = {
+            isVerified: false,
+
+            status: {
+                $in: ["Pending", "Suspended", "Rejected"]
+            },
+
+            isEmailVerified: true,
+
+            lastCompletedStep: 7,
+
+            verificationselfie: {
+                $exists: true,
+                $type: "string",
+                $ne: ""
+            },
+
+            verificationgovtId: {
+                $exists: true,
+                $type: "string",
+                $ne: ""
+            },
+
+            $or: [{
+                    "pendingAvatar.url": {
+                        $exists: true,
+                        $type: "string",
+                        $ne: ""
+                    }
+                },
+                {
+                    "avatar.url": {
+                        $exists: true,
+                        $type: "string",
+                        $ne: ""
+                    }
+                }
+            ],
+
+            "gallery.photos.2": {
+                $exists: true
+            }
+        };
+        if (
+            status && ["Pending", "Suspended", "Rejected"].includes(status)
+        ) {
+            filter.status = status;
+        }
+
+        if (search.trim()) {
+            filter.$or = [{
+                    name: {
+                        $regex: search.trim(),
+                        $options: "i"
+                    }
+                },
+                {
+                    escortId: {
+                        $regex: search.trim(),
+                        $options: "i"
+                    }
+                },
+                {
+                    email: {
+                        $regex: search.trim(),
+                        $options: "i"
+                    }
+                }
+            ];
+        }
+
+        if (country.trim()) {
+            filter.country = {
+                $regex: `^${country.trim()}$`,
+                $options: "i"
+            };
+        }
+
+        if (city.trim()) {
+            filter.city = {
+                $regex: `^${city.trim()}$`,
+                $options: "i"
+            };
+        }
+
+        if (register === "new") {
+            const newDate = new Date();
+            newDate.setDate(newDate.getDate() - 7);
+
+            filter.createdAt = {
+                $gte: newDate
+            };
+        }
+
+        if (register === "old") {
+            const oldDate = new Date();
+            oldDate.setDate(oldDate.getDate() - 7);
+
+            filter.createdAt = {
+                $lt: oldDate
+            };
+        }
+
+
+        console.log("complete filter", filter);
+
+
+
+
+        const [escorts, totalEscorts] = await Promise.all([
+            EscortModel.find(filter)
+            .select(
+                "escortId name email country city status isVerified isEmailVerified verificationSelfie verificationgovtId avatar pendingAvatar gallery adverties_category createdAt"
+            )
+            .sort({
+                createdAt: -1
+            })
+            .skip(skip)
+            .limit(pageLimit)
+            .lean(),
+
+            EscortModel.countDocuments(filter)
+        ]);
+
+        const totalPages = Math.ceil(totalEscorts / pageLimit);
+
+
+        return res.status(200).json({
+            success: true,
+            message: "Awaiting verification escorts fetched successfully",
+            data: {
+                escorts,
+                pagination: {
+                    total: totalEscorts,
+                    page: currentPage,
+                    limit: pageLimit,
+                    totalPages
+                }
+            }
+        });
+    } catch (error) {
+        console.error("Get Awaiting Verification Escorts Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch awaiting verification escorts",
+            error: error.message
+        });
+    }
+};
+
+
+//-------------------- fetch Verified escort with search filter data -----------------------------------//
+export async function getVerifiedEscorts(req, res) {
+    try {
+        const {
+            search = "",
+                country = "",
+                city = "",
+                status = "",
+                register = "",
+                page = 1,
+                limit = 10
+        } = req.query;
+
+        const currentPage = Math.max(Number(page) || 1, 1);
+        const pageLimit = Math.min(Number(limit) || 10, 500);
+        const skip = (currentPage - 1) * pageLimit;
+
+        const filter = {
+            isVerified: true,
+            status: {
+                $in: ["Active", "Suspended", "Rejected"]
+            }
+        };
+
+        if (search.trim()) {
+            filter.$or = [{
+                    name: {
+                        $regex: search.trim(),
+                        $options: "i"
+                    }
+                },
+                {
+                    escortId: {
+                        $regex: search.trim(),
+                        $options: "i"
+                    }
+                },
+                {
+                    email: {
+                        $regex: search.trim(),
+                        $options: "i"
+                    }
+                }
+            ];
+        }
+
+        if (country.trim()) {
+            filter.country = {
+                $regex: `^${country.trim()}$`,
+                $options: "i"
+            };
+        }
+
+        if (city.trim()) {
+            filter.city = {
+                $regex: `^${city.trim()}$`,
+                $options: "i"
+            };
+        }
+
+        if (
+            status && ["Active", "Suspended", "Rejected"].includes(status)
+        ) {
+            filter.status = status;
+        }
+
+        if (register === "new") {
+            const newDate = new Date();
+            newDate.setDate(newDate.getDate() - 7);
+
+            filter.createdAt = {
+                $gte: newDate
+            };
+        }
+
+        if (register === "old") {
+            const oldDate = new Date();
+            oldDate.setDate(oldDate.getDate() - 7);
+
+            filter.createdAt = {
+                $lt: oldDate
+            };
+        }
+
+        const [
+            escorts,
+            totalEscorts,
+            activeEscorts,
+            newEscorts,
+            recentSubscribedIds
+        ] = await Promise.all([
+            EscortModel.find(filter)
+            .select(
+                "escortId name avatar email country city status isVerified adverties_category createdAt"
+            )
+            .sort({
+                createdAt: -1
+            })
+            .skip(skip)
+            .limit(pageLimit)
+            .lean(),
+
+            EscortModel.countDocuments({
+                isVerified: true,
+                status: {
+                    $in: ["Active", "Suspended", "Rejected"]
+                }
+            }),
+
+            EscortModel.countDocuments({
+                isVerified: true,
+                status: "Active"
+            }),
+
+            EscortModel.countDocuments({
+                isVerified: true,
+                status: {
+                    $in: ["Active", "Suspended", "Rejected"]
+                },
+                createdAt: {
+                    $gte: (() => {
+                        const date = new Date();
+                        date.setDate(date.getDate() - 7);
+                        return date;
+                    })()
+                }
+            }),
+
+            subcribedModel.distinct("userId", {
+                status: "finished"
+            })
+        ]);
+
+        const recentSubscribedEscorts = await EscortModel.countDocuments({
+            _id: {
+                $in: recentSubscribedIds
+            },
+            isVerified: true,
+            status: {
+                $in: ["Active", "Suspended", "Rejected"]
+            }
+        });
+
+        const totalPages = Math.ceil(totalEscorts / pageLimit);
+
+        return res.status(200).json({
+            success: true,
+            message: "Registered escorts fetched successfully",
+            data: {
+                escorts,
+                cards: {
+                    totalEscorts,
+                    activeEscorts,
+                    recentSubscribedEscorts,
+                    newEscorts
+                },
+                pagination: {
+                    total: totalEscorts,
+                    page: currentPage,
+                    limit: pageLimit,
+                    totalPages
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error("Get Registered Escorts Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch registered escorts",
+            error: error.message
+        });
+    }
+};
+
+
+//-------------------- fetch pending media uploads escorts list--------------------------------------//'
+export const getPendingEscortMedia = async (req, res) => {
+    try {
+        const {
+            search = "",
+                country = "",
+                city = "",
+                mediaType = "",
+                page = 1,
+                limit = 10,
+        } = req.query;
+
+        const currentPage = Math.max(Number(page) || 1, 1);
+        const pageLimit = Math.min(Number(limit) || 10, 100);
+        const skip = (currentPage - 1) * pageLimit;
+
+        const filter = {
+            isVerified: true,
+            status: "Active",
+
+            $or: [{
+
+                    "pendingAvatar.status": "Pending",
+                    "pendingAvatar.url": {
+                        $exists: true,
+                        $ne: ""
+                    },
+                },
+                {
+                    "gallery.photos": {
+                        $elemMatch: {
+                            status: "Pending",
+                            url: {
+                                $exists: true,
+                                $ne: ""
+                            },
+                        },
+                    },
+                },
+                {
+                    "gallery.videos": {
+                        $elemMatch: {
+                            status: "Pending",
+                            url: {
+                                $exists: true,
+                                $ne: ""
+                            },
+                        },
+                    },
+                },
+            ],
+        };
+
+        if (search.trim()) {
+            filter.$and = [{
+                $or: [{
+                        name: {
+                            $regex: search.trim(),
+                            $options: "i",
+                        },
+                    },
+                    {
+                        escortId: {
+                            $regex: search.trim(),
+                            $options: "i",
+                        },
+                    },
+                    {
+                        email: {
+                            $regex: search.trim(),
+                            $options: "i",
+                        },
+                    },
+                ],
+            }, ];
+        }
+
+        if (country.trim()) {
+            filter.country = {
+                $regex: `^${country.trim()}$`,
+                $options: "i",
+            };
+        }
+
+        if (city.trim()) {
+            filter.city = {
+                $regex: `^${city.trim()}$`,
+                $options: "i",
+            };
+        }
+
+        if (mediaType === "avatar") {
+            filter.$or = [{
+                "pendingAvatar.status": "Pending",
+                "pendingAvatar.url": {
+                    $exists: true,
+                    $ne: ""
+                },
+            }, ];
+        } else if (mediaType === "photos") {
+            filter.$or = [{
+                "gallery.photos": {
+                    $elemMatch: {
+                        status: "Pending",
+                        url: {
+                            $exists: true,
+                            $ne: ""
+                        },
+                    },
+                },
+            }, ];
+        } else if (mediaType === "videos") {
+            filter.$or = [{
+                "gallery.videos": {
+                    $elemMatch: {
+                        status: "Pending",
+                        url: {
+                            $exists: true,
+                            $ne: ""
+                        },
+                    },
+                },
+            }, ];
+        }
+
+        const [escorts, total] = await Promise.all([
+            EscortModel.find(filter)
+            .select(
+                "escortId name email country city status avatar pendingAvatar gallery.photos gallery.videos createdAt updatedAt"
+            )
+            .sort({
+                updatedAt: -1
+            })
+            .skip(skip)
+            .limit(pageLimit)
+            .lean(),
+
+            EscortModel.countDocuments(filter),
+        ]);
+
+        const data = escorts.map((escort) => ({
+            _id: escort._id,
+            escortId: escort.escortId,
+            name: escort.name,
+            email: escort.email,
+            country: escort.country,
+            city: escort.city,
+            status: escort.status,
+            avatar: escort.avatar,
+            pendingAvatar: escort.pendingAvatar?.status === "Pending" &&
+                escort.pendingAvatar?.url ?
+                escort.pendingAvatar : null,
+            pendingPhotos: (escort.gallery?.photos || []).filter(
+                (photo) => photo.status === "Pending" && photo.url
+            ),
+            pendingVideos: (escort.gallery?.videos || []).filter(
+                (video) => video.status === "Pending" && video.url
+            ),
+            createdAt: escort.createdAt,
+        }));
+
+        return res.status(200).json({
+            success: true,
+            message: "Pending escort media fetched successfully",
+            data,
+            pagination: {
+                total,
+                page: currentPage,
+                limit: pageLimit,
+                totalPages: Math.ceil(total / pageLimit),
+            },
+        });
+    } catch (error) {
+        console.error("Get Pending Escort Media Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch pending escort media",
+            error: error.message,
+        });
+    }
+};
+
+
+//==========================================================< Clients >======================================================================
+
+// fetch clients
+export async function fetchClients(request, response) {
+    try {
+        const {
+            role
+        } = request.query;
+
+        let filter = {};
+
+        if (role) filter.role = role;
+
+        const clients = await ClientModel.find(filter)
+            .sort({
+                createdAt: -1
+            });
+
+
+        return response.status(200).json({
+            message: clients.length ? "clients list fetched" : "No clients found",
+            error: false,
+            success: true,
+            data: clients || [],
+        })
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            error: true,
+            success: false
+        })
+    }
+}
+
+// fetch client-details
+export async function fetchClientdetails(request, response) {
+    try {
+        const {
+            _id
+        } = request.query;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "client Id is missing",
+                success: false,
+                error: true
+            })
+        }
+
+        const client = await ClientModel.findById({
+            _id
+        });
+
+        if (!client) {
+            return response.status(404).json({
+                message: "client not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: "client details fetched",
+            success: true,
+            error: false,
+            data: client
+        })
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        })
+    }
+}
+
+// update client
+export async function updateClient(request, response) {
+    try {
+        const {
+            _id,
+            action,
+            reason
+        } = request.body;
+
+        if (!_id || !action) {
+            return response.status(400).json({
+                message: "Client ID and action are required",
+                success: false
+            });
+        }
+
+        const client = await ClientModel.findById({
+            _id
+        });
+
+        if (!client) {
+            return response.status(404).json({
+                message: "client Id not found",
+                success: false,
+                error: true
+            })
+        }
+
+        let updateData = {};
+        let emailSubject = "";
+        let emailHtml = "";
+
+        let loginLink = "https://www.greenevelvet.com/login"
+
+        const verifyHtml = `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background-color:#f9f9f9;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="padding:40px 0;">
+  <tr>
+    <td align="center">
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:460px;background:#ffffff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.05);border:1px solid #eeeeee;overflow:hidden;">
+        
+        <!-- Header Success Bar -->
+        <tr>
+          <td height="5" style="background-color:#00A68F;"></td>
+        </tr>
+
+        <!-- Logo Section -->
+        <tr>
+          <td style="padding:35px 40px 10px 40px;text-align:center;">
+            <h1 style="margin:0;color:#00A68F;font-size:24px;font-weight:800;letter-spacing:1px;">
+              GREENE VELVET
+            </h1>
+          </td>
+        </tr>
+
+        <!-- Main Content -->
+        <tr>
+          <td style="padding:20px 40px 40px 40px;text-align:center;">
+            <div style="margin-bottom: 20px;">
+                <span style="font-size: 40px;">✅</span>
+            </div>
+            <h2 style="margin:0 0 12px 0;color:#1a1a1a;font-size:22px;font-weight:600;">Verification Approved!</h2>
+            <p style="margin:0 0 25px 0;color:#555555;font-size:15px;line-height:22px;">
+              Hello <strong>${client.name}</strong>, your account has been verified by the admin. You are now a verified member of <b>Greene Velvet</b>.
+            </p>
+
+            <!-- Login Action -->
+            <div style="margin:30px 0;">
+              <a href="${loginLink}" 
+                 style="display:inline-block; background-color:#00A68F; color:#ffffff; padding:16px 45px; font-size:16px; font-weight:700; text-decoration:none; border-radius:8px; box-shadow: 0 4px 12px rgba(0, 166, 143, 0.2);">
+                Login to Dashboard
+              </a>
+            </div>
+
+            <p style="margin:20px 0 0 0; color:#888888; font-size:13px; line-height:20px;">
+              You can now access all our premium services and features. Welcome to the community!
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:25px 40px;background-color:#fcfcfc;border-top:1px solid #eeeeee;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#aaaaaa;line-height:18px;">
+              © ${new Date().getFullYear()} <b>Greene Velvet</b> Solutions. <br>
+              Verified Partner Account
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+`;
+
+        const suspendHtml = `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background-color:#f9f9f9;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="padding:40px 0;">
+  <tr>
+    <td align="center">
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:460px;background:#ffffff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.05);border:1px solid #eeeeee;overflow:hidden;">
+        
+        <!-- Danger/Alert Top Bar -->
+        <tr>
+          <td height="5" style="background-color:#d63031;"></td>
+        </tr>
+
+        <!-- Brand Section -->
+        <tr>
+          <td style="padding:35px 40px 10px 40px;text-align:center;">
+            <h1 style="margin:0;color:#00A68F;font-size:24px;font-weight:800;letter-spacing:1px;">
+              GREENE VELVET
+            </h1>
+          </td>
+        </tr>
+
+        <!-- Main Content -->
+        <tr>
+          <td style="padding:20px 40px 40px 40px;">
+            <div style="text-align:center; margin-bottom:20px;">
+                <span style="font-size: 40px;">⚠️</span>
+            </div>
+            <h2 style="margin:0 0 12px 0;color:#1a1a1a;font-size:20px;font-weight:600;text-align:center;">Account Suspended</h2>
+            <p style="margin:0 0 20px 0;color:#555555;font-size:15px;line-height:22px;text-align:center;">
+              Hello <strong>${client.name}</strong>, this is to inform you that your account access has been suspended by our administration team.
+            </p>
+
+            <!-- Suspension Reason Box -->
+            <div style="margin:25px 0;background-color:#fff5f5;border:1px solid #fab1a0;border-radius:8px;padding:20px;">
+              <span style="display:block;font-size:12px;color:#d63031;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Reason for Suspension:</span>
+              <p style="margin:0;color:#2d3436;font-size:15px;font-weight:500;line-height:1.5;">
+                ${reason || "Violation of community guidelines or terms of service."}
+              </p>
+            </div>
+
+            <p style="margin:20px 0 0 0; color:#888888; font-size:13px; line-height:20px; text-align:center;">
+              While suspended, you will not be able to access your dashboard or services. If you believe this is a mistake, please contact our support desk.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:25px 40px;background-color:#fcfcfc;border-top:1px solid #eeeeee;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#aaaaaa;line-height:18px;">
+              © ${new Date().getFullYear()} <b>Greene Velvet</b> Solutions. <br>
+              Compliance & Security Department
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+`;
+
+
+
+        if (action === "Active") {
+            updateData = {
+                status: "Active",
+                reason: ""
+            };
+            const verifyLink = `https://www.greenevelvet.com/login`
+
+            emailSubject = "Account Activated  ✅ - GreeneVelvet";
+            emailHtml = verifyHtml;
+        } else if (action === "Suspended") {
+            updateData = {
+                isVerified: false,
+                status: "Suspended",
+                reason: reason || "Violation of platform policies"
+            };
+
+            emailSubject = "Account Suspended ❌ - GreeneVelvet";
+            emailHtml = suspendHtml;
+        } else {
+            return response.status(400).json({
+                message: "action is undefined!",
+                success: false,
+                error: true
+            });
+        }
+
+        console.log("updateData", updateData);
+
+        const updatedClient = await ClientModel.findByIdAndUpdate(
+            _id, {
+                $set: updateData
+            }, {
+                new: true
+            }
+        );
+
+        if (client.email) {
+            await sendMail(client.email, emailSubject, emailHtml);
+        }
+
+        return response.status(200).json({
+            message: `Client ${action} successfully`,
+            success: true,
+            error: false,
+            data: updatedClient
+        })
+
+    } catch (error) {
+        console.log("UPDATE CLIENT ERROR:", error);
+
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        })
+    }
+}
+
+
+//  delete client
+export async function deleteClient(request, response) {
+    try {
+        const {
+            _id
+        } = request.body;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "client Id is required",
+                success: false,
+                error: true
+            })
+        }
+
+        const deletedClient = await ClientModel.findByIdAndDelete({
+            _id
+        })
+
+        if (!deletedClient) {
+            return response.status(404).json({
+                message: "Client not found",
+                success: false,
+                error: true
+            })
+        }
+
+        return response.status(200).json({
+            message: "Client delete successfull",
+            success: true,
+            error: false,
+            data: deletedClient
+        })
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true,
+        })
+    }
+}
+
+//============================================================< Tours >==========================================================================
+// fetch tours
+export async function fetchTours(request, response) {
+    try {
+
+        const tours = await TourModel.find()
+            .populate("userId", "name")
+            .sort({
+                createdAt: -1
+            });
+
+        const formattedTours = tours.map(tour => ({
+            ...tour.toObject(),
+            escortName: tour.userId?.name
+        }));
+
+        return response.status(200).json({
+            message: tours.length ? "Tours list fetched" : "No tour found",
+            error: false,
+            success: true,
+            data: formattedTours || [],
+        })
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            error: true,
+            success: false
+        })
+    }
+}
+
+// fetch tour details
+export async function fetchTourDetails(request, response) {
+    try {
+        const {
+            _id
+        } = request.query;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "Tour ID is required",
+                success: false,
+                error: true
+            });
+        }
+
+        const tour = await TourModel.findById(_id)
+            .populate("userId", "name");
+
+        if (!tour) {
+            return response.status(404).json({
+                message: "Tour not found",
+                success: false,
+                error: true
+            });
+        }
+
+        const formattedTour = {
+            ...tour.toObject(),
+            escortName: tour.userId?.name
+        };
+
+        return response.status(200).json({
+            message: "Tour details fetched successfully",
+            success: true,
+            error: false,
+            data: formattedTour
+        });
+
+    } catch (error) {
+        console.log("FETCH TOUR DETAILS ERROR:", error);
+
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
+
+// delete tour
+export async function deleteTour(request, response) {
+    try {
+        const {
+            _id
+        } = request.body;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "Tour ID required",
+                success: false,
+                error: true
+            });
+        }
+
+        const tour = await TourModel.findById(_id);
+
+        if (!tour) {
+            return response.status(404).json({
+                message: "Tour not found",
+                success: false,
+                error: true,
+            });
+        }
+
+        const today = new Date();
+        const start = new Date(tour.startDate);
+        const end = new Date(tour.endDate);
+
+        today.setHours(0, 0, 0, 0);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(0, 0, 0, 0);
+
+        if (start <= today && end >= today) {
+            return response.status(400).json({
+                message: "Cannot delete an ongoing tour",
+                success: false,
+                error: true,
+            });
+        }
+
+        await tour.deleteOne();
+
+        return response.status(200).json({
+            message: "Tour deleted successfully",
+            success: true,
+            error: false
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
+//=================================================================< Blogs >================================================================
+
+// fetch blogs
+export async function fetchBlogs(request, response) {
+    try {
+
+        const blogs = await BlogModel.find()
+            .populate("userId", "name")
+            .sort({
+                createdAt: -1
+            });
+
+        const formattedBlogs = blogs.map(blog => ({
+            ...blog.toObject(),
+            userName: blog.userId?.name
+        }));
+
+        return response.status(200).json({
+            message: formattedBlogs.length ? "Blogs list fetched" : "No blog found",
+            error: false,
+            success: true,
+            data: formattedBlogs
+        })
+
+    } catch (error) {
+
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            error: true,
+            success: false
+        })
+    }
+}
+
+// fetch blog details
+export async function fetchBlogDetails(request, response) {
+    try {
+        const {
+            _id
+        } = request.query;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "Blog ID is required",
+                success: false,
+                error: true
+            });
+        }
+
+        const blog = await BlogModel.findById(_id)
+            .populate("userId", "name");
+
+        if (!blog) {
+            return response.status(404).json({
+                message: "Blog not found",
+                success: false,
+                error: true
+            });
+        }
+
+        const formattedBlog = {
+            ...blog.toObject(),
+            escortName: blog.userId?.name
+        };
+
+        return response.status(200).json({
+            message: "Blog details fetched successfully",
+            success: true,
+            error: false,
+            data: formattedBlog
+        });
+
+    } catch (error) {
+        console.log("FETCH TOUR DETAILS ERROR:", error);
+
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
+
+export async function updateBlogStatus(request, response) {
+    try {
+        const {
+            _id,
+            status
+        } = request.body;
+
+        if (!_id || !status) {
+            return response.status(400).json({
+                message: "ID and status required",
+                success: false,
+                error: true
+            });
+        }
+
+        const updated = await BlogModel.findByIdAndUpdate(
+            _id, {
+                status
+            }, {
+                new: true
+            }
+        );
+
+        if (!updated) {
+            return response.status(404).json({
+                message: "Not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: `Status updated to ${status}`,
+            success: true,
+            error: false,
+            data: updated
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message,
+            success: false,
+            error: true
+        });
+    }
+}
+
+// delete blog and related data
+export async function deleteBlog(request, response) {
+    try {
+        const {
+            _id
+        } = request.body;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "Blog ID required",
+                success: false,
+                error: true
+            });
+        }
+
+        const blog = await BlogModel.findById(_id);
+
+        if (!blog) {
+            return response.status(404).json({
+                message: "Blog not found",
+                success: false,
+                error: true,
+            });
+        }
+
+        // 🔥 1. Delete media from Cloudinary
+        if (blog.media && blog.media.length > 0) {
+            await Promise.all(
+                blog.media.map(item =>
+                    item.public_id &&
+                    cloudinary.uploader.destroy(item.public_id, {
+                        resource_type: item.type === "video" ? "video" : "image"
+                    })
+                )
+            );
+        }
+
+        // 🔥 2. Delete comments & likes
+        await BlogCommentsModel.deleteMany({
+            postId: _id
+        });
+        await BlogLikesModel.deleteMany({
+            postId: _id
+        });
+
+        // 🔥 3. Remove blog reference from Escort
+        await EscortModel.updateMany({
+            blog: _id
+        }, {
+            $pull: {
+                blog: _id
+            }
+        });
+
+        // 🔥 4. Delete blog
+        await blog.deleteOne();
+
+        return response.status(200).json({
+            message: "Blog, media, comments & likes deleted successfully",
+            success: true,
+            error: false
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
+//=================================================================< NewsandTours >================================================================
+
+// fetch newsandtours
+export async function fetchNewsandtours(request, response) {
+    try {
+
+        const newsandtours = await NewsAndTourModel.find()
+            .populate("userId", "name")
+            .sort({
+                createdAt: -1
+            });
+
+        const formattedNewsandtours = newsandtours.map(newsandtour => ({
+            ...newsandtour.toObject(),
+            escortName: newsandtour.userId?.name
+        }));
+
+        return response.status(200).json({
+            message: formattedNewsandtours.length ? "Newsandtours list fetched" : "No Newsandtour found",
+            error: false,
+            success: true,
+            data: formattedNewsandtours || [],
+        })
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            error: true,
+            success: false
+        })
+    }
+}
+
+// fetch newsandtour details
+export async function fetchNewsandtourDetails(request, response) {
+    try {
+        const {
+            _id
+        } = request.query;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "Newsandtour ID is required",
+                success: false,
+                error: true
+            });
+        }
+
+        const newsandtour = await NewsAndTourModel.findById(_id)
+            .populate("userId", "name");
+
+        if (!newsandtour) {
+            return response.status(404).json({
+                message: "Newsandtour not found",
+                success: false,
+                error: true
+            });
+        }
+
+        const formattedNewsandtour = {
+            ...newsandtour.toObject(),
+            escortName: newsandtour.userId?.name
+        };
+
+        return response.status(200).json({
+            message: "Newsandtour details fetched successfully",
+            success: true,
+            error: false,
+            data: formattedNewsandtour
+        });
+
+    } catch (error) {
+        console.log("FETCH TOUR DETAILS ERROR:", error);
+
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
+
+// update newstour status
+export async function updateNewsandtourStatus(request, response) {
+    try {
+        const {
+            _id,
+            status
+        } = request.body;
+
+        if (!_id || !status) {
+            return response.status(400).json({
+                message: "ID and status required",
+                success: false,
+                error: true
+            });
+        }
+
+        const updated = await NewsAndTourModel.findByIdAndUpdate(
+            _id, {
+                status
+            }, {
+                new: true
+            }
+        );
+
+        if (!updated) {
+            return response.status(404).json({
+                message: "Not found",
+                success: false,
+                error: true
+            });
+        }
+
+        return response.status(200).json({
+            message: `Status updated to ${status}`,
+            success: true,
+            error: false,
+            data: updated
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message,
+            success: false,
+            error: true
+        });
+    }
+}
+
+// delete newsandtour and related data like and comments
+export async function deleteNewsandtour(request, response) {
+    try {
+        const {
+            _id
+        } = request.body;
+
+        if (!_id) {
+            return response.status(400).json({
+                message: "Newsandtour ID required",
+                success: false,
+                error: true
+            });
+        }
+
+        const newsandtour = await NewsAndTourModel.findById(_id);
+
+        if (!newsandtour) {
+            return response.status(404).json({
+                message: "Newsandtour not found",
+                success: false,
+                error: true,
+            });
+        }
+
+        if (newsandtour.media && newsandtour.media.length > 0) {
+            await Promise.all(
+                newsandtour.media.map(item =>
+                    item.public_id &&
+                    cloudinary.uploader.destroy(item.public_id, {
+                        resource_type: item.type === "video" ? "video" : "image"
+                    })
+                )
+            );
+        }
+
+        await NewstourCommentsModel.deleteMany({
+            postId: _id
+        });
+        await NewstourLikesModel.deleteMany({
+            postId: _id
+        });
+        await newsandtour.deleteOne();
+
+        await EscortModel.updateMany({
+            newsTour: _id
+        }, {
+            $pull: {
+                newsTour: _id
+            }
+        });
+
+        return response.status(200).json({
+            message: "Newsandtour and related data deleted successfully",
+            success: true,
+            error: false
+        });
+
+    } catch (error) {
+        return response.status(500).json({
+            message: error.message || "Internal server error",
+            success: false,
+            error: true
+        });
+    }
+}
+
+// ======================================================< avatar and gallery images status update and verify >==============================================================
+
+// avatar and gallery images status update and verify
+export async function verifyUploadImages(request, response) {
+
+    try {
+
+        const {
+            escortId,
+            imageUrl,
+            status,
+            type
+        } = request.body;
+
+
+        const adminId = request.user?._id;
+
+        if (!adminId) {
+            return response.status(401).json({
+                message: "Unauthorized access!",
+                success: false,
+                error: true
+            });
+        }
+
+        const allowedStatus = ["Pending", "Approved", "Rejected"];
+
+        if (!escortId || !imageUrl || !status || !type) {
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "escortId, image url, type and status are required"
+            });
+        }
+
+        if (!allowedStatus.includes(status)) {
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "Invalid status"
+            });
+        }
+
+        const escort = await EscortModel.findOne({
+            escortId
+        });
+
+        if (!escort) {
+            return response.status(404).json({
+                success: false,
+                error: true,
+                message: "Escort not found"
+            });
+        }
+
+        let updatedEscort = null;
+
+        if (type === "avatar") {
+
+            // Make sure pending avatar exists
+            if (!escort?.pendingAvatar?.url) {
+                return response.status(404).json({
+                    success: false,
+                    error: true,
+                    message: "Pending avatar not found"
+                });
+            }
+
+            // =========================*
+            // APPROVE AVATAR
+            // =========================
+            if (status === "Approved") {
+
+                const oldAvatarPublicId = escort?.avatar?.public_id;
+                const newAvatar = escort.pendingAvatar;
+
+                // Update DB first
+                updatedEscort = await EscortModel.findOneAndUpdate({
+                    escortId
+                }, {
+                    $set: {
+                        avatar: {
+                            url: newAvatar.url,
+                            public_id: newAvatar.public_id,
+                            status: "Approved"
+                        },
+                        pendingAvatar: {
+                            url: "",
+                            public_id: "",
+                            status: "Pending"
+                        }
+                    }
+                }, {
+                    new: true
+                });
+
+                // Delete old approved avatar from Cloudinary
+                if (oldAvatarPublicId) {
+                    await deleteFromCloudinary(oldAvatarPublicId);
+                }
+
+                // Send notification to Escort
+                await createAndSendNotification(request.app, {
+                    recipientId: updatedEscort._id,
+                    recipientModel: "Escort",
+                    senderId: adminId,
+                    senderModel: "Admin",
+                    type: "VERIFICATION",
+                    title: "Profile Image Approved",
+                    message: "Your profile image has been approved by the admin.",
+                    link: "/modeldashboard"
+                });
+            }
+
+            // =========================
+            // REJECT AVATAR
+            // =========================
+            if (status === "Rejected") {
+
+                const pendingAvatarPublicId =
+                    escort?.pendingAvatar?.public_id;
+
+                // Delete pending image from Cloudinary
+                if (pendingAvatarPublicId) {
+                    await deleteFromCloudinary(pendingAvatarPublicId);
+                }
+
+                // Keep current avatar unchanged
+                updatedEscort = await EscortModel.findOneAndUpdate({
+                    escortId
+                }, {
+                    $set: {
+                        pendingAvatar: {
+                            url: "",
+                            public_id: "",
+                            status: "Rejected"
+                        }
+                    }
+                }, {
+                    new: true
+                });
+
+                // Send notification to Escort
+                await createAndSendNotification(request.app, {
+                    recipientId: updatedEscort._id,
+                    recipientModel: "Escort",
+                    senderId: adminId,
+                    senderModel: "Admin",
+                    type: "VERIFICATION",
+                    title: "Profile Image Rejected",
+                    message: "Your profile image has been rejected by the admin. Please upload a new profile image.",
+                    link: "/modeldashboard/profile"
+                });
+            }
+        }
+
+
+        if (type === "gallery") {
+
+            // Update gallery photo status
+            updatedEscort = await EscortModel.findOneAndUpdate({
+                escortId,
+                "gallery.photos.url": imageUrl
+            }, {
+                $set: {
+                    "gallery.photos.$.status": status
+                }
+            }, {
+                new: true
+            });
+
+            if (!updatedEscort) {
+                return response.status(404).json({
+                    success: false,
+                    error: true,
+                    message: "Gallery photo not found"
+                });
+            }
+
+            // Send notification to Escort
+            await createAndSendNotification(request.app, {
+                recipientId: updatedEscort._id,
+                recipientModel: "Escort",
+                senderId: adminId,
+                senderModel: "Admin",
+                type: "VERIFICATION",
+                title: status === "Approved" ?
+                    "Gallery Photo Approved" : status === "Rejected" ?
+                    "Gallery Photo Rejected" : "Gallery Photo Status Updated",
+                message: status === "Approved" ?
+                    "Your gallery photo has been approved by the admin." : status === "Rejected" ?
+                    "Your gallery photo has been rejected by the admin. Please upload another photo." : "Your gallery photo status has been updated by the admin.",
+                link: "/modeldashboard/profile"
+            });
+        }
+
+        if (type === "video") {
+
+            // Update gallery video status
+            updatedEscort = await EscortModel.findOneAndUpdate({
+                escortId,
+                "gallery.videos.url": imageUrl
+            }, {
+                $set: {
+                    "gallery.videos.$.status": status
+                }
+            }, {
+                new: true
+            });
+
+            if (!updatedEscort) {
+                return response.status(404).json({
+                    success: false,
+                    error: true,
+                    message: "Gallery video not found"
+                });
+            }
+
+            // Send notification to Escort
+            await createAndSendNotification(request.app, {
+                recipientId: updatedEscort._id,
+                recipientModel: "Escort",
+                senderId: adminId,
+                senderModel: "Admin",
+                type: "VERIFICATION",
+                title: status === "Approved" ?
+                    "Gallery Video Approved" : status === "Rejected" ?
+                    "Gallery Video Rejected" : "Gallery Video Status Updated",
+                message: status === "Approved" ?
+                    "Your gallery video has been approved by the admin." : status === "Rejected" ?
+                    "Your gallery video has been rejected by the admin. Please upload another video." : "Your gallery video status has been updated by the admin.",
+                link: "/modeldashboard/profile"
+            });
+        }
+
+
+        if (!updatedEscort) {
+            return response.status(404).json({
+                success: false,
+                error: true,
+                message: "image or video not found"
+            });
+        }
+
+        return response.status(200).json({
+            success: true,
+            error: false,
+            message: `Uploaded ${type} ${status} successfully`
+        });
+
+    } catch (error) {
+        console.log("image status update error ", error);
+
+        return response.status(500).json({
+            success: false,
+            error: true,
+            message: error.message || error
+        });
+
+    }
+
+}
+
+
+//=================================================< Send registration reminder >==================================================//
+
+export async function sendRegistrationReminder(request, response) {
+    try {
+        const {
+            pendingEscortId,
+            customMessage
+        } = request.body;
+
+        if (!pendingEscortId) {
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "Escort Id is required",
+            });
+        }
+
+
+        const user = await EscortModel.findOne({
+            _id: pendingEscortId,
+            status: "Pending",
+        });
+
+        if (!user) {
+            return response.status(404).json({
+                success: false,
+                error: true,
+                message: "No incomplete escort registration found for this escort id.",
+            });
+        }
+
+        // Registration steps
+        const registrationSteps = {
+            1: "/signupadvertiser",
+            2: "/welcometogreenvelvet",
+            3: "/confirmmobilenumber",
+            4: "/profiledetails",
+            5: "/identityverification",
+            6: "/uploadprofileimage",
+            7: "/uploadprofilegalleryphotos",
+        };
+
+        // Registration already completed
+        if (user.lastCompletedStep >= 7) {
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "Escort registration is already completed and is under review.",
+            });
+        }
+
+        const nextStep = (user.lastCompletedStep || 0) + 1;
+
+        const stepPath = registrationSteps[nextStep] || "/signupadvertiser";
+
+        if (!stepPath) {
+            return response.status(400).json({
+                success: false,
+                error: true,
+                message: "Unable to determine the next registration step.",
+            });
+        }
+
+        const redirectUrl = `https://www.greenevelvet.com${stepPath}/${user.escortId}`;
+
+
+        // Send reminder email
+        const mailResponse = await sendRegistrationReminderEmail({
+            email: user.email,
+            modelName: user.name,
+            redirectUrl,
+            customMessage,
+        });
+
+        if (!mailResponse?.success) {
+            return response.status(500).json({
+                success: false,
+                error: true,
+                message: "Registration reminder email could not be sent.",
+            });
+        }
+
+
+        // Update escort email tracking after successful email send
+        await EscortModel.updateOne({
+            _id: user._id
+        }, {
+            $set: {
+                "incompleteProfileEmail.sendMail": true,
+                "incompleteProfileEmail.lastSentAt": new Date(),
+                "incompleteProfileEmail.lastSentAtStep": user.lastCompletedStep || 0,
+
+            },
+            $inc: {
+                "incompleteProfileEmail.sendCount": 1,
+            },
+        });
+
+
+        return response.status(200).json({
+            success: true,
+            error: false,
+            message: "Registration reminder email sent successfully.",
+            data: {
+                email: user.email,
+                escortId: user.escortId,
+                lastCompletedStep: user.lastCompletedStep,
+                nextStep,
+                redirectUrl,
+            },
+        });
+
+    } catch (error) {
+        console.log("Send registration reminder error:", error);
+
+        return response.status(500).json({
+            success: false,
+            error: true,
+            message: "Failed to send registration reminder email.",
+        });
+    }
+}
