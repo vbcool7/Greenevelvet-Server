@@ -86,7 +86,9 @@ export async function adminlogincontroller(request, response) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
+      // maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
+
+      maxAge: 5 * 60 * 1000, // 5 min for test
     });
 
     return response.json({
@@ -2881,7 +2883,6 @@ export async function verifyUploadImages(request, response) {
           },
           { new: true, runValidators: true },
         );
-
 
         // if (pendingAvatarPublicId) {
         //   await deleteFromCloudinary(pendingAvatarPublicId);
