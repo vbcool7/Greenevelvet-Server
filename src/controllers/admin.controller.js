@@ -72,8 +72,8 @@ export async function adminlogincontroller(request, response) {
       },
       process.env.JWT_SECRET,
       {
-        // expiresIn: "3d",
-        expiresIn: "2m",
+        expiresIn: "3d",
+        // expiresIn: "2m",
       },
     );
 
@@ -87,9 +87,9 @@ export async function adminlogincontroller(request, response) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      // maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
+      maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
 
-      maxAge: 2 * 60 * 1000, // 2 min for test
+      // maxAge: 2 * 60 * 1000, // 2 min for test
     });
 
     return response.json({
