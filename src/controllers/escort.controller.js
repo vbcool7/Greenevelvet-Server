@@ -1,18 +1,14 @@
 import bcryptjs from "bcryptjs";
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 import axios from "axios";
-import EscortModel from '../models/escortModel.js'
+import EscortModel from "../models/escortModel.js";
 import crypto from "crypto";
-import {
-    generatedescortId
-} from '../utils/generatedId.js'
+import { generatedescortId } from "../utils/generatedId.js";
 import EscortdetailsModel from "../models/escortdetailsModel.js";
 import EscortessentialModel from "../models/escortessentialModel.js";
 import EscortpreferModel from "../models/escortpreferModel.js";
 import uploadImageCloudinary from "../utils/uploadImageCloudinary.js";
-import {
-    sendVerificationEmail
-} from "../utils/emailService.js";
+import { sendVerificationEmail } from "../utils/emailService.js";
 import otpModel from "../models/otpModel.js";
 import uploadVideoCloudinary from "../utils/uploadVideoCloudinary.js";
 import deleteImageCloudinary from "../utils/deleteImageCloudinary.js";
@@ -20,9 +16,7 @@ import deleteVideoCloudinary from "../utils/deleteVideoCloudinary.js";
 import ServiceModel from "../models/escortserviceModel.js";
 import RatesModel from "../models/escortratesModel.js";
 import ClientModel from "../models/clientModel.js";
-import {
-    uploadMediaCloudinary
-} from "../utils/uploadMediaCloudinary.js";
+import { uploadMediaCloudinary } from "../utils/uploadMediaCloudinary.js";
 import NewsAndTourModel from "../models/newsandtourModel.js";
 import NewstourLikesModel from "../models/newstourLikesModel.js";
 import NewstourCommentsModel from "../models/newstourCommentsModel.js";
@@ -31,225 +25,210 @@ import BlogCommentsModel from "../models/blogCommentsModel.js";
 import BlogLikesModel from "../models/blogLikesModel.js";
 import BookingModel from "../models/bookingModel.js";
 import TourModel from "../models/tourModel.js";
-import {
-    decrypt,
-    encrypt
-} from "../utils/crypto.js";
+import { decrypt, encrypt } from "../utils/crypto.js";
 import sharp from "sharp";
 import {
-    sendMediaUploadNotification,
-    sendRegistrationNotification
+  sendMediaUploadNotification,
+  sendRegistrationNotification,
 } from "../utils/sendRegistrationNotification.js";
 import cloudinary from "../config/cloudinary.js";
-import {
-    sendMail
-} from "../utils/sendMail.js";
-import {
-    deleteFromCloudinary
-} from "../utils/deleteFromCloudinary.js";
-import {
-    createAndSendNotification
-} from "../utils/notificationHelper.js";
+import { sendMail } from "../utils/sendMail.js";
+import { deleteFromCloudinary } from "../utils/deleteFromCloudinary.js";
+import { createAndSendNotification } from "../utils/notificationHelper.js";
 import AdminModel from "../models/adminModel.js";
 import NotificationModel from "../models/notificationModel.js";
 import PendingEscortModel from "../models/PendingEscortModel.js";
 import subcribedModel from "../models/subcribedplanModel.js";
-import {
-    inflate
-} from "zlib";
+import { inflate } from "zlib";
 
 // change password
 export const escortChangePassword = async (request, response) => {
-    try {
-        const userId = request.user?._id;
+  try {
+    const userId = request.user?._id;
 
-        const {
-            currentPassword,
-            newPassword,
-            confirmPassword
-        } = request.body;
+    const { currentPassword, newPassword, confirmPassword } = request.body;
 
-        // 1. Required check
-        if (!currentPassword || !newPassword || !confirmPassword) {
-            return response.status(400).json({
-                message: "All fields are required",
-                success: false,
-                error: true
-            });
-        }
-
-        // 2. New & confirm match
-        if (newPassword !== confirmPassword) {
-            return response.status(400).json({
-                message: "New and Cinfirm Passwords do not match",
-                success: false,
-                error: true
-            });
-        }
-
-        // 3. Password strength
-        if (newPassword.length < 6) {
-            return response.status(400).json({
-                message: "Password must be at least 6 characters",
-                success: false,
-                error: true
-            });
-        }
-
-        // 4. Find user
-        const user = await EscortModel.findById(userId).select("+password");
-
-        if (!user) {
-            return response.status(404).json({
-                message: "User not found",
-                success: false,
-                error: true
-            });
-        }
-
-        // 5. Compare current password
-        const isMatch = await bcryptjs.compare(currentPassword, user.password);
-
-        if (!isMatch) {
-            return response.status(400).json({
-                message: "Current password is incorrect",
-                success: false,
-                error: true
-            });
-        }
-
-        // 6. Prevent same password reuse
-        const isSame = await bcryptjs.compare(newPassword, user.password);
-        if (isSame) {
-            return response.status(400).json({
-                message: "New password cannot be same as old password",
-                success: false,
-                error: true
-            });
-        }
-
-        // 7. Hash new password
-        const salt = await bcryptjs.genSalt(10);
-        const hashedPassword = await bcryptjs.hash(newPassword, salt);
-
-        await EscortModel.findByIdAndUpdate(userId, {
-            password: hashedPassword
-        });
-
-        return response.status(200).json({
-            message: "Password updated successfully",
-            success: true,
-            error: false
-        });
-
-    } catch (error) {
-        console.error("Change Password Error:", error);
-
-        return response.status(500).json({
-            message: "Something went wrong",
-            success: false,
-            error: true
-        });
+    // 1. Required check
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return response.status(400).json({
+        message: "All fields are required",
+        success: false,
+        error: true,
+      });
     }
-};
 
+    // 2. New & confirm match
+    if (newPassword !== confirmPassword) {
+      return response.status(400).json({
+        message: "New and Cinfirm Passwords do not match",
+        success: false,
+        error: true,
+      });
+    }
+
+    // 3. Password strength
+    if (newPassword.length < 6) {
+      return response.status(400).json({
+        message: "Password must be at least 6 characters",
+        success: false,
+        error: true,
+      });
+    }
+
+    // 4. Find user
+    const user = await EscortModel.findById(userId).select("+password");
+
+    if (!user) {
+      return response.status(404).json({
+        message: "User not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    // 5. Compare current password
+    const isMatch = await bcryptjs.compare(currentPassword, user.password);
+
+    if (!isMatch) {
+      return response.status(400).json({
+        message: "Current password is incorrect",
+        success: false,
+        error: true,
+      });
+    }
+
+    // 6. Prevent same password reuse
+    const isSame = await bcryptjs.compare(newPassword, user.password);
+    if (isSame) {
+      return response.status(400).json({
+        message: "New password cannot be same as old password",
+        success: false,
+        error: true,
+      });
+    }
+
+    // 7. Hash new password
+    const salt = await bcryptjs.genSalt(10);
+    const hashedPassword = await bcryptjs.hash(newPassword, salt);
+
+    await EscortModel.findByIdAndUpdate(userId, {
+      password: hashedPassword,
+    });
+
+    return response.status(200).json({
+      message: "Password updated successfully",
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    console.error("Change Password Error:", error);
+
+    return response.status(500).json({
+      message: "Something went wrong",
+      success: false,
+      error: true,
+    });
+  }
+};
 
 // fargot password , send otp
 export const escortForgotPassword = async (request, response) => {
-    try {
-        const {
-            email
-        } = request.body;
+  try {
+    const { email } = request.body;
 
-        if (!email) {
-            return response.status(400).json({
-                message: "Email is required",
-                success: false,
-                error: true
-            });
-        }
-        // ===================================================== 
-        // 1. FIRST CHECK ESCORT 
-        // ===================================================== 
+    if (!email) {
+      return response.status(400).json({
+        message: "Email is required",
+        success: false,
+        error: true,
+      });
+    }
+    // =====================================================
+    // 1. FIRST CHECK ESCORT
+    // =====================================================
 
-        let user = await EscortModel.findOne({
-            email
-        });
-        let userModel = EscortModel;
-        let userType = "Escort";
+    let user = await EscortModel.findOne({
+      email,
+    });
+    let userModel = EscortModel;
+    let userType = "Escort";
 
-        // ===================================================== 
-        // 2. IF ESCORT NOT FOUND → CHECK CLIENT 
-        // ===================================================== 
-        if (!user) {
-            user = await ClientModel.findOne({
-                email
-            });
-            userModel = ClientModel;
-            userType = "Client";
-        }
-        // =====================================================
-        //  3. USER NOT FOUND
-        // ===================================================== 
-        if (!user) {
-            return response.status(200).json({
-                message: "If account exists, OTP sent",
-                success: true,
-                error: false
-            });
-        }
-        // ===================================================== 
-        // 4. COOLDOWN CHECK 
-        // ===================================================== 
+    // =====================================================
+    // 2. IF ESCORT NOT FOUND → CHECK CLIENT
+    // =====================================================
+    if (!user) {
+      user = await ClientModel.findOne({
+        email,
+      });
+      userModel = ClientModel;
+      userType = "Client";
+    }
+    // =====================================================
+    //  3. USER NOT FOUND
+    // =====================================================
+    if (!user) {
+      return response.status(200).json({
+        message: "If account exists, OTP sent",
+        success: true,
+        error: false,
+      });
+    }
+    // =====================================================
+    // 4. COOLDOWN CHECK
+    // =====================================================
 
-        if (user.otpResendTime && user.otpResendTime > Date.now()) {
-            return response.status(429).json({
-                message: "Please wait before requesting a new OTP",
-                success: false,
-                error: true
-            });
-        }
+    if (user.otpResendTime && user.otpResendTime > Date.now()) {
+      return response.status(429).json({
+        message: "Please wait before requesting a new OTP",
+        success: false,
+        error: true,
+      });
+    }
 
-        // =====================================================
-        // 5. GENERATE OTP 
-        // =====================================================
+    // =====================================================
+    // 5. GENERATE OTP
+    // =====================================================
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const hashedOtp = await bcryptjs.hash(otp, 10);
-        const expiry = Date.now() + 5 * 60 * 1000;
-        const resendCooldown = Date.now() + 30 * 1000; // 30 sec
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedOtp = await bcryptjs.hash(otp, 10);
+    const expiry = Date.now() + 5 * 60 * 1000;
+    const resendCooldown = Date.now() + 30 * 1000; // 30 sec
 
-        console.log("otp", otp);
+    console.log("otp", otp);
 
-        // ===================================================== 
-        // 6. UPDATE OTP 
-        // ===================================================== 
+    // =====================================================
+    // 6. UPDATE OTP
+    // =====================================================
 
-        const updated = await userModel.findOneAndUpdate({
-            email
-        }, {
-            resetOtp: hashedOtp,
-            otpExpiry: expiry,
-            otpResendTime: resendCooldown,
-            otpAttempts: 0
-        }, {
-            new: true
-        });
+    const updated = await userModel.findOneAndUpdate(
+      {
+        email,
+      },
+      {
+        resetOtp: hashedOtp,
+        otpExpiry: expiry,
+        otpResendTime: resendCooldown,
+        otpAttempts: 0,
+      },
+      {
+        new: true,
+      },
+    );
 
-        if (!updated) {
-            return response.status(429).json({
-                message: "OTP already generated. Please wait",
-                success: false,
-                error: true
-            });
-        }
+    if (!updated) {
+      return response.status(429).json({
+        message: "OTP already generated. Please wait",
+        success: false,
+        error: true,
+      });
+    }
 
-        // ===================================================== 
-        // // 7. SEND EMAIL
-        //  =====================================================
-        const subject = "Password Reset OTP";
+    // =====================================================
+    // // 7. SEND EMAIL
+    //  =====================================================
+    const subject = "Password Reset OTP";
 
-        const html = `
+    const html = `
 <!DOCTYPE html>
 <html>
 <body style="margin:0;padding:0;background-color:#f9f9f9;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
@@ -314,267 +293,261 @@ export const escortForgotPassword = async (request, response) => {
 </html>
 `;
 
-        // ===================================================== 
-        // 8. SEND EMAIL 
-        // =====================================================
+    // =====================================================
+    // 8. SEND EMAIL
+    // =====================================================
 
+    try {
+      await sendMail(email, subject, html);
+    } catch (err) {
+      console.log("email send error", err);
 
-        try {
-            await sendMail(email, subject, html);
-        } catch (err) {
-            console.log("email send error", err);
+      await userModel.findByIdAndUpdate(user._id, {
+        resetOtp: null,
+        otpExpiry: null,
+      });
 
-            await userModel.findByIdAndUpdate(user._id, {
-                resetOtp: null,
-                otpExpiry: null
-            });
-
-            return response.status(500).json({
-                message: "Failed to send OTP",
-                success: false,
-                error: true
-            });
-        }
-
-        // ===================================================== 
-        // 9. SUCCESS 
-        // =====================================================
-
-        return response.status(200).json({
-            message: "OTP sent check email",
-            success: true,
-            error: false
-        });
-
-    } catch (error) {
-        console.error("otp send error: ", error);
-
-        return response.status(500).json({
-            message: "Something went wrong",
-            success: false,
-            error: true
-        });
+      return response.status(500).json({
+        message: "Failed to send OTP",
+        success: false,
+        error: true,
+      });
     }
+
+    // =====================================================
+    // 9. SUCCESS
+    // =====================================================
+
+    return response.status(200).json({
+      message: "OTP sent check email",
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    console.error("otp send error: ", error);
+
+    return response.status(500).json({
+      message: "Something went wrong",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // Verify OTP
 export const escortVerifyOtp = async (request, response) => {
-    try {
+  try {
+    const { email, otp } = request.body;
 
-        const {
-            email,
-            otp
-        } = request.body;
-
-        if (email == '' || otp == '') {
-            return response.status(400).json({
-                success: false,
-                message: "Email and OTP required!",
-                error: true
-            });
-        }
-        // 1. validation
-        if (!email || !otp) {
-            return response.status(400).json({
-                success: false,
-                message: "Email and OTP required",
-                error: true
-            });
-        }
-        // 2. find user
-
-        let user = await EscortModel.findOne({
-            email
-        });
-
-        let userModel = EscortModel;
-
-        if (!user) {
-            user = await ClientModel.findOne({
-                email
-            });
-            userModel = ClientModel;
-        }
-
-        if (!user || !user.resetOtp) {
-            return response.status(400).json({
-                success: false,
-                message: "Invalid request",
-                error: true
-            });
-        }
-
-
-
-        // 3. expiry check (safe)
-        if (!user.otpExpiry || user.otpExpiry < Date.now()) {
-            return response.status(400).json({
-                success: false,
-                message: "OTP expired",
-                error: true
-            });
-        }
-
-        // 4. attempts limit check
-        if (user.otpAttempts >= 5) {
-            return response.status(429).json({
-                success: false,
-                message: "Too many attempts. Try again later",
-                error: true
-            });
-        }
-
-        // 5. OTP match
-        const isMatch = await bcryptjs.compare(otp, user.resetOtp);
-
-        // ❌ WRONG OTP
-        if (!isMatch) {
-            await userModel.updateOne({
-                email
-            }, {
-                $inc: {
-                    otpAttempts: 1
-                }
-            });
-
-            return response.status(400).json({
-                success: false,
-                message: "Invalid OTP",
-                error: true
-            });
-        }
-
-        // 6. SUCCESS → clear OTP (NO save used)
-        await userModel.updateOne({
-            email
-        }, {
-            $unset: {
-                resetOtp: "",
-                otpExpiry: ""
-            },
-            $set: {
-                otpAttempts: 0
-            }
-        });
-
-        return response.status(200).json({
-            success: true,
-            message: "OTP verified successfully",
-            error: false
-        });
-
-    } catch (error) {
-        console.log("Verify OTP Error: ", error);
-
-        return response.status(500).json({
-            success: false,
-            message: "OTP Verification failed!",
-            error: true
-        });
+    if (email == "" || otp == "") {
+      return response.status(400).json({
+        success: false,
+        message: "Email and OTP required!",
+        error: true,
+      });
     }
-};
+    // 1. validation
+    if (!email || !otp) {
+      return response.status(400).json({
+        success: false,
+        message: "Email and OTP required",
+        error: true,
+      });
+    }
+    // 2. find user
 
+    let user = await EscortModel.findOne({
+      email,
+    });
+
+    let userModel = EscortModel;
+
+    if (!user) {
+      user = await ClientModel.findOne({
+        email,
+      });
+      userModel = ClientModel;
+    }
+
+    if (!user || !user.resetOtp) {
+      return response.status(400).json({
+        success: false,
+        message: "Invalid request",
+        error: true,
+      });
+    }
+
+    // 3. expiry check (safe)
+    if (!user.otpExpiry || user.otpExpiry < Date.now()) {
+      return response.status(400).json({
+        success: false,
+        message: "OTP expired",
+        error: true,
+      });
+    }
+
+    // 4. attempts limit check
+    if (user.otpAttempts >= 5) {
+      return response.status(429).json({
+        success: false,
+        message: "Too many attempts. Try again later",
+        error: true,
+      });
+    }
+
+    // 5. OTP match
+    const isMatch = await bcryptjs.compare(otp, user.resetOtp);
+
+    // ❌ WRONG OTP
+    if (!isMatch) {
+      await userModel.updateOne(
+        {
+          email,
+        },
+        {
+          $inc: {
+            otpAttempts: 1,
+          },
+        },
+      );
+
+      return response.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+        error: true,
+      });
+    }
+
+    // 6. SUCCESS → clear OTP (NO save used)
+    await userModel.updateOne(
+      {
+        email,
+      },
+      {
+        $unset: {
+          resetOtp: "",
+          otpExpiry: "",
+        },
+        $set: {
+          otpAttempts: 0,
+        },
+      },
+    );
+
+    return response.status(200).json({
+      success: true,
+      message: "OTP verified successfully",
+      error: false,
+    });
+  } catch (error) {
+    console.log("Verify OTP Error: ", error);
+
+    return response.status(500).json({
+      success: false,
+      message: "OTP Verification failed!",
+      error: true,
+    });
+  }
+};
 
 // Reset Password
 export const escortResetPassword = async (request, response) => {
-    try {
-        const {
-            email,
-            newPassword,
-            confirmPassword
-        } = request.body;
+  try {
+    const { email, newPassword, confirmPassword } = request.body;
 
-        // 1. validation
-        if (!email || !newPassword || !confirmPassword) {
-            return response.status(400).json({
-                message: "All fields are required",
-                success: false,
-                error: true
-            });
-        }
-
-        // 2. New & confirm match
-        if (newPassword !== confirmPassword) {
-            return response.status(400).json({
-                message: "New and Cinfirm Passwords do not match",
-                success: false,
-                error: true
-            });
-        }
-
-        // 3. Password strength
-        if (newPassword.length < 6) {
-            return response.status(400).json({
-                message: "Password must be at least 6 characters",
-                success: false,
-                error: true
-            });
-        }
-
-        // 4. check valid user 
-        let user = await EscortModel.findOne({
-            email
-        });
-        let userModel = EscortModel;
-
-        if (!user) {
-            user = await ClientModel.findOne({
-                email
-            });
-            userModel = ClientModel;
-        }
-
-        if (!user) {
-            return response.status(400).json({
-                message: "Invalid request",
-                success: false,
-                error: true
-            });
-        }
-
-        // 5. security check → OTP must be verified already
-        if (user.resetOtp || user.otpExpiry) {
-            return response.status(403).json({
-                message: "OTP not verified",
-                success: false,
-                error: true
-            });
-        }
-
-        // 6. hash new password
-        const hashedPassword = await bcryptjs.hash(newPassword, 10);
-
-        // 7. update password + clear any leftover fields (NO save)
-        await userModel.updateOne({
-            email
-        }, {
-            $set: {
-                password: hashedPassword
-            },
-            $unset: {
-                resetOtp: "",
-                otpExpiry: ""
-            },
-            $setOnInsert: {
-                otpAttempts: 0
-            }
-        });
-
-        return response.status(200).json({
-            success: true,
-            message: "Password reset successfully",
-            error: false
-        });
-
-    } catch (error) {
-        console.error("Reset Password Error:", error);
-
-        return response.status(500).json({
-            message: "Reset pawwsord failed!",
-            success: false,
-            error: true
-        });
+    // 1. validation
+    if (!email || !newPassword || !confirmPassword) {
+      return response.status(400).json({
+        message: "All fields are required",
+        success: false,
+        error: true,
+      });
     }
+
+    // 2. New & confirm match
+    if (newPassword !== confirmPassword) {
+      return response.status(400).json({
+        message: "New and Cinfirm Passwords do not match",
+        success: false,
+        error: true,
+      });
+    }
+
+    // 3. Password strength
+    if (newPassword.length < 6) {
+      return response.status(400).json({
+        message: "Password must be at least 6 characters",
+        success: false,
+        error: true,
+      });
+    }
+
+    // 4. check valid user
+    let user = await EscortModel.findOne({
+      email,
+    });
+    let userModel = EscortModel;
+
+    if (!user) {
+      user = await ClientModel.findOne({
+        email,
+      });
+      userModel = ClientModel;
+    }
+
+    if (!user) {
+      return response.status(400).json({
+        message: "Invalid request",
+        success: false,
+        error: true,
+      });
+    }
+
+    // 5. security check → OTP must be verified already
+    if (user.resetOtp || user.otpExpiry) {
+      return response.status(403).json({
+        message: "OTP not verified",
+        success: false,
+        error: true,
+      });
+    }
+
+    // 6. hash new password
+    const hashedPassword = await bcryptjs.hash(newPassword, 10);
+
+    // 7. update password + clear any leftover fields (NO save)
+    await userModel.updateOne(
+      {
+        email,
+      },
+      {
+        $set: {
+          password: hashedPassword,
+        },
+        $unset: {
+          resetOtp: "",
+          otpExpiry: "",
+        },
+        $setOnInsert: {
+          otpAttempts: 0,
+        },
+      },
+    );
+
+    return response.status(200).json({
+      success: true,
+      message: "Password reset successfully",
+      error: false,
+    });
+  } catch (error) {
+    console.error("Reset Password Error:", error);
+
+    return response.status(500).json({
+      message: "Reset pawwsord failed!",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 //===================================================================================================//
@@ -583,2622 +556,2433 @@ export const escortResetPassword = async (request, response) => {
 
 // Escort Register controll step-1
 export async function registerEscortcontroller(request, response) {
-    try {
+  try {
+    const {
+      name,
+      email,
+      password,
+      country,
+      countryCode,
+      city,
+      account_classification,
+      account_type,
+      adverties_category,
+    } = request.body;
 
-        const {
-            name,
-            email,
-            password,
-            country,
-            countryCode,
-            city,
-            account_classification,
-            account_type,
-            adverties_category
-        } = request.body
+    console.log(request.body);
 
-        console.log(request.body);
-
-        if (!name || !email || !password) {
-            return response.status(400).json({
-                message: "Provide name, email, password",
-                error: true,
-                success: false
-            })
-        }
-
-        const normalizedEmail = email.trim().toLowerCase();
-
-        const exstingEmail = await ClientModel.findOne({
-            email: normalizedEmail
-        })
-
-        if (exstingEmail) {
-            return response.status(409).json({
-                message: "This email is already registered as Client, You can not register as Escort with",
-                success: false,
-                error: true
-            })
-        }
-
-        const escort = await EscortModel.findOne({
-            email: normalizedEmail
-        })
-
-        if (escort) {
-            return response.status(409).json({
-                message: "Already register email",
-                error: true,
-                success: false
-            })
-        }
-
-        //-----------------------------------------------------//
-        //                 Pending Escort Check                //
-        //-----------------------------------------------------//
-
-        let user = await PendingEscortModel.findOne({
-            email
-        }).select("+password");
-
-        let role = "Escort";
-        let _id = user?._id;
-
-        if (user) {
-            if (user?.status === "Pending" && user?.role === "Escort") {
-
-                const registrationSteps = {
-                    1: "/signupadvertiser",
-                    2: "/welcometogreenvelvet",
-                    3: "/confirmmobilenumber",
-                    4: "/profiledetails",
-                    5: "/identityverification",
-                    6: "/uploadprofileimage",
-                    7: "/uploadprofilegalleryphotos"
-                };
-
-                if (user?.lastCompletedStep >= 7) {
-                    return response.status(200).json({
-                        success: true,
-                        message: "Your profile is under review. Please wait for admin approval.",
-                        registrationCompleted: true,
-                        verificationStatus: "Pending",
-                    });
-                }
-
-                const nextStep = user.lastCompletedStep + 1;
-
-                let redirectUrl;
-
-                let message;
-
-                if (user.lastCompletedStep === 1) {
-                    redirectUrl = `${registrationSteps[nextStep]}/${user._id}`;
-
-                    // Generate new verification token
-                    const token = crypto.randomBytes(32).toString("hex");
-
-                    user.emailVerifyToken = token;
-                    user.emailVerifyExpiry = new Date(
-                        Date.now() + 24 * 60 * 60 * 1000 // 24 hours
-                    );
-
-                    await user.save();
-
-                    const verifyLink = `https://greenevelvet-server.onrender.com/escort/verify-email?token=${token}&id=${user._id}`;
-
-                    await sendVerificationEmail(
-                        user.email,
-                        verifyLink,
-                    );
-
-                    message = "Please verify your email before logging in.";
-
-                } else {
-                    redirectUrl = `${registrationSteps[nextStep]}/${user.escortId}`;
-                    message = "Please Complete your registration";
-                }
-
-                return response.status(403).json({
-                    message: message,
-                    success: false,
-                    error: true,
-                    registrationCompleted: false,
-                    escortId: user.escortId,
-                    id: user._id,
-                    lastCompletedStep: user.lastCompletedStep,
-                    nextStep,
-                    redirectUrl
-                });
-            }
-        }
-
-
-        // const escortId = await generatedescortId()
-
-        const token = crypto.randomBytes(32).toString("hex");
-
-        const salt = await bcryptjs.genSalt(10);
-        const hashPassword = await bcryptjs.hash(password, salt);
-
-        const payload = {
-            name,
-            email: normalizedEmail,
-            password: hashPassword,
-            country,
-            countryCode,
-            city,
-            account_classification,
-            account_type,
-            adverties_category,
-            emailVerifyToken: token,
-            emailVerifyExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hour
-            lastCompletedStep: 1,
-        }
-
-
-        const pendingEscort = new PendingEscortModel(payload)
-        const save = await pendingEscort.save()
-
-        console.log("pendingEscort ", pendingEscort);
-
-
-        const verifyLink = `https://greenevelvet-server.onrender.com/escort/verify-email?token=${token}`
-
-        await sendVerificationEmail(normalizedEmail, verifyLink);
-
-        return response.status(200).json({
-            message: "Verification link sent to your email",
-            error: false,
-            success: true,
-            data: {
-                email: save.email,
-                id: save._id,
-
-            }
-        })
-
-    } catch (error) {
-        console.log("Reg submit error", error);
-
-        return response.status(500).json({
-            message: "Registration submission failed!",
-            error: true,
-            success: false
-        })
+    if (!name || !email || !password) {
+      return response.status(400).json({
+        message: "Provide name, email, password",
+        error: true,
+        success: false,
+      });
     }
-}
 
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const exstingEmail = await ClientModel.findOne({
+      email: normalizedEmail,
+    });
+
+    if (exstingEmail) {
+      return response.status(409).json({
+        message:
+          "This email is already registered as Client, You can not register as Escort with",
+        success: false,
+        error: true,
+      });
+    }
+
+    const escort = await EscortModel.findOne({
+      email: normalizedEmail,
+    });
+
+    if (escort) {
+      return response.status(409).json({
+        message: "Already register email",
+        error: true,
+        success: false,
+      });
+    }
+
+    //-----------------------------------------------------//
+    //                 Pending Escort Check                //
+    //-----------------------------------------------------//
+
+    let user = await PendingEscortModel.findOne({
+      email,
+    }).select("+password");
+
+    let role = "Escort";
+    let _id = user?._id;
+
+    if (user) {
+      if (user?.status === "Pending" && user?.role === "Escort") {
+        const registrationSteps = {
+          1: "/signupadvertiser",
+          2: "/welcometogreenvelvet",
+          3: "/confirmmobilenumber",
+          4: "/profiledetails",
+          5: "/identityverification",
+          6: "/uploadprofileimage",
+          7: "/uploadprofilegalleryphotos",
+        };
+
+        if (user?.lastCompletedStep >= 7) {
+          return response.status(200).json({
+            success: true,
+            message:
+              "Your profile is under review. Please wait for admin approval.",
+            registrationCompleted: true,
+            verificationStatus: "Pending",
+          });
+        }
+
+        const nextStep = user.lastCompletedStep + 1;
+
+        let redirectUrl;
+
+        let message;
+
+        if (user.lastCompletedStep === 1) {
+          redirectUrl = `${registrationSteps[nextStep]}/${user._id}`;
+
+          // Generate new verification token
+          const token = crypto.randomBytes(32).toString("hex");
+
+          user.emailVerifyToken = token;
+          user.emailVerifyExpiry = new Date(
+            Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+          );
+
+          await user.save();
+
+          const verifyLink = `https://greenevelvet-server.onrender.com/escort/verify-email?token=${token}&id=${user._id}`;
+
+          await sendVerificationEmail(user.email, verifyLink);
+
+          message = "Please verify your email before logging in.";
+        } else {
+          redirectUrl = `${registrationSteps[nextStep]}/${user.escortId}`;
+          message = "Please Complete your registration";
+        }
+
+        return response.status(403).json({
+          message: message,
+          success: false,
+          error: true,
+          registrationCompleted: false,
+          escortId: user.escortId,
+          id: user._id,
+          lastCompletedStep: user.lastCompletedStep,
+          nextStep,
+          redirectUrl,
+        });
+      }
+    }
+
+    // const escortId = await generatedescortId()
+
+    const token = crypto.randomBytes(32).toString("hex");
+
+    const salt = await bcryptjs.genSalt(10);
+    const hashPassword = await bcryptjs.hash(password, salt);
+
+    const payload = {
+      name,
+      email: normalizedEmail,
+      password: hashPassword,
+      country,
+      countryCode,
+      city,
+      account_classification,
+      account_type,
+      adverties_category,
+      emailVerifyToken: token,
+      emailVerifyExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hour
+      lastCompletedStep: 1,
+    };
+
+    const pendingEscort = new PendingEscortModel(payload);
+    const save = await pendingEscort.save();
+
+    console.log("pendingEscort ", pendingEscort);
+
+    const verifyLink = `https://greenevelvet-server.onrender.com/escort/verify-email?token=${token}`;
+
+    await sendVerificationEmail(normalizedEmail, verifyLink);
+
+    return response.status(200).json({
+      message: "Verification link sent to your email",
+      error: false,
+      success: true,
+      data: {
+        email: save.email,
+        id: save._id,
+      },
+    });
+  } catch (error) {
+    console.log("Reg submit error", error);
+
+    return response.status(500).json({
+      message: "Registration submission failed!",
+      error: true,
+      success: false,
+    });
+  }
+}
 
 // Escort verify email controll step-2
 export async function verifyEmailcontroller(request, response) {
-    try {
-        const {
-            token
-        } = request.query;
+  try {
+    const { token } = request.query;
 
-        const pendingEscort = await PendingEscortModel.findOne({
-            emailVerifyToken: token,
-            emailVerifyExpiry: {
-                $gt: Date.now()
-            }
-        }).select("+password");
+    const pendingEscort = await PendingEscortModel.findOne({
+      emailVerifyToken: token,
+      emailVerifyExpiry: {
+        $gt: Date.now(),
+      },
+    }).select("+password");
 
+    if (!pendingEscort) {
+      const expiredEscort = await PendingEscortModel.findOne({
+        emailVerifyToken: token,
+      });
 
-        if (!pendingEscort) {
+      if (expiredEscort) {
+        return response.redirect(
+          `https://www.greenevelvet.com/link-expired/${expiredEscort._id || ""}`,
+        );
+      }
 
-            const expiredEscort = await PendingEscortModel.findOne({
-                emailVerifyToken: token
-            });
-
-            if (expiredEscort) {
-                return response.redirect(
-                    `https://www.greenevelvet.com/link-expired/${expiredEscort._id || ""}`
-                );
-            }
-
-            return response.redirect(
-                "https://www.greenevelvet.com/link-expired"
-            );
-        }
-
-        // Safety check
-        const existingEscort = await EscortModel.findOne({
-            email: pendingEscort.email
-        });
-
-        if (existingEscort) {
-            await PendingEscortModel.deleteOne({
-                _id: pendingEscort._id
-            });
-
-            return response.status(409).json({
-                message: "Escort already exists with this email",
-                success: false,
-                error: true
-            });
-        }
-
-        const existingClient = await ClientModel.findOne({
-            email: pendingEscort.email
-        });
-
-        if (existingClient) {
-            await PendingEscortModel.deleteOne({
-                _id: pendingEscort._id
-            });
-
-
-
-            return response.status(409).json({
-                message: "This email is already registered as Client",
-                success: false,
-                error: true
-            });
-        }
-
-        // Convert pending escort to plain object
-        const escortData = pendingEscort.toObject();
-
-        delete escortData._id;
-        delete escortData.createdAt;
-        delete escortData.updatedAt;
-
-        escortData.isEmailVerified = true;
-        escortData.emailVerifyToken = null;
-        escortData.emailVerifyExpiry = null;
-        escortData.lastCompletedStep = 2;
-
-        // Id generate for new escort
-        const escortId = await generatedescortId();
-
-        escortData.escortId = escortId;
-
-        console.log("Escort Data Before Create:", escortData);
-
-        // Create Escort
-        const escort = await EscortModel.create(escortData);
-
-        // Delete pending record
-        await PendingEscortModel.deleteOne({
-            _id: pendingEscort._id
-        });
-
-
-        if (!escort || !escort.escortId) {
-            return response.status(400).json({
-                message: "Failed to create account",
-                error: true,
-                success: false
-            });
-        }
-
-        return response.redirect(`https://www.greenevelvet.com/confirmmobilenumber/${escort.escortId}`);
-
-
-    } catch (error) {
-        console.log("verifyEmailcontroller error", error);
-
-        return response.status(500).json({
-            message: "Email verification failed!",
-            success: false,
-            error: true,
-        })
+      return response.redirect("https://www.greenevelvet.com/link-expired");
     }
+
+    // Safety check
+    const existingEscort = await EscortModel.findOne({
+      email: pendingEscort.email,
+    });
+
+    if (existingEscort) {
+      await PendingEscortModel.deleteOne({
+        _id: pendingEscort._id,
+      });
+
+      return response.status(409).json({
+        message: "Escort already exists with this email",
+        success: false,
+        error: true,
+      });
+    }
+
+    const existingClient = await ClientModel.findOne({
+      email: pendingEscort.email,
+    });
+
+    if (existingClient) {
+      await PendingEscortModel.deleteOne({
+        _id: pendingEscort._id,
+      });
+
+      return response.status(409).json({
+        message: "This email is already registered as Client",
+        success: false,
+        error: true,
+      });
+    }
+
+    // Convert pending escort to plain object
+    const escortData = pendingEscort.toObject();
+
+    delete escortData._id;
+    delete escortData.createdAt;
+    delete escortData.updatedAt;
+
+    escortData.isEmailVerified = true;
+    escortData.emailVerifyToken = null;
+    escortData.emailVerifyExpiry = null;
+    escortData.lastCompletedStep = 2;
+
+    // Id generate for new escort
+    const escortId = await generatedescortId();
+
+    escortData.escortId = escortId;
+
+    console.log("Escort Data Before Create:", escortData);
+
+    // Create Escort
+    const escort = await EscortModel.create(escortData);
+
+    // Delete pending record
+    await PendingEscortModel.deleteOne({
+      _id: pendingEscort._id,
+    });
+
+    if (!escort || !escort.escortId) {
+      return response.status(400).json({
+        message: "Failed to create account",
+        error: true,
+        success: false,
+      });
+    }
+
+    return response.redirect(
+      `https://www.greenevelvet.com/confirmmobilenumber/${escort.escortId}`,
+    );
+  } catch (error) {
+    console.log("verifyEmailcontroller error", error);
+
+    return response.status(500).json({
+      message: "Email verification failed!",
+      success: false,
+      error: true,
+    });
+  }
 }
 
 // Resend email verification
 export async function resendEmailVerification(request, response) {
-    try {
-        const {
-            id
-        } = request.body;
+  try {
+    const { id } = request.body;
 
-        if (!id) {
-            return response.status(400).json({
-                success: false,
-                error: true,
-                message: "ID is required"
-            });
-        }
-
-        const pendingEscort = await PendingEscortModel.findById(id);
-
-        if (!pendingEscort) {
-            return response.status(404).json({
-                success: false,
-                error: true,
-                message: "User not found"
-            });
-        }
-
-        if (pendingEscort.isEmailVerified) {
-            return response.status(400).json({
-                success: false,
-                error: true,
-                message: "Email already verified"
-            });
-        }
-
-        // Generate new verification token
-        const token = crypto.randomBytes(32).toString("hex");
-
-        pendingEscort.emailVerifyToken = token;
-        pendingEscort.emailVerifyExpiry = new Date(
-            Date.now() + 24 * 60 * 60 * 1000 // 24 hours
-        );
-
-        await pendingEscort.save();
-
-        const verifyLink = `https://greenevelvet-server.onrender.com/escort/verify-email?token=${token}&id=${pendingEscort._id}`;
-
-        await sendVerificationEmail(
-            pendingEscort.email,
-            verifyLink,
-        );
-
-        return response.status(200).json({
-            success: true,
-            error: false,
-            message: "Verification email sent successfully"
-        });
-
-    } catch (error) {
-        console.error("Resend Email Verification Error:", error);
-
-        return response.status(500).json({
-            success: false,
-            error: true,
-            message: "Resend Email Verification failed!"
-        });
+    if (!id) {
+      return response.status(400).json({
+        success: false,
+        error: true,
+        message: "ID is required",
+      });
     }
+
+    const pendingEscort = await PendingEscortModel.findById(id);
+
+    if (!pendingEscort) {
+      return response.status(404).json({
+        success: false,
+        error: true,
+        message: "User not found",
+      });
+    }
+
+    if (pendingEscort.isEmailVerified) {
+      return response.status(400).json({
+        success: false,
+        error: true,
+        message: "Email already verified",
+      });
+    }
+
+    // Generate new verification token
+    const token = crypto.randomBytes(32).toString("hex");
+
+    pendingEscort.emailVerifyToken = token;
+    pendingEscort.emailVerifyExpiry = new Date(
+      Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+    );
+
+    await pendingEscort.save();
+
+    const verifyLink = `https://greenevelvet-server.onrender.com/escort/verify-email?token=${token}&id=${pendingEscort._id}`;
+
+    await sendVerificationEmail(pendingEscort.email, verifyLink);
+
+    return response.status(200).json({
+      success: true,
+      error: false,
+      message: "Verification email sent successfully",
+    });
+  } catch (error) {
+    console.error("Resend Email Verification Error:", error);
+
+    return response.status(500).json({
+      success: false,
+      error: true,
+      message: "Resend Email Verification failed!",
+    });
+  }
 }
 
 // Escort change mobile number controll
 export async function changeMobilenumber(request, response) {
-    try {
-        const {
-            escortId,
-            mobile,
-            countryCode
-        } = request.body;
+  try {
+    const { escortId, mobile, countryCode } = request.body;
 
-        const mobileEncrypted = encrypt(request.body.mobile);
+    const mobileEncrypted = encrypt(request.body.mobile);
 
-
-        if (!escortId || !mobile) {
-            return response.status(400).json({
-                message: "Escort Id and mobile is required",
-                success: false,
-                error: true
-            })
-        }
-
-        const updateMobile = await EscortModel.findOneAndUpdate({
-            escortId
-        }, {
-            mobile: mobileEncrypted,
-            isMobileVerified: false,
-            countryCode: countryCode,
-        })
-
-        if (!updateMobile) {
-            return response.status(404).json({
-                message: "User not found",
-                success: false,
-                error: true
-            });
-        }
-
-        return response.json({
-            message: "Mobile number change successfully",
-            success: true,
-            error: false,
-            data: {
-                mobile: mobile,
-                countryCode: countryCode,
-            },
-        });
-
-    } catch (error) {
-        console.log("change mobile error", error);
-
-        if (error.code === 11000 && error.keyPattern?.mobile) {
-            return response.status(400).json({
-                success: false,
-                message: "Mobile No. Already Exists"
-            });
-        }
-
-        return response.json({
-            message: "Mobile No. Already Exists",
-            success: false,
-            error: true
-        })
-
+    if (!escortId || !mobile) {
+      return response.status(400).json({
+        message: "Escort Id and mobile is required",
+        success: false,
+        error: true,
+      });
     }
+
+    const updateMobile = await EscortModel.findOneAndUpdate(
+      {
+        escortId,
+      },
+      {
+        mobile: mobileEncrypted,
+        isMobileVerified: false,
+        countryCode: countryCode,
+      },
+    );
+
+    if (!updateMobile) {
+      return response.status(404).json({
+        message: "User not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    return response.json({
+      message: "Mobile number change successfully",
+      success: true,
+      error: false,
+      data: {
+        mobile: mobile,
+        countryCode: countryCode,
+      },
+    });
+  } catch (error) {
+    console.log("change mobile error", error);
+
+    if (error.code === 11000 && error.keyPattern?.mobile) {
+      return response.status(400).json({
+        success: false,
+        message: "Mobile No. Already Exists",
+      });
+    }
+
+    return response.json({
+      message: "Mobile No. Already Exists",
+      success: false,
+      error: true,
+    });
+  }
 }
 
 // Escort send otp controll
 export async function sendOtpcontroller(request, response) {
-    try {
+  try {
+    const { escortId, mobile, countryCode } = request.body;
 
-        const {
-            escortId,
-            mobile,
-            countryCode
-        } = request.body;
+    console.log("req.body", request.body);
 
-        console.log("req.body", request.body);
+    const escort = await EscortModel.findOne({
+      escortId,
+    });
 
-        const escort = await EscortModel.findOne({
-            escortId
-        });
-
-        if (!escort) {
-            return response.status(400).json({
-                message: "Unauthorised access failed",
-                success: false,
-                error: true
-            })
-        }
-
-        let escortMobile = escort.mobile;
-
-        try {
-            if (escortMobile?.startsWith("enc:")) {
-                escortMobile = decrypt(escortMobile.replace("enc:", ""));
-            } else {
-                escortMobile = decrypt(escortMobile);
-            }
-        } catch {
-            escortMobile = "";
-        }
-
-
-        // If mobile changed, check duplicate in Escorts
-        if (escortMobile !== mobile) {
-
-            const escorts = await EscortModel.find({
-                escortId: {
-                    $ne: escortId
-                }
-            }, {
-                mobile: 1,
-                escortId: 1
-            });
-
-            for (const item of escorts) {
-
-                let dbMobile = item.mobile;
-
-                try {
-                    if (dbMobile?.startsWith("enc:")) {
-                        dbMobile = decrypt(dbMobile.replace("enc:", ""));
-                    } else {
-                        dbMobile = decrypt(dbMobile);
-                    }
-                } catch {
-                    continue;
-                }
-
-                if (dbMobile === mobile) {
-                    return response.status(400).json({
-                        success: false,
-                        error: true,
-                        message: "Mobile No. Already Exists"
-                    });
-                }
-            }
-
-            // Check duplicate in Clients
-            const clients = await ClientModel.find({}, {
-                mobile: 1
-            });
-
-            for (const client of clients) {
-
-                let dbMobile = client.mobile;
-
-                try {
-                    if (dbMobile?.startsWith("enc:")) {
-                        dbMobile = decrypt(dbMobile.replace("enc:", ""));
-                    } else {
-                        dbMobile = decrypt(dbMobile);
-                    }
-                } catch {
-                    continue;
-                }
-
-                if (dbMobile === mobile) {
-                    return response.status(400).json({
-                        success: false,
-                        error: true,
-                        message: "Mobile No. Already Exists"
-                    });
-                }
-            }
-        }
-
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-        await otpModel.create({
-            mobile,
-            otp,
-            expiresAt: new Date(Date.now() + 5 * 60 * 1000) // 5 min
-        });
-
-        const fullMobile = countryCode + mobile;
-
-        console.log("fullMobile", fullMobile);
-
-        // Prepare SMS payload
-        const smsPayload = {
-            sms_text: `Your Greene Velvet OTP is ${otp}`,
-            numbers: [fullMobile],
-        };
-
-        // Send SMS using Cellcast API
-        const cellcastResponse = await axios.post(
-            "https://cellcast.com.au/api/v3/send-sms",
-            smsPayload, {
-                headers: {
-                    "APPKEY": process.env.CELLCAST_APPKEY,
-                    "Content-Type": "application/json",
-                },
-            }
-        );
-
-        console.log("Mobile no. and OTP ", fullMobile, otp);
-        console.log("CELLCAST RESPONSE:", cellcastResponse.data);
-
-        if (cellcastResponse?.data?.meta?.code === 200) {
-            return response.status(200).json({
-                success: true,
-                error: false,
-                message: "Otp Sent Successfully"
-            });
-        }
-
-        if (cellcastResponse?.data?.meta?.status === "RECIPIENTS_ERROR") {
-            return response.status(400).json({
-                success: false,
-                error: true,
-                message: "Invalid Mobile Number"
-            });
-        }
-
-
-
-    } catch (error) {
-        console.log("OTP send error", error.response?.data);
-
-        if (error.response?.data?.meta?.code === 400) {
-            return response.status(400).json({
-                success: false,
-                error: true,
-                message: "Invalid Mobile Number"
-            });
-        }
-
-        return response.status(500).json({
-            message: "Invalid Mobile Number, Please select country and enter only mobile number",
-            success: false,
-            error: true
-        })
+    if (!escort) {
+      return response.status(400).json({
+        message: "Unauthorised access failed",
+        success: false,
+        error: true,
+      });
     }
 
+    let escortMobile = escort.mobile;
+
+    try {
+      if (escortMobile?.startsWith("enc:")) {
+        escortMobile = decrypt(escortMobile.replace("enc:", ""));
+      } else {
+        escortMobile = decrypt(escortMobile);
+      }
+    } catch {
+      escortMobile = "";
+    }
+
+    // If mobile changed, check duplicate in Escorts
+    if (escortMobile !== mobile) {
+      const escorts = await EscortModel.find(
+        {
+          escortId: {
+            $ne: escortId,
+          },
+        },
+        {
+          mobile: 1,
+          escortId: 1,
+        },
+      );
+
+      for (const item of escorts) {
+        let dbMobile = item.mobile;
+
+        try {
+          if (dbMobile?.startsWith("enc:")) {
+            dbMobile = decrypt(dbMobile.replace("enc:", ""));
+          } else {
+            dbMobile = decrypt(dbMobile);
+          }
+        } catch {
+          continue;
+        }
+
+        if (dbMobile === mobile) {
+          return response.status(400).json({
+            success: false,
+            error: true,
+            message: "Mobile No. Already Exists",
+          });
+        }
+      }
+
+      // Check duplicate in Clients
+      const clients = await ClientModel.find(
+        {},
+        {
+          mobile: 1,
+        },
+      );
+
+      for (const client of clients) {
+        let dbMobile = client.mobile;
+
+        try {
+          if (dbMobile?.startsWith("enc:")) {
+            dbMobile = decrypt(dbMobile.replace("enc:", ""));
+          } else {
+            dbMobile = decrypt(dbMobile);
+          }
+        } catch {
+          continue;
+        }
+
+        if (dbMobile === mobile) {
+          return response.status(400).json({
+            success: false,
+            error: true,
+            message: "Mobile No. Already Exists",
+          });
+        }
+      }
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await otpModel.create({
+      mobile,
+      otp,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 min
+    });
+
+    const fullMobile = countryCode + mobile;
+
+    console.log("fullMobile", fullMobile);
+
+    // Prepare SMS payload
+    const smsPayload = {
+      sms_text: `Your Greene Velvet OTP is ${otp}`,
+      numbers: [fullMobile],
+    };
+
+    // Send SMS using Cellcast API
+    const cellcastResponse = await axios.post(
+      "https://cellcast.com.au/api/v3/send-sms",
+      smsPayload,
+      {
+        headers: {
+          APPKEY: process.env.CELLCAST_APPKEY,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+
+    console.log("Mobile no. and OTP ", fullMobile, otp);
+    console.log("CELLCAST RESPONSE:", cellcastResponse.data);
+
+    if (cellcastResponse?.data?.meta?.code === 200) {
+      return response.status(200).json({
+        success: true,
+        error: false,
+        message: "Otp Sent Successfully",
+      });
+    }
+
+    if (cellcastResponse?.data?.meta?.status === "RECIPIENTS_ERROR") {
+      return response.status(400).json({
+        success: false,
+        error: true,
+        message: "Invalid Mobile Number",
+      });
+    }
+  } catch (error) {
+    console.log("OTP send error", error.response?.data);
+
+    if (error.response?.data?.meta?.code === 400) {
+      return response.status(400).json({
+        success: false,
+        error: true,
+        message: "Invalid Mobile Number",
+      });
+    }
+
+    return response.status(500).json({
+      message:
+        "Invalid Mobile Number, Please select country and enter only mobile number",
+      success: false,
+      error: true,
+    });
+  }
 }
 
 // Escort verify mobile otp controll step-3
 export async function verifyMobileotp(request, response) {
-    try {
+  try {
+    let { escortId, mobile, otp, countryCode } = request.body; // 👈 let use karo
 
-        let {
-            escortId,
-            mobile,
-            otp,
-            countryCode
-        } = request.body; // 👈 let use karo
+    console.log(
+      "verify otp , escortId ,mobile , contyrcode and otp ",
+      escortId,
+      mobile,
+      countryCode,
+      otp,
+    );
 
-        console.log("verify otp , escortId ,mobile , contyrcode and otp ", escortId, mobile, countryCode, otp);
-
-        if (!mobile || !otp) {
-            return response.status(400).json({
-                message: "Mobile and OTP required",
-                success: false,
-                error: true
-            });
-        }
-
-        const escort = await EscortModel.findOne({
-            escortId
-        });
-
-        if (!escort) {
-            return response.status(404).json({
-                message: "Unauthorized access",
-                success: false,
-                error: true
-            });
-        }
-
-        const record = await otpModel.findOne({
-            mobile,
-            otp: otp,
-            isUsed: false,
-            expiresAt: {
-                $gt: new Date()
-            }
-        });
-
-        console.log("record", record);
-
-        if (!record) {
-            return response.status(400).json({
-                message: "Invalid or expired OTP",
-                success: false,
-                error: true
-            });
-        }
-        const mobileEncrypted = "enc:" + encrypt(mobile);
-
-        await EscortModel.updateOne({
-                escortId
-            }, {
-                $set: {
-                    isMobileVerified: true,
-                    mobile: mobileEncrypted,
-                    countryCode: countryCode,
-                    lastCompletedStep: 3
-                }
-            } // ✅ correct field
-        );
-
-        record.isUsed = true;
-        await record.save();
-
-        return response.json({
-            message: "Mobile verified successfully",
-            success: true,
-            error: false
-        });
-
-    } catch (error) {
-        console.log("VERIFY OTP ERROR:", error);
-        return response.status(500).json({
-            message: "OTP verification failed",
-            success: false,
-            error: true
-        });
+    if (!mobile || !otp) {
+      return response.status(400).json({
+        message: "Mobile and OTP required",
+        success: false,
+        error: true,
+      });
     }
+
+    const escort = await EscortModel.findOne({
+      escortId,
+    });
+
+    if (!escort) {
+      return response.status(404).json({
+        message: "Unauthorized access",
+        success: false,
+        error: true,
+      });
+    }
+
+    const record = await otpModel.findOne({
+      mobile,
+      otp: otp,
+      isUsed: false,
+      expiresAt: {
+        $gt: new Date(),
+      },
+    });
+
+    console.log("record", record);
+
+    if (!record) {
+      return response.status(400).json({
+        message: "Invalid or expired OTP",
+        success: false,
+        error: true,
+      });
+    }
+    const mobileEncrypted = "enc:" + encrypt(mobile);
+
+    await EscortModel.updateOne(
+      {
+        escortId,
+      },
+      {
+        $set: {
+          isMobileVerified: true,
+          mobile: mobileEncrypted,
+          countryCode: countryCode,
+          lastCompletedStep: 3,
+        },
+      }, // ✅ correct field
+    );
+
+    record.isUsed = true;
+    await record.save();
+
+    return response.json({
+      message: "Mobile verified successfully",
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    console.log("VERIFY OTP ERROR:", error);
+    return response.status(500).json({
+      message: "OTP verification failed",
+      success: false,
+      error: true,
+    });
+  }
 }
 
 // Escort add details controll step-4
 export async function escortdetailscontroller(request, response) {
-    try {
-        const {
-            escortId,
-            ...restData
-        } = request.body;
+  try {
+    const { escortId, ...restData } = request.body;
 
-        if (!escortId) {
-            return response.status(400).json({
-                message: "EscortId missing",
-                success: false,
-                error: true
-            })
-        }
-
-
-        // ✅ Link to main Escort table
-        await EscortModel.findOneAndUpdate({
-                escortId
-            }, {
-                $set: {
-                    ...restData,
-                    lastCompletedStep: 4
-                }
-            }, // 👈 direct fields save
-            {
-                new: true,
-                upsert: true
-            }
-        );
-
-
-        return response.status(200).json({
-            message: "Details saved ",
-            error: false,
-            success: true
-        });
-
-    } catch (error) {
-        return response.status(500).json({
-            message: "Add optional detailed failed!",
-            error: true,
-            success: false
-        });
+    if (!escortId) {
+      return response.status(400).json({
+        message: "EscortId missing",
+        success: false,
+        error: true,
+      });
     }
+
+    // ✅ Link to main Escort table
+    await EscortModel.findOneAndUpdate(
+      {
+        escortId,
+      },
+      {
+        $set: {
+          ...restData,
+          lastCompletedStep: 4,
+        },
+      }, // 👈 direct fields save
+      {
+        new: true,
+        upsert: true,
+      },
+    );
+
+    return response.status(200).json({
+      message: "Details saved ",
+      error: false,
+      success: true,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: "Add optional detailed failed!",
+      error: true,
+      success: false,
+    });
+  }
 }
 
 // Escort upload verification doc controll step-5
 export async function escortUploadverification(request, response) {
-    try {
-        const {
-            escortId
-        } = request.body;
+  try {
+    const { escortId } = request.body;
 
-        if (!escortId) {
-            return response.status(400).json({
-                message: "escort Id required",
-                success: false,
-                error: true
-            })
-        }
-
-        if (!request.files?.verificationselfie || !request.files?.verificationgovtId) {
-            return response.status(400).json({
-                message: "Selfie and Govt Id required",
-                success: false,
-                error: true
-            })
-        }
-
-        const escort = await EscortModel.findOne({
-            escortId
-        });
-
-        if (!escort) {
-            return response.status(404).json({
-                message: "Escort not found",
-                success: false,
-                error: true
-            });
-        }
-
-        const selfieUpload = await uploadImageCloudinary(request.files.verificationselfie[0], "verification/verificationselfie");
-        const govtIdUpload = await uploadImageCloudinary(request.files.verificationgovtId[0], "verification/verificationgovtId");
-
-        const uploadEscort = await EscortModel.findOneAndUpdate({
-            escortId
-        }, {
-            verificationselfie: selfieUpload.secure_url,
-            verificationgovtId: govtIdUpload.secure_url,
-            docsuploadStatus: "pending",
-            hasAcceptedDocsOwnership: true,
-            docsOwnershipAcceptedAt: new Date(),
-            lastCompletedStep: 5,
-
-        }, {
-            new: true
-        });
-
-        return response.json({
-            message: "Verification documents uploaded successfully",
-            success: true,
-            error: false,
-            data: {
-                verificationselfie: selfieUpload.secure_url,
-                verificationgovtId: govtIdUpload.secure_url,
-            },
-        });
-
-    } catch (error) {
-        console.log("docs upload error ", error);
-
-        return response.status(500).json({
-            message: "Documnets upload failed!",
-            error: true,
-            success: false
-        })
+    if (!escortId) {
+      return response.status(400).json({
+        message: "escort Id required",
+        success: false,
+        error: true,
+      });
     }
 
+    if (
+      !request.files?.verificationselfie ||
+      !request.files?.verificationgovtId
+    ) {
+      return response.status(400).json({
+        message: "Selfie and Govt Id required",
+        success: false,
+        error: true,
+      });
+    }
+
+    const escort = await EscortModel.findOne({
+      escortId,
+    });
+
+    if (!escort) {
+      return response.status(404).json({
+        message: "Escort not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    const selfieUpload = await uploadImageCloudinary(
+      request.files.verificationselfie[0],
+      "verification/verificationselfie",
+    );
+    const govtIdUpload = await uploadImageCloudinary(
+      request.files.verificationgovtId[0],
+      "verification/verificationgovtId",
+    );
+
+    const uploadEscort = await EscortModel.findOneAndUpdate(
+      {
+        escortId,
+      },
+      {
+        verificationselfie: selfieUpload.secure_url,
+        verificationgovtId: govtIdUpload.secure_url,
+        docsuploadStatus: "pending",
+        hasAcceptedDocsOwnership: true,
+        docsOwnershipAcceptedAt: new Date(),
+        lastCompletedStep: 5,
+      },
+      {
+        new: true,
+      },
+    );
+
+    return response.json({
+      message: "Verification documents uploaded successfully",
+      success: true,
+      error: false,
+      data: {
+        verificationselfie: selfieUpload.secure_url,
+        verificationgovtId: govtIdUpload.secure_url,
+      },
+    });
+  } catch (error) {
+    console.log("docs upload error ", error);
+
+    return response.status(500).json({
+      message: "Documnets upload failed!",
+      error: true,
+      success: false,
+    });
+  }
 }
 
 // upload Avatar step-6
 export async function uploadAvatarcontroller(request, response) {
-    try {
-        const {
-            escortId
-        } = request.body;
+  try {
+    const { escortId } = request.body;
 
-        if (!escortId) {
-            return response.status(400).json({
-                message: "escort Id required",
-                success: false,
-                error: true
-            })
-        }
-
-        if (!request.files?.avatar) {
-            return response.status(400).json({
-                message: "profile image required",
-                success: false,
-                error: true
-            })
-        }
-
-        const existingEscort = await EscortModel.findOne({
-            escortId
-        });
-
-        if (!existingEscort) {
-            return response.status(404).json({
-                message: "Escort not found",
-                success: false,
-                error: true
-            });
-        }
-
-        if (existingEscort?.pendingAvatar?.public_id) {
-            await deleteFromCloudinary(existingEscort.pendingAvatar.public_id);
-        }
-
-
-
-        const avatarUpload = await uploadImageCloudinary(request.files.avatar[0], "profileImg/avatar");
-
-        const uploadEscort = await EscortModel.findOneAndUpdate({
-            escortId
-        }, {
-            pendingAvatar: {
-                url: avatarUpload.secure_url,
-                public_id: avatarUpload.public_id,
-                status: "Pending"
-            },
-            hasAcceptedAvatarOwnership: true,
-            avatarOwnershipAcceptedAt: new Date(),
-            lastCompletedStep: 6,
-        }, {
-            new: true
-        });
-
-        if (!uploadEscort) {
-            return response.status(404).json({
-                message: "Escort not found",
-                success: false,
-                error: true
-            });
-        }
-
-        const admin = await AdminModel.findOne();
-        if (!admin) {
-            console.error("❌ Notification skipped: No Admin found in database.");
-        } else {
-            if (uploadEscort.status === "Active") {
-                const load = await createAndSendNotification(request.app, {
-                    recipientId: admin._id,
-                    recipientModel: "Admin",
-                    senderId: uploadEscort._id,
-                    senderModel: "Escort",
-                    type: "VERIFICATION",
-                    title: "New Profile image upload",
-                    message: `${uploadEscort.name} has upload new profile image and is waiting for approval.`,
-                    link: `/dashboard/pending-escort-media/${uploadEscort.escortId}`
-                });
-            }
-        }
-
-        if (uploadEscort.status === "Active" && uploadEscort.isVerified) {
-            await sendMediaUploadNotification({
-                email: process.env.ADMIN_RECEIVER_EMAIL,
-                modelName: uploadEscort.name,
-                mediaType: "avatar",
-                escortId: uploadEscort.escortId,
-            })
-        }
-
-
-        return response.status(200).json({
-            message: "profile image uploaded successfully and approval pending",
-            success: true,
-            error: false,
-            data: {
-                avatar: avatarUpload.secure_url,
-            },
-        });
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || error,
-            error: true,
-            success: false
-        })
+    if (!escortId) {
+      return response.status(400).json({
+        message: "escort Id required",
+        success: false,
+        error: true,
+      });
     }
 
+    if (!request.files?.avatar) {
+      return response.status(400).json({
+        message: "profile image required",
+        success: false,
+        error: true,
+      });
+    }
+
+    const existingEscort = await EscortModel.findOne({
+      escortId,
+    });
+
+    if (!existingEscort) {
+      return response.status(404).json({
+        message: "Escort not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    if (existingEscort?.pendingAvatar?.public_id) {
+      await deleteFromCloudinary(existingEscort.pendingAvatar.public_id);
+    }
+
+    const avatarUpload = await uploadImageCloudinary(
+      request.files.avatar[0],
+      "profileImg/avatar",
+    );
+
+    const uploadEscort = await EscortModel.findOneAndUpdate(
+      {
+        escortId,
+      },
+      {
+        pendingAvatar: {
+          url: avatarUpload.secure_url,
+          public_id: avatarUpload.public_id,
+          status: "Pending",
+        },
+        hasAcceptedAvatarOwnership: true,
+        avatarOwnershipAcceptedAt: new Date(),
+        lastCompletedStep: 6,
+      },
+      {
+        new: true,
+      },
+    );
+
+    if (!uploadEscort) {
+      return response.status(404).json({
+        message: "Escort not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    const admin = await AdminModel.findOne();
+    if (!admin) {
+      console.error("❌ Notification skipped: No Admin found in database.");
+    } else {
+      if (uploadEscort.status === "Active") {
+        const load = await createAndSendNotification(request.app, {
+          recipientId: admin._id,
+          recipientModel: "Admin",
+          senderId: uploadEscort._id,
+          senderModel: "Escort",
+          type: "VERIFICATION",
+          title: "New Profile image upload",
+          message: `${uploadEscort.name} has upload new profile image and is waiting for approval.`,
+          link: `/dashboard/pending-escort-media/${uploadEscort.escortId}`,
+        });
+      }
+    }
+
+    if (uploadEscort.status === "Active" && uploadEscort.isVerified) {
+      await sendMediaUploadNotification({
+        email: process.env.ADMIN_RECEIVER_EMAIL,
+        modelName: uploadEscort.name,
+        mediaType: "avatar",
+        escortId: uploadEscort.escortId,
+      });
+    }
+
+    return response.status(200).json({
+      message: "profile image uploaded successfully and approval pending",
+      success: true,
+      error: false,
+      data: {
+        avatar: avatarUpload.secure_url,
+      },
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
+  }
 }
 
 // registration process upload gallery images  step-7
 export async function registerGalleryController(request, response) {
-    try {
+  try {
+    const { escortId } = request.body;
 
-        const {
-            escortId
-        } = request.body;
-
-        if (!escortId) {
-            return response.status(400).json({
-                message: "escortId required",
-                success: false,
-                error: true
-            });
-        }
-
-        if (!request.files || request.files.length < 3) {
-            return response.status(400).json({
-                message: "Minimum 3 images required",
-                success: false,
-                error: true
-            });
-        }
-
-        if (request.files.length > 6) {
-            return response.status(400).json({
-                message: "Maximum 6 images allowed",
-                success: false,
-                error: true
-            });
-        }
-
-        const escort = await EscortModel.findOne({
-            escortId
-        });
-
-        if (!escort) {
-            return response.status(404).json({
-                message: "Escort not found",
-                success: false,
-                error: true
-            });
-        }
-
-        let uploadedImages = [];
-
-        for (let file of request.files) {
-
-            const uploadResult = await uploadImageCloudinary(file, "gallery/images");
-
-            uploadedImages.push({
-                public_id: uploadResult.public_id,
-                url: uploadResult.secure_url
-            });
-        }
-
-        await EscortModel.updateOne({
-            escortId
-        }, {
-            $set: {
-                "gallery.photos": uploadedImages,
-                hasAcceptedImageOwnership: true,
-                imageOwnershipAcceptedAt: new Date(),
-                lastCompletedStep: 7,
-            }
-        });
-
-        const updatedEscort = await EscortModel
-            .findOne({
-                escortId
-            })
-            .lean();
-
-
-        await sendRegistrationNotification({
-            email: process.env.ADMIN_RECEIVER_EMAIL,
-            modelName: updatedEscort.name
-        })
-
-
-        const admin = await AdminModel.findOne();
-        if (!admin) {
-            console.error("❌ Notification skipped: No Admin found in database.");
-        } else {
-            const load = await createAndSendNotification(request.app, {
-                recipientId: admin._id,
-                recipientModel: "Admin",
-                senderId: updatedEscort._id,
-                senderModel: "Escort",
-                type: "VERIFICATION",
-                title: "New Profile Awaiting Verification",
-                message: `A new advertiser account (${updatedEscort.name}) has been created. Review documents and gallery images to verify`,
-                link: `/dashboard/awaiting-verification`
-            });
-        }
-
-        return response.status(200).json({
-            message: "Gallery uploaded successfully",
-            success: true,
-            error: false,
-            data: updatedEscort
-        });
-
-    } catch (error) {
-
-        console.error("Gallery uploaded error", error);
-
-        return response.status(500).json({
-            message: "Gallery upload failed!",
-            success: false,
-            error: true
-        });
+    if (!escortId) {
+      return response.status(400).json({
+        message: "escortId required",
+        success: false,
+        error: true,
+      });
     }
+
+    if (!request.files || request.files.length < 3) {
+      return response.status(400).json({
+        message: "Minimum 3 images required",
+        success: false,
+        error: true,
+      });
+    }
+
+    if (request.files.length > 6) {
+      return response.status(400).json({
+        message: "Maximum 6 images allowed",
+        success: false,
+        error: true,
+      });
+    }
+
+    const escort = await EscortModel.findOne({
+      escortId,
+    });
+
+    if (!escort) {
+      return response.status(404).json({
+        message: "Escort not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    let uploadedImages = [];
+
+    for (let file of request.files) {
+      const uploadResult = await uploadImageCloudinary(file, "gallery/images");
+
+      uploadedImages.push({
+        public_id: uploadResult.public_id,
+        url: uploadResult.secure_url,
+      });
+    }
+
+    await EscortModel.updateOne(
+      {
+        escortId,
+      },
+      {
+        $set: {
+          "gallery.photos": uploadedImages,
+          hasAcceptedImageOwnership: true,
+          imageOwnershipAcceptedAt: new Date(),
+          lastCompletedStep: 7,
+        },
+      },
+    );
+
+    const updatedEscort = await EscortModel.findOne({
+      escortId,
+    }).lean();
+
+    await sendRegistrationNotification({
+      email: process.env.ADMIN_RECEIVER_EMAIL,
+      modelName: updatedEscort.name,
+    });
+
+    const admin = await AdminModel.findOne();
+    if (!admin) {
+      console.error("❌ Notification skipped: No Admin found in database.");
+    } else {
+      const load = await createAndSendNotification(request.app, {
+        recipientId: admin._id,
+        recipientModel: "Admin",
+        senderId: updatedEscort._id,
+        senderModel: "Escort",
+        type: "VERIFICATION",
+        title: "New Profile Awaiting Verification",
+        message: `A new advertiser account (${updatedEscort.name}) has been created. Review documents and gallery images to verify`,
+        link: `/dashboard/awaiting-verification`,
+      });
+    }
+
+    return response.status(200).json({
+      message: "Gallery uploaded successfully",
+      success: true,
+      error: false,
+      data: updatedEscort,
+    });
+  } catch (error) {
+    console.error("Gallery uploaded error", error);
+
+    return response.status(500).json({
+      message: "Gallery upload failed!",
+      success: false,
+      error: true,
+    });
+  }
 }
 
 //------------- Registration Resubmit --------------------//
 export async function registrationResubmit(request, response) {
-    try {
-        const {
-            escortId,
-            deletedImages,
-            hasAcceptedImageOwnership
-        } = request.body;
+  try {
+    const { escortId, deletedImages, hasAcceptedImageOwnership } = request.body;
 
-        // ================= ESCORT ID =================
-        if (!escortId) {
-            return response.status(400).json({
-                message: "escortId required",
-                success: false,
-                error: true
-            });
+    // ================= ESCORT ID =================
+    if (!escortId) {
+      return response.status(400).json({
+        message: "escortId required",
+        success: false,
+        error: true,
+      });
+    }
+
+    // ================= GALLERY ACCEPTANCE =================
+    if (
+      hasAcceptedImageOwnership !== true &&
+      hasAcceptedImageOwnership !== "true"
+    ) {
+      return response.status(400).json({
+        message: "Please accept the gallery image ownership confirmation",
+        success: false,
+        error: true,
+      });
+    }
+
+    // ================= FIND ESCORT =================
+    const escort = await EscortModel.findOne({
+      escortId,
+    });
+
+    if (!escort) {
+      return response.status(404).json({
+        message: "Escort not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    // ================= CHECK CHANGES =================
+
+    const hasAvatar = request.files?.avatar && request.files.avatar.length > 0;
+
+    const hasSelfie =
+      request.files?.verificationselfie &&
+      request.files.verificationselfie.length > 0;
+
+    const hasGovtId =
+      request.files?.verificationgovtId &&
+      request.files.verificationgovtId.length > 0;
+
+    const hasNewGalleryImages =
+      request.files?.photos && request.files.photos.length > 0;
+
+    let parsedDeletedImages = [];
+
+    if (deletedImages) {
+      try {
+        parsedDeletedImages =
+          typeof deletedImages === "string"
+            ? JSON.parse(deletedImages)
+            : deletedImages;
+
+        if (!Array.isArray(parsedDeletedImages)) {
+          parsedDeletedImages = [];
         }
-
-        // ================= GALLERY ACCEPTANCE =================
-        if (
-            hasAcceptedImageOwnership !== true &&
-            hasAcceptedImageOwnership !== "true"
-        ) {
-            return response.status(400).json({
-                message: "Please accept the gallery image ownership confirmation",
-                success: false,
-                error: true
-            });
-        }
-
-        // ================= FIND ESCORT =================
-        const escort = await EscortModel.findOne({
-            escortId
+      } catch (error) {
+        return response.status(400).json({
+          message: "Invalid deletedImages data",
+          success: false,
+          error: true,
         });
-
-        if (!escort) {
-            return response.status(404).json({
-                message: "Escort not found",
-                success: false,
-                error: true
-            });
-        }
-
-        // ================= CHECK CHANGES =================
-
-        const hasAvatar =
-            request.files?.avatar &&
-            request.files.avatar.length > 0;
-
-        const hasSelfie =
-            request.files?.verificationselfie &&
-            request.files.verificationselfie.length > 0;
-
-        const hasGovtId =
-            request.files?.verificationgovtId &&
-            request.files.verificationgovtId.length > 0;
-
-        const hasNewGalleryImages =
-            request.files?.photos &&
-            request.files.photos.length > 0;
-
-        let parsedDeletedImages = [];
-
-        if (deletedImages) {
-            try {
-                parsedDeletedImages =
-                    typeof deletedImages === "string" ?
-                    JSON.parse(deletedImages) :
-                    deletedImages;
-
-                if (!Array.isArray(parsedDeletedImages)) {
-                    parsedDeletedImages = [];
-                }
-            } catch (error) {
-                return response.status(400).json({
-                    message: "Invalid deletedImages data",
-                    success: false,
-                    error: true
-                });
-            }
-        }
-
-        const hasDeletedGalleryImages =
-            parsedDeletedImages.length > 0;
-
-        // At least one actual change required
-        if (
-            !hasAvatar &&
-            !hasSelfie &&
-            !hasGovtId &&
-            !hasNewGalleryImages &&
-            !hasDeletedGalleryImages
-        ) {
-            return response.status(400).json({
-                message: "Please update at least one image or document",
-                success: false,
-                error: true
-            });
-        }
-
-
-        // =====================================================
-        // UPDATE OBJECT
-        // =====================================================
-
-        const updateData = {};
-
-        // =====================================================
-        // 1. AVATAR
-        // =====================================================
-
-        if (hasAvatar) {
-
-            // Delete old avatar from Cloudinary
-            if (escort?.avatar?.public_id) {
-                await deleteFromCloudinary(
-                    escort.avatar.public_id
-                );
-            }
-
-            const avatarUpload =
-                await uploadImageCloudinary(
-                    request.files.avatar[0],
-                    "profileImg/avatar"
-                );
-
-            updateData.avatar = {
-                url: avatarUpload.secure_url,
-                public_id: avatarUpload.public_id,
-                status: "Pending"
-            };
-
-            updateData.isAvatarApproved = "Pending";
-        }
-
-
-        // =====================================================
-        // 2. SELFIE
-        // =====================================================
-
-        if (hasSelfie) {
-
-            const selfieUpload =
-                await uploadImageCloudinary(
-                    request.files.verificationselfie[0],
-                    "verification/verificationselfie"
-                );
-
-            updateData.verificationselfie =
-                selfieUpload.secure_url;
-
-            updateData.selfieStatus = "Pending";
-        }
-
-
-        // =====================================================
-        // 3. GOVERNMENT ID
-        // =====================================================
-
-        if (hasGovtId) {
-
-            const govtIdUpload =
-                await uploadImageCloudinary(
-                    request.files.verificationgovtId[0],
-                    "verification/verificationgovtId"
-                );
-
-            updateData.verificationgovtId =
-                govtIdUpload.secure_url;
-
-            updateData.govtId = "Pending";
-        }
-
-
-        // =====================================================
-        // 4. DELETE GALLERY IMAGES
-        // =====================================================
-
-        let galleryPhotos = [
-            ...(escort?.gallery?.photos || [])
-        ];
-
-        if (hasDeletedGalleryImages) {
-
-            for (const deletedImage of parsedDeletedImages) {
-
-                if (!deletedImage?.public_id) continue;
-
-                // Delete from Cloudinary
-                await deleteFromCloudinary(
-                    deletedImage.public_id
-                );
-
-                // Remove from DB array
-                galleryPhotos = galleryPhotos.filter(
-                    (photo) =>
-                    photo.public_id !==
-                    deletedImage.public_id
-                );
-            }
-        }
-
-
-        // =====================================================
-        // 5. NEW GALLERY IMAGES
-        // =====================================================
-
-        if (hasNewGalleryImages) {
-
-            for (const file of request.files.photos) {
-
-                const uploadResult =
-                    await uploadImageCloudinary(
-                        file,
-                        "gallery/images"
-                    );
-
-                galleryPhotos.push({
-                    public_id: uploadResult.public_id,
-                    url: uploadResult.secure_url,
-                    status: "Pending"
-                });
-            }
-        }
-
-
-        // =====================================================
-        // 6. GALLERY VALIDATION
-        // =====================================================
-
-        if (
-            hasDeletedGalleryImages ||
-            hasNewGalleryImages
-        ) {
-
-            if (galleryPhotos.length < 3) {
-                return response.status(400).json({
-                    message: "Minimum 3 gallery images are required",
-                    success: false,
-                    error: true
-                });
-            }
-
-            if (galleryPhotos.length > 6) {
-                return response.status(400).json({
-                    message: "Maximum 6 gallery images allowed",
-                    success: false,
-                    error: true
-                });
-            }
-
-            updateData["gallery.photos"] =
-                galleryPhotos;
-        }
-
-
-        // =====================================================
-        // 7. GALLERY OWNERSHIP ACCEPTANCE
-        // =====================================================
-
-        updateData.hasAcceptedImageOwnership = true;
-        updateData.imageOwnershipAcceptedAt = new Date();
-
-
-        // =====================================================
-        // 8. PROFILE GOES BACK FOR ADMIN REVIEW
-        // =====================================================
-
-        updateData.status = "Pending";
-        updateData.isVerified = false;
-
-
-        // =====================================================
-        // 9. UPDATE DATABASE
-        // =====================================================
-
-        const updatedEscort =
-            await EscortModel.findOneAndUpdate({
-                escortId
-            }, {
-                $set: updateData
-            }, {
-                new: true
-            });
-
-
-        if (!updatedEscort) {
-            return response.status(404).json({
-                message: "Escort not found",
-                success: false,
-                error: true
-            });
-        }
-
-
-        // =====================================================
-        // 10. ADMIN NOTIFICATION
-        // =====================================================
-
-        const admin = await AdminModel.findOne();
-
-        if (!admin) {
-
-            console.error(
-                "❌ Notification skipped: No Admin found in database."
-            );
-
-        } else {
-
-            await createAndSendNotification(
-                request.app, {
-                    recipientId: admin._id,
-                    recipientModel: "Admin",
-
-                    senderId: updatedEscort._id,
-                    senderModel: "Escort",
-
-                    type: "VERIFICATION",
-
-                    title: "Registration Resubmitted",
-
-                    message: `${updatedEscort.name} has resubmitted their registration for verification.`,
-
-                    link: `/dashboard/awaiting-verification`
-                }
-            );
-        }
-
-
-        // =====================================================
-        // RESPONSE
-        // =====================================================
-
-        return response.status(200).json({
-            message: "Registration resubmitted successfully. Your profile is now under review.",
-            success: true,
-            error: false,
-            data: updatedEscort
-        });
-
-
-    } catch (error) {
-
-        console.error(
-            "Registration Resubmit Error:",
-            error
+      }
+    }
+
+    const hasDeletedGalleryImages = parsedDeletedImages.length > 0;
+
+    // At least one actual change required
+    if (
+      !hasAvatar &&
+      !hasSelfie &&
+      !hasGovtId &&
+      !hasNewGalleryImages &&
+      !hasDeletedGalleryImages
+    ) {
+      return response.status(400).json({
+        message: "Please update at least one image or document",
+        success: false,
+        error: true,
+      });
+    }
+
+    // =====================================================
+    // UPDATE OBJECT
+    // =====================================================
+
+    const updateData = {};
+
+    // =====================================================
+    // 1. AVATAR
+    // =====================================================
+
+    if (hasAvatar) {
+      // Delete old avatar from Cloudinary
+      if (escort?.avatar?.public_id) {
+        await deleteFromCloudinary(escort.avatar.public_id);
+      }
+
+      const avatarUpload = await uploadImageCloudinary(
+        request.files.avatar[0],
+        "profileImg/avatar",
+      );
+
+      updateData.avatar = {
+        url: avatarUpload.secure_url,
+        public_id: avatarUpload.public_id,
+        status: "Pending",
+      };
+
+      updateData.isAvatarApproved = "Pending";
+    }
+
+    // =====================================================
+    // 2. SELFIE
+    // =====================================================
+
+    if (hasSelfie) {
+      const selfieUpload = await uploadImageCloudinary(
+        request.files.verificationselfie[0],
+        "verification/verificationselfie",
+      );
+
+      updateData.verificationselfie = selfieUpload.secure_url;
+
+      updateData.selfieStatus = "Pending";
+    }
+
+    // =====================================================
+    // 3. GOVERNMENT ID
+    // =====================================================
+
+    if (hasGovtId) {
+      const govtIdUpload = await uploadImageCloudinary(
+        request.files.verificationgovtId[0],
+        "verification/verificationgovtId",
+      );
+
+      updateData.verificationgovtId = govtIdUpload.secure_url;
+
+      updateData.govtId = "Pending";
+    }
+
+    // =====================================================
+    // 4. DELETE GALLERY IMAGES
+    // =====================================================
+
+    let galleryPhotos = [...(escort?.gallery?.photos || [])];
+
+    if (hasDeletedGalleryImages) {
+      for (const deletedImage of parsedDeletedImages) {
+        if (!deletedImage?.public_id) continue;
+
+        // Delete from Cloudinary
+        await deleteFromCloudinary(deletedImage.public_id);
+
+        // Remove from DB array
+        galleryPhotos = galleryPhotos.filter(
+          (photo) => photo.public_id !== deletedImage.public_id,
+        );
+      }
+    }
+
+    // =====================================================
+    // 5. NEW GALLERY IMAGES
+    // =====================================================
+
+    if (hasNewGalleryImages) {
+      for (const file of request.files.photos) {
+        const uploadResult = await uploadImageCloudinary(
+          file,
+          "gallery/images",
         );
 
-        return response.status(500).json({
-            message: "Registration Resubmit Failed!",
-            success: false,
-            error: true
+        galleryPhotos.push({
+          public_id: uploadResult.public_id,
+          url: uploadResult.secure_url,
+          status: "Pending",
         });
+      }
     }
+
+    // =====================================================
+    // 6. GALLERY VALIDATION
+    // =====================================================
+
+    if (hasDeletedGalleryImages || hasNewGalleryImages) {
+      if (galleryPhotos.length < 3) {
+        return response.status(400).json({
+          message: "Minimum 3 gallery images are required",
+          success: false,
+          error: true,
+        });
+      }
+
+      if (galleryPhotos.length > 6) {
+        return response.status(400).json({
+          message: "Maximum 6 gallery images allowed",
+          success: false,
+          error: true,
+        });
+      }
+
+      updateData["gallery.photos"] = galleryPhotos;
+    }
+
+    // =====================================================
+    // 7. GALLERY OWNERSHIP ACCEPTANCE
+    // =====================================================
+
+    updateData.hasAcceptedImageOwnership = true;
+    updateData.imageOwnershipAcceptedAt = new Date();
+
+    // =====================================================
+    // 8. PROFILE GOES BACK FOR ADMIN REVIEW
+    // =====================================================
+
+    updateData.status = "Pending";
+    updateData.isVerified = false;
+
+    // =====================================================
+    // 9. UPDATE DATABASE
+    // =====================================================
+
+    const updatedEscort = await EscortModel.findOneAndUpdate(
+      {
+        escortId,
+      },
+      {
+        $set: updateData,
+      },
+      {
+        new: true,
+      },
+    );
+
+    if (!updatedEscort) {
+      return response.status(404).json({
+        message: "Escort not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    // =====================================================
+    // 10. ADMIN NOTIFICATION
+    // =====================================================
+
+    const admin = await AdminModel.findOne();
+
+    if (!admin) {
+      console.error("❌ Notification skipped: No Admin found in database.");
+    } else {
+      await createAndSendNotification(request.app, {
+        recipientId: admin._id,
+        recipientModel: "Admin",
+
+        senderId: updatedEscort._id,
+        senderModel: "Escort",
+
+        type: "VERIFICATION",
+
+        title: "Registration Resubmitted",
+
+        message: `${updatedEscort.name} has resubmitted their registration for verification.`,
+
+        link: `/dashboard/awaiting-verification`,
+      });
+    }
+
+    // =====================================================
+    // RESPONSE
+    // =====================================================
+
+    return response.status(200).json({
+      message:
+        "Registration resubmitted successfully. Your profile is now under review.",
+      success: true,
+      error: false,
+      data: updatedEscort,
+    });
+  } catch (error) {
+    console.error("Registration Resubmit Error:", error);
+
+    return response.status(500).json({
+      message: "Registration Resubmit Failed!",
+      success: false,
+      error: true,
+    });
+  }
 }
 
 //===========================================================================//
 
 // Subcribe plan controll
 export async function subcribePlans(request, response) {
-    try {
-        const {
-            title,
-            plan
-        } = request.body;
-        return response.status(400).json({
-            message: "",
-            success: false,
-            error: true
-        })
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || error,
-            success: false,
-            error: true
-        })
-    }
+  try {
+    const { title, plan } = request.body;
+    return response.status(400).json({
+      message: "",
+      success: false,
+      error: true,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || error,
+      success: false,
+      error: true,
+    });
+  }
 }
 
 // Escort Login controll
 export async function escortLogincontroller(request, response) {
-    try {
-        const {
-            email,
-            password
-        } = request.body;
+  try {
+    const { email, password } = request.body;
 
-        if (!email || !password) {
-            return response.status(400).json({
-                message: "Provide email, and password",
-                success: false,
-                error: true
-            })
-        }
-
-        const escort = await EscortModel.findOne({
-            email
-        }).select("+password");
-
-        if (!escort) {
-            return response.status(400).json({
-                message: "User not register",
-                success: false,
-                error: true
-            })
-        }
-
-        console.log("escort details ", escort);
-
-        if (escort.status !== "Active") {
-            return response.status(400).json({
-                message: "Contact to admin",
-                success: false,
-                error: true
-            })
-        }
-
-        const checkPassword = await bcryptjs.compare(password, escort.password);
-
-        if (!checkPassword) {
-            return response.status(400).json({
-                message: "check your password",
-                success: false,
-                error: true
-            })
-        }
-
-        const token = jwt.sign({
-                _id: escort._id,
-                escortId: escort.escortId,
-                role: escort.role || "Escort"
-            },
-            process.env.JWT_SECRET, {
-                expiresIn: "7d"
-            }
-        );
-
-        return response.json({
-            message: "Login successful",
-            success: true,
-            error: false,
-            data: {
-                _id: escort._id,
-                escortId: escort.escortId,
-                role: escort.role,
-                token: token
-            }
-
-        });
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || error,
-            success: false,
-            error: true
-        })
+    if (!email || !password) {
+      return response.status(400).json({
+        message: "Provide email, and password",
+        success: false,
+        error: true,
+      });
     }
 
+    const escort = await EscortModel.findOne({
+      email,
+    }).select("+password");
+
+    if (!escort) {
+      return response.status(400).json({
+        message: "User not register",
+        success: false,
+        error: true,
+      });
+    }
+
+    console.log("escort details ", escort);
+
+    if (escort.status !== "Active") {
+      return response.status(400).json({
+        message: "Contact to admin",
+        success: false,
+        error: true,
+      });
+    }
+
+    const checkPassword = await bcryptjs.compare(password, escort.password);
+
+    if (!checkPassword) {
+      return response.status(400).json({
+        message: "check your password",
+        success: false,
+        error: true,
+      });
+    }
+
+    const token = jwt.sign(
+      {
+        _id: escort._id,
+        escortId: escort.escortId,
+        role: escort.role || "Escort",
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "7d",
+      },
+    );
+
+    return response.json({
+      message: "Login successful",
+      success: true,
+      error: false,
+      data: {
+        _id: escort._id,
+        escortId: escort.escortId,
+        role: escort.role,
+        token: token,
+      },
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || error,
+      success: false,
+      error: true,
+    });
+  }
 }
 
-// Fetch Escort details 
+// Fetch Escort details
 export async function fetchEscortdetailscontroller(request, response) {
-    try {
-        const {
-            escortId
-        } = request.query;
+  try {
+    const { escortId } = request.query;
 
-        if (!escortId) {
-            return response.status(400).json({
-                message: "provide escortId",
-                error: true,
-                success: false
-            })
-        }
-
-        const escortDetails = await EscortModel.findOne({
-                escortId
-            })
-            .populate("services")
-            .populate("rates")
-            .populate("bookings")
-            .populate("currentSubscription");
-
-        if (!escortDetails) {
-            return response.status(400).json({
-                message: "escorts not found",
-                error: true,
-                success: false
-            })
-        }
-        let mobile = escortDetails.mobile;
-
-        try {
-            if (mobile?.startsWith("enc:")) {
-                mobile = decrypt(mobile.replace("enc:", ""));
-            } else {
-                mobile = decrypt(mobile);
-            }
-        } catch {
-            mobile = "";
-        }
-
-        escortDetails.mobile = mobile;
-
-        return response.status(200).json({
-            message: "Escort details fetched",
-            error: false,
-            success: true,
-            data: escortDetails
-        })
-
-    } catch (error) {
-        console.log("fetch escort details error ", error);
-        return response.status(500).json({
-            message: error.message || error,
-            error: true,
-            success: false
-        })
+    if (!escortId) {
+      return response.status(400).json({
+        message: "provide escortId",
+        error: true,
+        success: false,
+      });
     }
+
+    const escortDetails = await EscortModel.findOne({
+      escortId,
+    })
+      .populate("services")
+      .populate("rates")
+      .populate("bookings")
+      .populate("currentSubscription");
+
+    if (!escortDetails) {
+      return response.status(400).json({
+        message: "escorts not found",
+        error: true,
+        success: false,
+      });
+    }
+    let mobile = escortDetails.mobile;
+
+    try {
+      if (mobile?.startsWith("enc:")) {
+        mobile = decrypt(mobile.replace("enc:", ""));
+      } else {
+        mobile = decrypt(mobile);
+      }
+    } catch {
+      mobile = "";
+    }
+
+    escortDetails.mobile = mobile;
+
+    return response.status(200).json({
+      message: "Escort details fetched",
+      error: false,
+      success: true,
+      data: escortDetails,
+    });
+  } catch (error) {
+    console.log("fetch escort details error ", error);
+    return response.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
+  }
 }
 
 // logout controll
 export async function logoutEscortcontroller(request, response) {
-    try {
-        const {
-            escortId,
-            role
-        } = request.body;
+  try {
+    const { escortId, role } = request.body;
 
-        if (!escortId || !role) {
-            return response.status(400).json({
-                message: "Invalid token",
-                success: false,
-                error: true
-            });
-        }
-
-
-        const escort = await EscortModel.findOne({
-            escortId: escortId
-        });
-
-        if (!escort) {
-            return response.status(404).json({
-                message: "escort not found",
-                success: false,
-                error: true,
-            })
-
-        }
-        escort.refresh_token = "";
-        escort.onlineStatus = false;
-        await escort.save();
-
-        return response.status(200).json({
-            message: "Logged out successfully",
-            success: true,
-            error: false,
-        })
-
-    } catch (error) {
-        return response.status(500).json({
-            message: "Internal server error",
-            success: false,
-            error: true,
-        })
+    if (!escortId || !role) {
+      return response.status(400).json({
+        message: "Invalid token",
+        success: false,
+        error: true,
+      });
     }
+
+    const escort = await EscortModel.findOne({
+      escortId: escortId,
+    });
+
+    if (!escort) {
+      return response.status(404).json({
+        message: "escort not found",
+        success: false,
+        error: true,
+      });
+    }
+    escort.refresh_token = "";
+    escort.onlineStatus = false;
+    await escort.save();
+
+    return response.status(200).json({
+      message: "Logged out successfully",
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: "Internal server error",
+      success: false,
+      error: true,
+    });
+  }
 }
 
 // toggle face blur
 export async function toggleFaceBlur(request, response) {
-    try {
-        const userId = request.user?._id;
+  try {
+    const userId = request.user?._id;
 
-        if (!userId) {
-            return response.status(401).json({
-                message: "Unauthorized",
-                success: false,
-                error: true
-            });
-        }
-
-        const escort = await EscortModel.findById(userId);
-
-        if (!escort) {
-            return response.status(404).json({
-                message: "Escort not found",
-                success: false,
-                error: true
-            });
-        }
-
-        // 🔁 Toggle
-        escort.isFaceBlurred = !escort.isFaceBlurred;
-        await escort.save();
-
-        return response.status(200).json({
-            success: true,
-            message: `Face blur ${escort.isFaceBlurred ? "enabled" : "disabled"}`,
-            isFaceBlurred: escort.isFaceBlurred,
-            error: false
-        });
-
-    } catch (error) {
-        console.log("Toggle error", error);
-
-        return response.status(500).json({
-            message: error.message,
-            success: false,
-            error: true
-        });
+    if (!userId) {
+      return response.status(401).json({
+        message: "Unauthorized",
+        success: false,
+        error: true,
+      });
     }
+
+    const escort = await EscortModel.findById(userId);
+
+    if (!escort) {
+      return response.status(404).json({
+        message: "Escort not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    // 🔁 Toggle
+    escort.isFaceBlurred = !escort.isFaceBlurred;
+    await escort.save();
+
+    return response.status(200).json({
+      success: true,
+      message: `Face blur ${escort.isFaceBlurred ? "enabled" : "disabled"}`,
+      isFaceBlurred: escort.isFaceBlurred,
+      error: false,
+    });
+  } catch (error) {
+    console.log("Toggle error", error);
+
+    return response.status(500).json({
+      message: error.message,
+      success: false,
+      error: true,
+    });
+  }
 }
 
 // upload gallery images
 export async function uploadImagescontroller(request, response) {
-    try {
-        const {
-            escortId,
-            deletedImages
-        } = request.body;
+  try {
+    const { escortId, deletedImages } = request.body;
 
-        //------------------------< Escort id and account check >----------------------------//
-        if (!escortId) {
-            return response.status(400).json({
-                message: "escortId required",
-                success: false,
-                error: true
-            });
-        }
-
-        const escort = await EscortModel.findOne({
-            escortId
-        });
-
-        if (!escort) {
-            return response.status(404).json({
-                message: "Escort not found",
-                success: false,
-                error: true
-            });
-        }
-
-        //------------------------< Check subscription and check status  >----------------------------//
-
-
-        const subscription = await subcribedModel.findOne({
-            _id: escort.currentSubscription,
-            userId: escort._id
-        });
-
-        if (!subscription) {
-            return response.status(403).json({
-                message: "No active subscription found",
-                success: false,
-                error: true
-            });
-        }
-
-        if (subscription.status !== "finished" || !subscription.isActive) {
-            return response.status(403).json({
-                message: "Your subscription is not active",
-                success: false,
-                error: true
-            });
-        }
-
-        if (subscription.subscriptionExpiry && new Date(subscription.subscriptionExpiry) <= new Date()) {
-            return response.status(403).json({
-                message: "Your subscription has expired",
-                success: false,
-                error: true
-            });
-        }
-
-
-        //------------------------< Check max photos limit and calculate count delete images  >----------------------------//
-
-        const photoLimit = subscription.limits?.photos || 6;
-
-
-        const deletedArr = deletedImages ? JSON.parse(deletedImages) : [];
-
-
-
-        const allPhotos = escort.gallery?.photos || [];
-
-        // Current plan ke according sirf latest photos accessible hain
-        const visiblePhotos = allPhotos.slice(-photoLimit);
-
-        const deletedUrls = deletedArr
-            .map(item => item.url)
-            .filter(Boolean);
-
-        // Sirf wahi deleted photos count hongi jo current plan ke visible
-        // photos mein hain.
-        const deletedVisiblePhotoCount = visiblePhotos.filter(
-            photo => deletedUrls.includes(photo.url)
-        ).length;
-
-        const currentVisiblePhotoCount = visiblePhotos.length;
-
-        const newPhotoCount = request.files?.length || 0;
-
-        const finalVisiblePhotoCount =
-            currentVisiblePhotoCount -
-            deletedVisiblePhotoCount +
-            newPhotoCount;
-
-
-        if (finalVisiblePhotoCount > photoLimit) {
-            return response.status(400).json({
-                message: `You can upload maximum ${photoLimit} photos with your current subscription plan.`,
-                success: false,
-                error: true,
-                data: {
-                    currentPhotos: currentVisiblePhotoCount,
-                    newPhotos: newPhotoCount,
-                    deletedPhotos: deletedVisiblePhotoCount,
-                    photoLimit,
-                    remainingSlots: Math.max(
-                        0,
-                        photoLimit -
-                        (currentVisiblePhotoCount - deletedVisiblePhotoCount)
-                    )
-                }
-            });
-        }
-
-
-
-
-        // 1️⃣ Delete images from Cloudinary & DB
-
-        if (deletedArr.length > 0) {
-
-            // Cloudinary delete
-            for (let item of deletedArr) {
-                if (item.public_id) {
-                    await deleteImageCloudinary(item.public_id);
-                }
-            }
-
-            // DB delete by URL
-            const urlsToDelete = deletedArr.map(item => item.url).filter(Boolean);
-
-            if (urlsToDelete.length > 0) {
-                await EscortModel.updateOne({
-                    escortId
-                }, {
-                    $pull: {
-                        "gallery.photos": {
-                            url: {
-                                $in: urlsToDelete
-                            }
-                        }
-                    }
-                });
-            }
-        }
-
-        // 2️⃣ Upload new images to Cloudinary
-        let uploadedImages = [];
-        if (request.files && request.files.length > 0) {
-            for (let file of request.files) {
-                const uploadResult = await uploadImageCloudinary(file, "gallery/images");
-                uploadedImages.push({
-                    public_id: uploadResult.public_id,
-                    url: uploadResult.secure_url
-                });
-            }
-
-            // Push new images to DB
-            await EscortModel.updateOne({
-                escortId
-            }, {
-                $push: {
-                    "gallery.photos": {
-                        $each: uploadedImages
-                    },
-                },
-                $set: {
-                    hasAcceptedImageOwnership: true,
-                    imageOwnershipAcceptedAt: new Date()
-                },
-            });
-        }
-
-        // 3️⃣ Fetch updated escort
-        const updatedEscort = await EscortModel.findOne({
-            escortId
-        }).lean();
-
-        const visibleUpdatedPhotos =
-            updatedEscort.gallery?.photos?.slice(-photoLimit) || [];
-
-        // 4️⃣ Keep only last 6 images in DB
-        // const last6Images = updatedEscort.gallery.photos.slice(-6);
-        // await EscortModel.updateOne({
-        //     escortId
-        // }, {
-        //     $set: {
-        //         "gallery.photos": last6Images
-        //     }
-        // });
-
-
-        // Send notification and email only when new images are uploaded
-        if (
-            uploadedImages.length > 0 &&
-            updatedEscort?.status === "Active" &&
-            updatedEscort?.isVerified === true
-        ) {
-            const admin = await AdminModel.findOne();
-
-            if (!admin) {
-                console.error("Notification skipped: No Admin found in database.");
-            } else {
-                await createAndSendNotification(request.app, {
-                    recipientId: admin._id,
-                    recipientModel: "Admin",
-                    senderId: updatedEscort._id,
-                    senderModel: "Escort",
-                    type: "VERIFICATION",
-                    title: "New Gallery Images Uploaded",
-                    message: `${updatedEscort.name} has uploaded new gallery images and is waiting for approval.`,
-                    link: `/dashboard/pending-escort-media/${updatedEscort.escortId}`
-                });
-            }
-
-            await sendMediaUploadNotification({
-                email: process.env.ADMIN_RECEIVER_EMAIL,
-                modelName: updatedEscort.name,
-                mediaType: "photos",
-                escortId: updatedEscort.escortId,
-            });
-        }
-
-
-
-        return response.status(200).json({
-            message: "Gallery updated successfully",
-            success: true,
-            error: false,
-            data: {
-                ...updatedEscort,
-                gallery: {
-                    ...updatedEscort.gallery,
-                    photos: visibleUpdatedPhotos,
-                }
-            }
-        });
-
-    } catch (error) {
-        console.error(error);
-        return response.status(500).json({
-            message: "Upload gallery photos failed!",
-            success: false,
-            error: true
-        });
+    //------------------------< Escort id and account check >----------------------------//
+    if (!escortId) {
+      return response.status(400).json({
+        message: "escortId required",
+        success: false,
+        error: true,
+      });
     }
+
+    const escort = await EscortModel.findOne({
+      escortId,
+    });
+
+    if (!escort) {
+      return response.status(404).json({
+        message: "Escort not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    //------------------------< Check subscription and check status  >----------------------------//
+
+    const subscription = await subcribedModel.findOne({
+      _id: escort.currentSubscription,
+      userId: escort._id,
+    });
+
+    if (!subscription) {
+      return response.status(403).json({
+        message: "No active subscription found",
+        success: false,
+        error: true,
+      });
+    }
+
+    if (subscription.status !== "finished" || !subscription.isActive) {
+      return response.status(403).json({
+        message: "Your subscription is not active",
+        success: false,
+        error: true,
+      });
+    }
+
+    if (
+      subscription.subscriptionExpiry &&
+      new Date(subscription.subscriptionExpiry) <= new Date()
+    ) {
+      return response.status(403).json({
+        message: "Your subscription has expired",
+        success: false,
+        error: true,
+      });
+    }
+
+    //------------------------< Check max photos limit and calculate count delete images  >----------------------------//
+
+    const photoLimit = subscription.limits?.photos || 6;
+
+    const deletedArr = deletedImages ? JSON.parse(deletedImages) : [];
+
+    const allPhotos = escort.gallery?.photos || [];
+
+    // Current plan ke according sirf latest photos accessible hain
+    const visiblePhotos = allPhotos.slice(-photoLimit);
+
+    const deletedUrls = deletedArr.map((item) => item.url).filter(Boolean);
+
+    // Sirf wahi deleted photos count hongi jo current plan ke visible
+    // photos mein hain.
+    const deletedVisiblePhotoCount = visiblePhotos.filter((photo) =>
+      deletedUrls.includes(photo.url),
+    ).length;
+
+    const currentVisiblePhotoCount = visiblePhotos.length;
+
+    const newPhotoCount = request.files?.length || 0;
+
+    const finalVisiblePhotoCount =
+      currentVisiblePhotoCount - deletedVisiblePhotoCount + newPhotoCount;
+
+    if (finalVisiblePhotoCount > photoLimit) {
+      return response.status(400).json({
+        message: `You can upload maximum ${photoLimit} photos with your current subscription plan.`,
+        success: false,
+        error: true,
+        data: {
+          currentPhotos: currentVisiblePhotoCount,
+          newPhotos: newPhotoCount,
+          deletedPhotos: deletedVisiblePhotoCount,
+          photoLimit,
+          remainingSlots: Math.max(
+            0,
+            photoLimit - (currentVisiblePhotoCount - deletedVisiblePhotoCount),
+          ),
+        },
+      });
+    }
+
+    // 1️⃣ Delete images from Cloudinary & DB
+
+    if (deletedArr.length > 0) {
+      // Cloudinary delete
+      for (let item of deletedArr) {
+        if (item.public_id) {
+          await deleteImageCloudinary(item.public_id);
+        }
+      }
+
+      // DB delete by URL
+      const urlsToDelete = deletedArr.map((item) => item.url).filter(Boolean);
+
+      if (urlsToDelete.length > 0) {
+        await EscortModel.updateOne(
+          {
+            escortId,
+          },
+          {
+            $pull: {
+              "gallery.photos": {
+                url: {
+                  $in: urlsToDelete,
+                },
+              },
+            },
+          },
+        );
+      }
+    }
+
+    // 2️⃣ Upload new images to Cloudinary
+    let uploadedImages = [];
+    if (request.files && request.files.length > 0) {
+      for (let file of request.files) {
+        const uploadResult = await uploadImageCloudinary(
+          file,
+          "gallery/images",
+        );
+        uploadedImages.push({
+          public_id: uploadResult.public_id,
+          url: uploadResult.secure_url,
+        });
+      }
+
+      // Push new images to DB
+      await EscortModel.updateOne(
+        {
+          escortId,
+        },
+        {
+          $push: {
+            "gallery.photos": {
+              $each: uploadedImages,
+            },
+          },
+          $set: {
+            hasAcceptedImageOwnership: true,
+            imageOwnershipAcceptedAt: new Date(),
+          },
+        },
+      );
+    }
+
+    // 3️⃣ Fetch updated escort
+    const updatedEscort = await EscortModel.findOne({
+      escortId,
+    }).lean();
+
+    const visibleUpdatedPhotos =
+      updatedEscort.gallery?.photos?.slice(-photoLimit) || [];
+
+    // 4️⃣ Keep only last 6 images in DB
+    // const last6Images = updatedEscort.gallery.photos.slice(-6);
+    // await EscortModel.updateOne({
+    //     escortId
+    // }, {
+    //     $set: {
+    //         "gallery.photos": last6Images
+    //     }
+    // });
+
+    // Send notification and email only when new images are uploaded
+    if (
+      uploadedImages.length > 0 &&
+      updatedEscort?.status === "Active" &&
+      updatedEscort?.isVerified === true
+    ) {
+      const admin = await AdminModel.findOne();
+
+      if (!admin) {
+        console.error("Notification skipped: No Admin found in database.");
+      } else {
+        await createAndSendNotification(request.app, {
+          recipientId: admin._id,
+          recipientModel: "Admin",
+          senderId: updatedEscort._id,
+          senderModel: "Escort",
+          type: "VERIFICATION",
+          title: "New Gallery Images Uploaded",
+          message: `${updatedEscort.name} has uploaded new gallery images and is waiting for approval.`,
+          link: `/dashboard/pending-escort-media/${updatedEscort.escortId}`,
+        });
+      }
+
+      await sendMediaUploadNotification({
+        email: process.env.ADMIN_RECEIVER_EMAIL,
+        modelName: updatedEscort.name,
+        mediaType: "photos",
+        escortId: updatedEscort.escortId,
+      });
+    }
+
+    return response.status(200).json({
+      message: "Gallery updated successfully",
+      success: true,
+      error: false,
+      data: {
+        ...updatedEscort,
+        gallery: {
+          ...updatedEscort.gallery,
+          photos: visibleUpdatedPhotos,
+        },
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return response.status(500).json({
+      message: "Upload gallery photos failed!",
+      success: false,
+      error: true,
+    });
+  }
 }
 
 // upload gallery videos
 
 export async function uploadVideoscontroller(request, response) {
-    try {
-        const {
-            escortId,
-            deletedVideos
-        } = request.body;
+  try {
+    const { escortId, deletedVideos } = request.body;
 
-        if (!escortId) {
-            return response.status(400).json({
-                message: "escortId required",
-                success: false,
-                error: true
-            });
-        }
-
-        const deletedArr = deletedVideos ? JSON.parse(deletedVideos) : [];
-
-        // 1️⃣ Delete videos from Cloudinary & DB
-        if (deletedArr.length > 0) {
-            const escort = await EscortModel.findOne({
-                escortId
-            });
-            if (escort && escort.gallery?.videos?.length) {
-
-                // Cloudinary delete
-                for (let urlOrObj of deletedArr) {
-                    // If frontend sends { public_id, url } object
-                    if (typeof urlOrObj === "object" && urlOrObj.public_id) {
-                        await deleteVideoCloudinary(urlOrObj.public_id);
-                    }
-                }
-
-                // DB delete using URL
-                const urlsToDelete = deletedArr.map(item => (typeof item === "object" ? item.url : item)).filter(Boolean);
-                if (urlsToDelete.length > 0) {
-                    await EscortModel.updateOne({
-                        escortId
-                    }, {
-                        $pull: {
-                            "gallery.videos": {
-                                url: {
-                                    $in: urlsToDelete
-                                }
-                            }
-                        }
-                    });
-                }
-            }
-        }
-
-        // 2️⃣ Upload new videos to Cloudinary
-        let uploadedVideos = [];
-        if (request.files && request.files.length > 0) {
-            for (let file of request.files) {
-                const uploadResult = await uploadVideoCloudinary(file, "gallery/videos");
-                uploadedVideos.push({
-                    public_id: uploadResult.public_id,
-                    url: uploadResult.secure_url
-                });
-            }
-
-            // Push new videos to DB
-            await EscortModel.updateOne({
-                escortId
-            }, {
-                $push: {
-                    "gallery.videos": {
-                        $each: uploadedVideos
-                    },
-                },
-                $set: {
-                    hasAcceptedVideoOwnership: true,
-                    videoOwnershipAcceptedAt: new Date()
-                }
-            });
-        }
-
-        // 3️⃣ Fetch updated escort
-        const updatedEscort = await EscortModel.findOne({
-            escortId
-        }).lean();
-
-        // 4️⃣ Keep only last 6 videos
-        const last6Videos = updatedEscort.gallery.videos.slice(-6);
-        await EscortModel.updateOne({
-            escortId
-        }, {
-            $set: {
-                "gallery.videos": last6Videos
-            }
-        });
-
-
-        // Send notification and email only when new videos are uploaded
-
-        if (
-            uploadedVideos.length > 0 &&
-            updatedEscort?.status === "Active" &&
-            updatedEscort?.isVerified === true
-        ) {
-            const admin = await AdminModel.findOne();
-
-            if (!admin) {
-                console.error("Notification skipped: No Admin found in database.");
-            } else {
-                await createAndSendNotification(request.app, {
-                    recipientId: admin._id,
-                    recipientModel: "Admin",
-                    senderId: updatedEscort._id,
-                    senderModel: "Escort",
-                    type: "VERIFICATION",
-                    title: "New Gallery Videos Uploaded",
-                    message: `${updatedEscort.name} has uploaded new gallery videos and is waiting for approval.`,
-                    link: `/dashboard/pending-escort-media/${updatedEscort.escortId}`
-                });
-            }
-
-            await sendMediaUploadNotification({
-                email: process.env.ADMIN_RECEIVER_EMAIL,
-                modelName: updatedEscort.name,
-                mediaType: "videos",
-                escortId: updatedEscort.escortId,
-            });
-        }
-
-
-        return response.status(200).json({
-            message: "Video gallery updated successfully",
-            success: true,
-            error: false,
-            data: {
-                ...updatedEscort,
-                gallery: {
-                    ...updatedEscort.gallery,
-                    videos: last6Videos
-                }
-            }
-        });
-
-    } catch (error) {
-        console.error(error);
-        return response.status(500).json({
-            message: error.message || error,
-            success: false,
-            error: true
-        });
+    if (!escortId) {
+      return response.status(400).json({
+        message: "escortId required",
+        success: false,
+        error: true,
+      });
     }
-}
 
+    const deletedArr = deletedVideos ? JSON.parse(deletedVideos) : [];
+
+    // 1️⃣ Delete videos from Cloudinary & DB
+    if (deletedArr.length > 0) {
+      const escort = await EscortModel.findOne({
+        escortId,
+      });
+      if (escort && escort.gallery?.videos?.length) {
+        // Cloudinary delete
+        for (let urlOrObj of deletedArr) {
+          // If frontend sends { public_id, url } object
+          if (typeof urlOrObj === "object" && urlOrObj.public_id) {
+            await deleteVideoCloudinary(urlOrObj.public_id);
+          }
+        }
+
+        // DB delete using URL
+        const urlsToDelete = deletedArr
+          .map((item) => (typeof item === "object" ? item.url : item))
+          .filter(Boolean);
+        if (urlsToDelete.length > 0) {
+          await EscortModel.updateOne(
+            {
+              escortId,
+            },
+            {
+              $pull: {
+                "gallery.videos": {
+                  url: {
+                    $in: urlsToDelete,
+                  },
+                },
+              },
+            },
+          );
+        }
+      }
+    }
+
+    // 2️⃣ Upload new videos to Cloudinary
+    let uploadedVideos = [];
+    if (request.files && request.files.length > 0) {
+      for (let file of request.files) {
+        const uploadResult = await uploadVideoCloudinary(
+          file,
+          "gallery/videos",
+        );
+        uploadedVideos.push({
+          public_id: uploadResult.public_id,
+          url: uploadResult.secure_url,
+        });
+      }
+
+      // Push new videos to DB
+      await EscortModel.updateOne(
+        {
+          escortId,
+        },
+        {
+          $push: {
+            "gallery.videos": {
+              $each: uploadedVideos,
+            },
+          },
+          $set: {
+            hasAcceptedVideoOwnership: true,
+            videoOwnershipAcceptedAt: new Date(),
+          },
+        },
+      );
+    }
+
+    // 3️⃣ Fetch updated escort
+    const updatedEscort = await EscortModel.findOne({
+      escortId,
+    }).lean();
+
+    // 4️⃣ Keep only last 6 videos
+    const last6Videos = updatedEscort.gallery.videos.slice(-6);
+    await EscortModel.updateOne(
+      {
+        escortId,
+      },
+      {
+        $set: {
+          "gallery.videos": last6Videos,
+        },
+      },
+    );
+
+    // Send notification and email only when new videos are uploaded
+
+    if (
+      uploadedVideos.length > 0 &&
+      updatedEscort?.status === "Active" &&
+      updatedEscort?.isVerified === true
+    ) {
+      const admin = await AdminModel.findOne();
+
+      if (!admin) {
+        console.error("Notification skipped: No Admin found in database.");
+      } else {
+        await createAndSendNotification(request.app, {
+          recipientId: admin._id,
+          recipientModel: "Admin",
+          senderId: updatedEscort._id,
+          senderModel: "Escort",
+          type: "VERIFICATION",
+          title: "New Gallery Videos Uploaded",
+          message: `${updatedEscort.name} has uploaded new gallery videos and is waiting for approval.`,
+          link: `/dashboard/pending-escort-media/${updatedEscort.escortId}`,
+        });
+      }
+
+      await sendMediaUploadNotification({
+        email: process.env.ADMIN_RECEIVER_EMAIL,
+        modelName: updatedEscort.name,
+        mediaType: "videos",
+        escortId: updatedEscort.escortId,
+      });
+    }
+
+    return response.status(200).json({
+      message: "Video gallery updated successfully",
+      success: true,
+      error: false,
+      data: {
+        ...updatedEscort,
+        gallery: {
+          ...updatedEscort.gallery,
+          videos: last6Videos,
+        },
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return response.status(500).json({
+      message: error.message || error,
+      success: false,
+      error: true,
+    });
+  }
+}
 
 // fetch all verified escorts
 export async function verifiedEscortcontroller(request, response) {
-    try {
-        const {
-            role,
-            isVerified,
-            isVisible
-        } = request.query;
+  try {
+    const { role, isVerified, isVisible } = request.query;
 
-        let filter = {};
+    let filter = {};
 
-        if (role) filter.role = role;
+    if (role) filter.role = role;
 
-        if (isVerified !== undefined)
-            filter.isVerified = isVerified === "true";
+    if (isVerified !== undefined) filter.isVerified = isVerified === "true";
 
-        if (isVisible !== undefined)
-            filter.isVisible = isVisible === "true";
+    if (isVisible !== undefined) filter.isVisible = isVisible === "true";
 
-        filter.status = "Active";
+    filter.status = "Active";
 
-        const escorts = await EscortModel.find(filter);
+    const escorts = await EscortModel.find(filter);
 
-        if (escorts.length === 0) {
-            return response.status(400).json({
-                message: "escorts not found",
-                error: true,
-                success: false
-            })
-        }
-
-        return response.status(200).json({
-            message: "Escort list fetched",
-            error: false,
-            success: true,
-            data: escorts
-        })
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || error,
-            error: true,
-            success: false
-        })
+    if (escorts.length === 0) {
+      return response.status(400).json({
+        message: "escorts not found",
+        error: true,
+        success: false,
+      });
     }
+
+    return response.status(200).json({
+      message: "Escort list fetched",
+      error: false,
+      success: true,
+      data: escorts,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
+  }
 }
-
-
 
 // ------------------x-x-x-x-x-< Not completed >-x-x-x-x-x--------------------
 export async function updateEscortcontroller(request, response) {
-    try {
-        const escortId = request.user._id
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || error,
-            error: true,
-            success: false
-        })
-    }
+  try {
+    const escortId = request.user._id;
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
+  }
 }
 
-// update highlights 
+// update highlights
 export async function updateHighlightscontroller(request, response) {
-    try {
-        const {
-            escortId,
-            incall,
-            outcall,
-            infmty,
-            rateFrom,
-            highlights,
-            about
-        } = request.body;
+  try {
+    const { escortId, incall, outcall, infmty, rateFrom, highlights, about } =
+      request.body;
 
-        if (!escortId) {
-            return response.status(400).json({
-                message: "escortId is missing!",
-                success: false,
-                error: true
-            });
-        }
-
-        const updateData = {};
-
-        if (incall !== undefined) updateData.incall = incall;
-        if (outcall !== undefined) updateData.outcall = outcall;
-        if (infmty !== undefined) updateData.infmty = infmty;
-        if (highlights) updateData.highlights = highlights;
-        if (about) updateData.about = about;
-        if (rateFrom) updateData.rateFrom = rateFrom;
-
-
-        const details = await EscortModel.findOneAndUpdate({
-                escortId: escortId
-            }, {
-                $set: updateData
-            }, {
-                new: true
-            } // upsert mat lagao unless naya doc banana ho
-        );
-
-        if (!details) {
-            return response.status(404).json({
-                message: "Escort not found",
-                success: false,
-                error: true
-            });
-        }
-
-        return response.status(200).json({
-            message: "Update successful",
-            success: true,
-            error: false,
-            data: details
-        });
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || "Server error",
-            success: false,
-            error: true
-        });
+    if (!escortId) {
+      return response.status(400).json({
+        message: "escortId is missing!",
+        success: false,
+        error: true,
+      });
     }
+
+    const updateData = {};
+
+    if (incall !== undefined) updateData.incall = incall;
+    if (outcall !== undefined) updateData.outcall = outcall;
+    if (infmty !== undefined) updateData.infmty = infmty;
+    if (highlights) updateData.highlights = highlights;
+    if (about) updateData.about = about;
+    if (rateFrom) updateData.rateFrom = rateFrom;
+
+    const details = await EscortModel.findOneAndUpdate(
+      {
+        escortId: escortId,
+      },
+      {
+        $set: updateData,
+      },
+      {
+        new: true,
+      }, // upsert mat lagao unless naya doc banana ho
+    );
+
+    if (!details) {
+      return response.status(404).json({
+        message: "Escort not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    return response.status(200).json({
+      message: "Update successful",
+      success: true,
+      error: false,
+      data: details,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || "Server error",
+      success: false,
+      error: true,
+    });
+  }
 }
 
 // escort services
 export async function escortServicescontroller(request, response) {
-    try {
-        const {
-            escortId,
-            title,
-            label,
-            price,
-            description,
-            isActive
-        } = request.body;
+  try {
+    const { escortId, title, label, price, description, isActive } =
+      request.body;
 
-        // ✅ correct validation
-        if (!escortId) {
-            return response.status(400).json({
-                message: "escortId is missing",
-                success: false,
-                error: true
-            });
-        }
-
-        // ✅ create service
-        const newService = await ServiceModel.create({
-            escortId,
-            title,
-            label,
-            price,
-            description,
-            isActive
-        });
-
-        // ✅ push service _id into Escort model
-        await EscortModel.findOneAndUpdate({
-            escortId: escortId
-        }, {
-            $push: {
-                services: newService._id
-            }
-        });
-
-        return response.status(200).json({
-            message: "Service added successfully",
-            success: true,
-            error: false,
-            data: newService
-        });
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || "server error",
-            success: false,
-            error: true
-        });
+    // ✅ correct validation
+    if (!escortId) {
+      return response.status(400).json({
+        message: "escortId is missing",
+        success: false,
+        error: true,
+      });
     }
+
+    // ✅ create service
+    const newService = await ServiceModel.create({
+      escortId,
+      title,
+      label,
+      price,
+      description,
+      isActive,
+    });
+
+    // ✅ push service _id into Escort model
+    await EscortModel.findOneAndUpdate(
+      {
+        escortId: escortId,
+      },
+      {
+        $push: {
+          services: newService._id,
+        },
+      },
+    );
+
+    return response.status(200).json({
+      message: "Service added successfully",
+      success: true,
+      error: false,
+      data: newService,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || "server error",
+      success: false,
+      error: true,
+    });
+  }
 }
 
 // update service
 export async function UpdateService(request, response) {
+  try {
+    const { _id, escortId, title, label, price, description, isActive } =
+      request.body;
 
-    try {
-
-        const {
-            _id,
-            escortId,
-            title,
-            label,
-            price,
-            description,
-            isActive
-        } = request.body;
-
-        // validation
-        if (!_id) {
-
-            return response.status(400).json({
-                message: "Service id is missing",
-                success: false,
-                error: true
-            });
-
-        }
-
-        const service = await ServiceModel.findById(_id);
-
-        // not found
-        if (!service) {
-
-            return response.status(404).json({
-                message: "Service not found",
-                success: false,
-                error: true
-            });
-
-        }
-
-        // update
-        const updatedService = await ServiceModel.findByIdAndUpdate(
-            _id, {
-                escortId,
-                title,
-                label,
-                price,
-                description,
-                isActive
-            }, {
-                new: true
-            }
-        );
-
-        return response.status(200).json({
-            message: "Service updated successfully",
-            success: true,
-            error: false,
-            data: updatedService
-        });
-
-    } catch (error) {
-        console.log("service update error ", error);
-
-        return response.status(500).json({
-            message: error.message || "server error",
-            success: false,
-            error: true
-        });
-
+    // validation
+    if (!_id) {
+      return response.status(400).json({
+        message: "Service id is missing",
+        success: false,
+        error: true,
+      });
     }
 
+    const service = await ServiceModel.findById(_id);
+
+    // not found
+    if (!service) {
+      return response.status(404).json({
+        message: "Service not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    // update
+    const updatedService = await ServiceModel.findByIdAndUpdate(
+      _id,
+      {
+        escortId,
+        title,
+        label,
+        price,
+        description,
+        isActive,
+      },
+      {
+        new: true,
+      },
+    );
+
+    return response.status(200).json({
+      message: "Service updated successfully",
+      success: true,
+      error: false,
+      data: updatedService,
+    });
+  } catch (error) {
+    console.log("service update error ", error);
+
+    return response.status(500).json({
+      message: error.message || "server error",
+      success: false,
+      error: true,
+    });
+  }
 }
 
 // delete services
 export async function DeleteService(request, response) {
+  try {
+    const { _id } = request.body;
 
-    try {
-
-        const {
-            _id
-        } = request.body;
-
-        // validation
-        if (!_id) {
-
-            return response.status(400).json({
-                message: "Service id is missing",
-                success: false,
-                error: true
-            });
-
-        }
-
-        // check service
-        const service = await ServiceModel.findById(_id);
-
-        if (!service) {
-
-            return response.status(404).json({
-                message: "Service not found",
-                success: false,
-                error: true
-            });
-
-        }
-
-        // delete
-        await ServiceModel.findByIdAndDelete(_id);
-
-        await EscortModel.findOneAndUpdate({
-            escortId: service.escortId
-        }, {
-            $pull: {
-                services: _id
-            }
-        });
-
-
-        return response.status(200).json({
-            message: "Service deleted successfully",
-            success: true,
-            error: false
-        });
-
-    } catch (error) {
-        console.log("service delete error ", error);
-        return response.status(500).json({
-            message: error.message || "server error",
-            success: false,
-            error: true
-        });
-
+    // validation
+    if (!_id) {
+      return response.status(400).json({
+        message: "Service id is missing",
+        success: false,
+        error: true,
+      });
     }
 
-}
+    // check service
+    const service = await ServiceModel.findById(_id);
 
+    if (!service) {
+      return response.status(404).json({
+        message: "Service not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    // delete
+    await ServiceModel.findByIdAndDelete(_id);
+
+    await EscortModel.findOneAndUpdate(
+      {
+        escortId: service.escortId,
+      },
+      {
+        $pull: {
+          services: _id,
+        },
+      },
+    );
+
+    return response.status(200).json({
+      message: "Service deleted successfully",
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    console.log("service delete error ", error);
+    return response.status(500).json({
+      message: error.message || "server error",
+      success: false,
+      error: true,
+    });
+  }
+}
 
 // escort add rates
 export async function escortRatescontroller(request, response) {
-    try {
-        const {
-            escortId,
-            label,
-            price,
-            duration,
-            isActive
-        } = request.body;
+  try {
+    const { escortId, label, price, duration, isActive } = request.body;
 
-        if (!escortId) {
-            return response.status(400).json({
-                message: "escortId is missing",
-                success: false,
-                error: true
-            });
-        }
-
-        // ✅ create rates
-        const newRates = await RatesModel.create({
-            escortId,
-            label,
-            price,
-            duration,
-            isActive
-        });
-
-        if (!newRates) {
-            return response.status(404).json({
-                message: "rates add failed",
-                success: false,
-                error: true
-            })
-        }
-
-        // ✅ push rates _id into Escort model
-        await EscortModel.findOneAndUpdate({
-            escortId: escortId
-        }, {
-            $push: {
-                rates: newRates._id
-            }
-        });
-
-        return response.status(200).json({
-            message: "rates added successfully",
-            success: true,
-            error: false,
-            data: newRates
-        });
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || "server error",
-            success: false,
-            error: true
-        });
+    if (!escortId) {
+      return response.status(400).json({
+        message: "escortId is missing",
+        success: false,
+        error: true,
+      });
     }
+
+    // ✅ create rates
+    const newRates = await RatesModel.create({
+      escortId,
+      label,
+      price,
+      duration,
+      isActive,
+    });
+
+    if (!newRates) {
+      return response.status(404).json({
+        message: "rates add failed",
+        success: false,
+        error: true,
+      });
+    }
+
+    // ✅ push rates _id into Escort model
+    await EscortModel.findOneAndUpdate(
+      {
+        escortId: escortId,
+      },
+      {
+        $push: {
+          rates: newRates._id,
+        },
+      },
+    );
+
+    return response.status(200).json({
+      message: "rates added successfully",
+      success: true,
+      error: false,
+      data: newRates,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || "server error",
+      success: false,
+      error: true,
+    });
+  }
 }
 
 // escort update rate
 export async function updateRate(request, response) {
+  try {
+    const { _id, escortId, label, price, duration, isActive } = request.body;
 
-    try {
-
-        const {
-            _id,
-            escortId,
-            label,
-            price,
-            duration,
-            isActive
-        } = request.body;
-
-        if (!_id) {
-
-            return response.status(400).json({
-                message: "Rate id is missing",
-                success: false,
-                error: true
-            });
-
-        }
-
-        // check existing rate
-        const rate = await RatesModel.findById(_id);
-
-        if (!rate) {
-
-            return response.status(404).json({
-                message: "Rate not found",
-                success: false,
-                error: true
-            });
-
-        }
-
-        // update rate
-        const updatedRate = await RatesModel.findByIdAndUpdate(
-            _id, {
-                escortId,
-                label,
-                price,
-                duration,
-                isActive
-            }, {
-                new: true
-            }
-        );
-
-        return response.status(200).json({
-            message: "Rate updated successfully",
-            success: true,
-            error: false,
-            data: updatedRate
-        });
-
-    } catch (error) {
-        console.log("update rate error", error);
-
-        return response.status(500).json({
-            message: error.message || "server error",
-            success: false,
-            error: true
-        });
-
+    if (!_id) {
+      return response.status(400).json({
+        message: "Rate id is missing",
+        success: false,
+        error: true,
+      });
     }
 
+    // check existing rate
+    const rate = await RatesModel.findById(_id);
+
+    if (!rate) {
+      return response.status(404).json({
+        message: "Rate not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    // update rate
+    const updatedRate = await RatesModel.findByIdAndUpdate(
+      _id,
+      {
+        escortId,
+        label,
+        price,
+        duration,
+        isActive,
+      },
+      {
+        new: true,
+      },
+    );
+
+    return response.status(200).json({
+      message: "Rate updated successfully",
+      success: true,
+      error: false,
+      data: updatedRate,
+    });
+  } catch (error) {
+    console.log("update rate error", error);
+
+    return response.status(500).json({
+      message: error.message || "server error",
+      success: false,
+      error: true,
+    });
+  }
 }
 
-// escort rate delete 
+// escort rate delete
 export async function deleteRate(request, response) {
+  try {
+    const { _id } = request.body;
 
-    try {
-
-        const {
-            _id
-        } = request.body;
-
-        if (!_id) {
-
-            return response.status(400).json({
-                message: "Rate id is missing",
-                success: false,
-                error: true
-            });
-
-        }
-
-        // check existing rate
-        const rate = await RatesModel.findById(_id);
-
-        if (!rate) {
-
-            return response.status(404).json({
-                message: "Rate not found",
-                success: false,
-                error: true
-            });
-
-        }
-
-        // delete rate
-        await RatesModel.findByIdAndDelete(_id);
-
-        // remove rate id from escort model
-        await EscortModel.findOneAndUpdate({
-            escortId: rate.escortId
-        }, {
-            $pull: {
-                rates: _id
-            }
-        });
-
-        return response.status(200).json({
-            message: "Rate deleted successfully",
-            success: true,
-            error: false
-        });
-
-    } catch (error) {
-        console.log("delete rate error", error);
-
-        return response.status(500).json({
-            message: error.message || "server error",
-            success: false,
-            error: true
-        });
-
+    if (!_id) {
+      return response.status(400).json({
+        message: "Rate id is missing",
+        success: false,
+        error: true,
+      });
     }
 
-}
+    // check existing rate
+    const rate = await RatesModel.findById(_id);
 
+    if (!rate) {
+      return response.status(404).json({
+        message: "Rate not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    // delete rate
+    await RatesModel.findByIdAndDelete(_id);
+
+    // remove rate id from escort model
+    await EscortModel.findOneAndUpdate(
+      {
+        escortId: rate.escortId,
+      },
+      {
+        $pull: {
+          rates: _id,
+        },
+      },
+    );
+
+    return response.status(200).json({
+      message: "Rate deleted successfully",
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    console.log("delete rate error", error);
+
+    return response.status(500).json({
+      message: error.message || "server error",
+      success: false,
+      error: true,
+    });
+  }
+}
 
 // fetch escorts added services  => not in use bcoz -> use populate and fetch rates and services
 export async function fetchescortServicescontroller(request, response) {
-    try {
-        const {
-            escortId
-        } = request.query;
+  try {
+    const { escortId } = request.query;
 
-        if (!escortId) {
-            return response.status(400).json({
-                message: "escortId is missing",
-                success: false,
-                error: true
-            });
-        }
-
-        return response.status(200).json({
-            message: "fetched services",
-            success: true,
-            error: false,
-            data: services
-        });
-
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || "server error",
-            success: false,
-            error: true
-        });
+    if (!escortId) {
+      return response.status(400).json({
+        message: "escortId is missing",
+        success: false,
+        error: true,
+      });
     }
+
+    return response.status(200).json({
+      message: "fetched services",
+      success: true,
+      error: false,
+      data: services,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || "server error",
+      success: false,
+      error: true,
+    });
+  }
 }
 
 //----------------------------------------- < Fetch Available, Escort Weekly and Monthly Elite > --------------------------------------------------------//
 
-
 export const getExtraPlanedEscorts = async (req, res) => {
-    try {
+  try {
+    console.log("getExtraPlanedEscorts api call");
 
-        console.log("getExtraPlanedEscorts api call");
+    const now = new Date();
 
-        const now = new Date();
+    const hourAgo = new Date(now.getTime() - 4 * 60 * 60 * 1000);
 
-        const hourAgo = new Date(now.getTime() - 4 * 60 * 60 * 1000);
-
-        const escortFields = `
+    const escortFields = `
                             escortId
                             name
                             age
@@ -3215,131 +2999,120 @@ export const getExtraPlanedEscorts = async (req, res) => {
                             monthlyElite
                         `;
 
-        const baseFilter = {
-            status: "Active",
-            isVerified: true,
-            "avatar.status": "Approved",
-            "avatar.url": {
-                $ne: ""
-            },
-        };
+    const baseFilter = {
+      status: "Active",
+      isVerified: true,
+      "avatar.status": "Approved",
+      "avatar.url": {
+        $ne: "",
+      },
+    };
 
-        const [
-            availableEscorts,
-            escortOfTheWeek,
-            escortOfTheMonth,
-        ] = await Promise.all([
-            // Available Escorts
-            EscortModel.find({
-                ...baseFilter,
-                "availability.availabilityStart": {
-                    $lte: now
-                },
-                "availability.availabilityEnd": {
-                    $gt: hourAgo
-                },
-            })
-            .select(escortFields)
-            .lean(),
+    const [availableEscorts, escortOfTheWeek, escortOfTheMonth] =
+      await Promise.all([
+        // Available Escorts
+        EscortModel.find({
+          ...baseFilter,
+          "availability.availabilityStart": {
+            $lte: now,
+          },
+          "availability.availabilityEnd": {
+            $gt: hourAgo,
+          },
+        })
+          .select(escortFields)
+          .lean(),
 
-            // Escort of the Week
-            EscortModel.find({
-                ...baseFilter,
-                "weeklyElite.totalWeeklyElite": {
-                    $gt: 0
-                },
-                "weeklyElite.weeklyEliteExpiry": {
-                    $gt: now
-                },
-            })
-            .select(escortFields)
-            .lean(),
+        // Escort of the Week
+        EscortModel.find({
+          ...baseFilter,
+          "weeklyElite.totalWeeklyElite": {
+            $gt: 0,
+          },
+          "weeklyElite.weeklyEliteExpiry": {
+            $gt: now,
+          },
+        })
+          .select(escortFields)
+          .lean(),
 
-            // Escort of the Month
-            EscortModel.find({
-                ...baseFilter,
-                "monthlyElite.totalMonthlyElite": {
-                    $gt: 0
-                },
-                "monthlyElite.monthlyEliteExpiry": {
-                    $gt: now
-                },
-            })
-            .select(escortFields)
-            .lean(),
-        ]);
+        // Escort of the Month
+        EscortModel.find({
+          ...baseFilter,
+          "monthlyElite.totalMonthlyElite": {
+            $gt: 0,
+          },
+          "monthlyElite.monthlyEliteExpiry": {
+            $gt: now,
+          },
+        })
+          .select(escortFields)
+          .lean(),
+      ]);
 
-        return res.status(200).json({
-            success: true,
-            message: "Home banner escorts fetched successfully",
-            data: {
-                availableEscorts,
-                escortOfTheWeek,
-                escortOfTheMonth,
-            },
-        });
-    } catch (error) {
-        console.error("getHomeBannerEscorts error:", error);
+    return res.status(200).json({
+      success: true,
+      message: "Home banner escorts fetched successfully",
+      data: {
+        availableEscorts,
+        escortOfTheWeek,
+        escortOfTheMonth,
+      },
+    });
+  } catch (error) {
+    console.error("getHomeBannerEscorts error:", error);
 
-        return res.status(500).json({
-            success: false,
-            message: "Failed to fetch home banner escorts",
-        });
-    }
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch home banner escorts",
+    });
+  }
 };
-
 
 // ==========================================================< Fetch Home and City Slider Escorts >====================================================================
 
 // country escorts for home page banner
 export async function fetchHomeSliderEscorts(request, response) {
-    try {
-        const {
-            role,
-            isVerified,
-            country,
-            city,
-            isVisible
-        } = request.query;
+  try {
+    const { role, isVerified, country, city, isVisible } = request.query;
 
-        let filter = {};
+    let filter = {};
 
-        if (role) filter.role = role;
+    if (role) filter.role = role;
 
-        if (!country) {
-            return response.status(400).json({
-                message: "country is missing",
-                error: true,
-                success: false
-            });
-        }
-        filter.country = country;
+    if (!country) {
+      return response.status(400).json({
+        message: "country is missing",
+        error: true,
+        success: false,
+      });
+    }
+    filter.country = country;
 
-        if (isVerified !== undefined)
-            filter.isVerified = isVerified === "true";
+    if (isVerified !== undefined) filter.isVerified = isVerified === "true";
 
-        if (isVisible !== undefined)
-            filter.isVisible = isVisible === "true";
+    if (isVisible !== undefined) filter.isVisible = isVisible === "true";
 
-        // Only escorts with avatar
-        filter.avatar = {
-            $exists: true,
-            $ne: null,
-            $ne: ""
-        };
+    // Only escorts with avatar
+    filter.avatar = {
+      $exists: true,
+      $ne: null,
+      $ne: "",
+    };
 
-        filter.status = "Active";
+    filter.status = "Active";
 
-        // City filter only if city is provided
-        if (city) filter.city = city;
+    // City filter only if city is provided
+    if (city) filter.city = city;
 
-        // console.log("request filter: ", filter);
+    // console.log("request filter: ", filter);
 
-        const escorts = await EscortModel.find(filter)
-            .sort({
-                createdAt: -1
-            })
-            .select(`
+    const escorts = await EscortModel.find(filter)
+      .sort({
+        createdAt: -1,
+      })
+      .select(
+        `
         escortId
         name
         city
@@ -3362,5185 +3135,4685 @@ export async function fetchHomeSliderEscorts(request, response) {
         weeklyElite
         monthlyElite
 
-    `).lean();
+    `,
+      )
+      .lean();
 
-        return response.status(200).json({
-            message: "Escort list fetched",
-            error: false,
-            success: true,
-            data: escorts
-        });
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || error,
-            error: true,
-            success: false
-        });
-    }
+    return response.status(200).json({
+      message: "Escort list fetched",
+      error: false,
+      success: true,
+      data: escorts,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || error,
+      error: true,
+      success: false,
+    });
+  }
 }
 
 // city escorts for banner slider
 export async function fetchCitySliderEscorts(request, response) {
-    try {
-        const {
-            role,
-            isVerified,
-            city,
-            country,
-            isVisible
-        } = request.query;
+  try {
+    const { role, isVerified, city, country, isVisible } = request.query;
 
-        let filter = {};
+    let filter = {};
 
-        if (role) filter.role = role;
+    if (role) filter.role = role;
 
-        // if (!city) {
-        //     return response.status(400).json({
-        //         message: "city is missing",
-        //         error: true,
-        //         success: false
-        //     });
-        // }
+    // if (!city) {
+    //     return response.status(400).json({
+    //         message: "city is missing",
+    //         error: true,
+    //         success: false
+    //     });
+    // }
 
+    // if (city) filter.city = city;
 
-        // if (city) filter.city = city;
+    filter.country = country;
 
+    if (isVerified !== undefined) filter.isVerified = isVerified === "true";
 
-        filter.country = country;
+    if (isVisible !== undefined) filter.isVisible = isVisible === "true";
 
-        if (isVerified !== undefined)
-            filter.isVerified = isVerified === "true";
+    // Only escorts with avatar
+    filter.avatar = {
+      $exists: true,
+      $ne: null,
+      $ne: "",
+    };
 
-        if (isVisible !== undefined)
-            filter.isVisible = isVisible === "true";
+    filter.status = "Active";
 
-        // Only escorts with avatar
-        filter.avatar = {
-            $exists: true,
-            $ne: null,
-            $ne: ""
-        };
+    const selectedCity = city?.trim().replace(/\s+/g, " ");
 
-        filter.status = "Active";
+    const escorts = await EscortModel.aggregate([
+      // 1. Existing filters
+      {
+        $match: {
+          ...filter,
+        },
+      },
 
+      //  crated 1st
 
-        const selectedCity = city
-            ?.trim()
-            .replace(/\s+/g, " ");
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
 
-        const escorts = await EscortModel.aggregate([
-            // 1. Existing filters
+      // 2. Current subscription
+      {
+        $lookup: {
+          from: "subcribedplans",
+          localField: "currentSubscription",
+          foreignField: "_id",
+          as: "currentPlan",
+        },
+      },
+
+      // 3. Plan based city search
+      ...(selectedCity
+        ? [
             {
-                $match: {
-                    ...filter
-                }
-            },
-
-            //  crated 1st 
-
-            {
-                $sort: {
-                    createdAt: -1
-                }
-            },
-
-            // 2. Current subscription
-            {
-                $lookup: {
-                    from: "subcribedplans",
-                    localField: "currentSubscription",
-                    foreignField: "_id",
-                    as: "currentPlan"
-                }
-            },
-
-            // 3. Plan based city search
-            ...(selectedCity ? [{
-                $match: {
-                    $or: [{
-                            city: {
-                                $regex: `^${selectedCity}$`,
-                                $options: "i"
-                            }
-                        },
+              $match: {
+                $or: [
+                  {
+                    city: {
+                      $regex: `^${selectedCity}$`,
+                      $options: "i",
+                    },
+                  },
+                  {
+                    $expr: {
+                      $in: [
+                        selectedCity.toUpperCase(),
                         {
-                            $expr: {
-                                $in: [
-                                    selectedCity.toUpperCase(),
+                          $map: {
+                            input: {
+                              $slice: [
+                                {
+                                  $ifNull: ["$additionalCities", []],
+                                },
+                                {
+                                  $ifNull: [
                                     {
-                                        $map: {
-                                            input: {
-                                                $slice: [{
-                                                        $ifNull: [
-                                                            "$additionalCities",
-                                                            []
-                                                        ]
-                                                    },
-                                                    {
-                                                        $ifNull: [{
-                                                                $arrayElemAt: [
-                                                                    "$currentPlan.limits.baseLocations",
-                                                                    0
-                                                                ]
-                                                            },
-                                                            0
-                                                        ]
-                                                    }
-                                                ]
-                                            },
-                                            as: "city",
-                                            in: {
-                                                $toUpper: "$$city"
-                                            }
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                }
-            }] : []),
-            {
-                $project: {
-                    _id: 1,
-                    escortId: 1,
-                    name: 1,
-                    city: 1,
-                    additionalCities: 1,
-                    age: 1,
-                    isVerified: 1,
-                    adverties_category: 1,
-                    rateFrom: 1,
-                    infmty: 1,
-                    last_login_date: 1,
-                    available: 1,
-                    availability_start: 1,
-                    isFaceBlurred: 1,
-                    "avatar.url": 1,
-                    "avatar.status": 1,
-                    availability: 1,
-                    boost: 1,
-                    isBoosted: 1,
-                    boostedAt: 1,
-                    weeklyElite: 1,
-                    monthlyElite: 1,
-                }
-            }
-        ]);
+                                      $arrayElemAt: [
+                                        "$currentPlan.limits.baseLocations",
+                                        0,
+                                      ],
+                                    },
+                                    0,
+                                  ],
+                                },
+                              ],
+                            },
+                            as: "city",
+                            in: {
+                              $toUpper: "$$city",
+                            },
+                          },
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            },
+          ]
+        : []),
+      {
+        $project: {
+          _id: 1,
+          escortId: 1,
+          name: 1,
+          city: 1,
+          additionalCities: 1,
+          age: 1,
+          isVerified: 1,
+          adverties_category: 1,
+          rateFrom: 1,
+          infmty: 1,
+          last_login_date: 1,
+          available: 1,
+          availability_start: 1,
+          isFaceBlurred: 1,
+          "avatar.url": 1,
+          "avatar.status": 1,
+          availability: 1,
+          boost: 1,
+          isBoosted: 1,
+          boostedAt: 1,
+          weeklyElite: 1,
+          monthlyElite: 1,
+        },
+      },
+    ]);
 
-        const formattedEscorts = escorts.map((escort) => ({
-            ...escort,
-            city: selectedCity || escort.city
-        }));
+    const formattedEscorts = escorts.map((escort) => ({
+      ...escort,
+      city: selectedCity || escort.city,
+    }));
 
-        return response.status(200).json({
-            message: "Escort list fetched",
-            error: false,
-            success: true,
-            data: formattedEscorts,
-            counts: formattedEscorts.length,
-        });
+    return response.status(200).json({
+      message: "Escort list fetched",
+      error: false,
+      success: true,
+      data: formattedEscorts,
+      counts: formattedEscorts.length,
+    });
+  } catch (error) {
+    console.log("City Slider escorts rfetching error ", error);
 
-    } catch (error) {
-        console.log("City Slider escorts rfetching error ", error);
-
-        return response.status(500).json({
-            message: `Fetching available ${city} city escort failed!`,
-            error: true,
-            success: false
-        });
-    }
+    return response.status(500).json({
+      message: `Fetching available ${city} city escort failed!`,
+      error: true,
+      success: false,
+    });
+  }
 }
 
 // ===================================================< Fetch Home, City and Advanced Search controlls >============================================================
 
 // filter city escorts
 export async function fetchFiltercityescortscontroller(request, response) {
-    try {
-        let filters = {
-            ...request.query
-        };
+  try {
+    let filters = {
+      ...request.query,
+    };
 
-        // ✅ Boolean conversion
-        for (const key in filters) {
-            if (filters[key] === "true") filters[key] = true;
-            else if (filters[key] === "false") filters[key] = false;
-        }
-        // 🔹 Parse filters
-        for (const key in request.query) {
-            if (key.startsWith("filters[")) {
-                const actualKey = key.replace(/^filters\[(.*)\]$/, "$1");
-                let value = request.query[key];
-
-                if (value === "true") value = true;
-                else if (value === "false") value = false;
-
-                if (value !== "" && value !== null && value !== undefined) {
-                    filters[actualKey] = value;
-                }
-            }
-        }
-
-
-        // 🔹 Build query (ONLY EscortModel fields)
-        const query = {};
-
-        query.status = "Active";
-
-        // if (filters.city) query.city = filters.city;
-
-
-        if (filters.country) query.country = filters.country;
-
-        if (filters.name) {
-            query.name = {
-                $regex: filters.name,
-                $options: "i"
-            };
-        }
-        if (filters.isVerified === true) query.isVerified = true;
-        if (filters.isVisible === true) query.isVisible = true;
-        if (filters.incall === true) query.incall = true;
-        if (filters.outcall === true) query.outcall = true;
-        if (filters.infmty === true) query.infmty = true;
-
-        if (filters.adverties_category && filters.adverties_category !== "Any") {
-            query.adverties_category = filters.adverties_category;
-        }
-
-        if (filters.account_type && filters.account_type !== "All") {
-            query.account_type = filters.account_type;
-        }
-
-        if (filters.escortFor && filters.escortFor !== "Anyone") {
-            query.escortFor = filters.escortFor;
-        }
-
-        // ✅ GENDER (single value in DB)
-        // Gender fix
-        const genderKey = filters.gender || filters["gender[]"];
-        if (genderKey && genderKey.length > 0 && !genderKey.includes("All")) {
-            query.gender = {
-                $in: genderKey
-            };
-        }
-
-        // ✅ OTHER FIELDS (same model)
-        if (filters.ethnicity && filters.ethnicity !== "Any") {
-            query.ethnicity = filters.ethnicity;
-        }
-
-        if (filters.bustSize && filters.bustSize !== "Any") {
-            query.bustSize = filters.bustSize;
-        }
-
-        if (filters.hairColor && filters.hairColor !== "Any") {
-            query.hairColor = filters.hairColor;
-        }
-
-        // ---------- AGE RANGE ----------
-        if (filters.age) {
-            if (filters.age.includes("-")) {
-                const [min, max] = filters.age.split("-").map(Number);
-                query.age = {
-                    $gte: min,
-                    $lte: max
-                };
-            } else if (filters.age.includes("+")) {
-                const min = Number(filters.age.replace("+", ""));
-                query.age = {
-                    $gte: min
-                };
-            }
-        }
-
-        // ---------- RATE RANGE ----------
-        if (filters.rateFrom) {
-            const minRate = Number(filters.rateFrom.replace("+", ""));
-            query.rateFrom = {
-                $gte: minRate
-            };
-        }
-
-        query["avatar.url"] = {
-            $exists: true,
-            $nin: [null, ""]
-        };
-
-        query["avatar.status"] = "Approved";
-
-        console.time("CITY_AGGREGATION");
-
-        // 🔹 Fetch escorts (NO populate)
-        const escortList = await EscortModel.aggregate([
-            // 1. Existing filters — unchanged
-            {
-                $match: query
-            },
-
-
-            // 2. Current subscription fetch
-            {
-                $lookup: {
-                    from: "subcribedplans",
-                    localField: "currentSubscription",
-                    foreignField: "_id",
-                    as: "currentPlan"
-                }
-            },
-
-            // 3. Plan based city search
-            ...(filters.city ? [{
-                $match: {
-                    $or: [{
-                            city: {
-                                $regex: `^${filters.city.trim().replace(/\s+/g, " ")}$`,
-                                $options: "i"
-                            }
-                        },
-                        {
-                            $expr: {
-                                $in: [
-                                    filters.city.trim().replace(/\s+/g, " ").toUpperCase(),
-                                    {
-                                        $map: {
-                                            input: {
-                                                $slice: [{
-                                                        $ifNull: [
-                                                            "$additionalCities",
-                                                            []
-                                                        ]
-                                                    },
-                                                    {
-                                                        $ifNull: [{
-                                                                $arrayElemAt: [
-                                                                    "$currentPlan.limits.baseLocations",
-                                                                    0
-                                                                ]
-                                                            },
-                                                            0
-                                                        ]
-                                                    }
-                                                ]
-                                            },
-                                            as: "city",
-                                            in: {
-                                                $toUpper: "$$city"
-                                            }
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                }
-            }] : []),
-
-            // 4. Priority Search + Subscription Status + Positioning
-
-            {
-                $addFields: {
-                    subscriptionActive: {
-                        $cond: [{
-                                $gt: [{
-                                        $arrayElemAt: [
-                                            "$currentPlan.subscriptionExpiry",
-                                            0
-                                        ]
-                                    },
-                                    new Date()
-                                ]
-                            },
-                            1,
-                            0
-                        ]
-                    },
-
-                    prioritySearch: {
-                        $cond: [{
-                                $and: [{
-                                        $eq: [{
-                                                $arrayElemAt: [
-                                                    "$currentPlan.permissions.prioritySearch",
-                                                    0
-                                                ]
-                                            },
-                                            true
-                                        ]
-                                    },
-                                    {
-                                        $gt: [{
-                                                $arrayElemAt: [
-                                                    "$currentPlan.subscriptionExpiry",
-                                                    0
-                                                ]
-                                            },
-                                            new Date()
-                                        ]
-                                    }
-                                ]
-                            },
-                            1,
-                            0
-                        ]
-                    },
-
-                    prioritySearchPositioning: {
-                        $cond: [{
-                                $and: [{
-                                        $eq: [{
-                                                $arrayElemAt: [
-                                                    "$currentPlan.permissions.prioritySearch",
-                                                    0
-                                                ]
-                                            },
-                                            true
-                                        ]
-                                    },
-                                    {
-                                        $gt: [{
-                                                $arrayElemAt: [
-                                                    "$currentPlan.subscriptionExpiry",
-                                                    0
-                                                ]
-                                            },
-                                            new Date()
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                $ifNull: [{
-                                        $arrayElemAt: [
-                                            "$currentPlan.permissions.prioritySearchPositioning",
-                                            0
-                                        ]
-                                    },
-                                    4
-                                ]
-                            },
-                            5
-                        ]
-                    }
-                }
-            },
-
-            // 5. Final Search Order
-
-            // 1. LUX + Boost
-            // 2. LUX
-            // 3. PREMIUM + Boost
-            // 4. LITE + Boost
-            // 5. START + Boost
-            // 6. PREMIUM
-            // 7. LITE
-            // 8. START
-            // 9. Expired
-
-            {
-                $addFields: {
-                    searchPosition: {
-                        $switch: {
-                            branches: [
-                                // 1. LUX + Boost
-                                {
-                                    case: {
-                                        $and: [{
-                                                $eq: ["$subscriptionActive", 1]
-                                            },
-                                            {
-                                                $eq: ["$prioritySearchPositioning", 1]
-                                            },
-                                            {
-                                                $eq: ["$isBoosted", true]
-                                            }
-                                        ]
-                                    },
-                                    then: 1
-                                },
-
-                                // 2. LUX
-                                {
-                                    case: {
-                                        $and: [{
-                                                $eq: ["$subscriptionActive", 1]
-                                            },
-                                            {
-                                                $eq: ["$prioritySearchPositioning", 1]
-                                            }
-                                        ]
-                                    },
-                                    then: 2
-                                },
-
-                                // 3. PREMIUM + Boost
-                                {
-                                    case: {
-                                        $and: [{
-                                                $eq: ["$subscriptionActive", 1]
-                                            },
-                                            {
-                                                $eq: ["$prioritySearchPositioning", 2]
-                                            },
-                                            {
-                                                $eq: ["$isBoosted", true]
-                                            }
-                                        ]
-                                    },
-                                    then: 3
-                                },
-
-                                // 4. LITE + Boost
-                                {
-                                    case: {
-                                        $and: [{
-                                                $eq: ["$subscriptionActive", 1]
-                                            },
-                                            {
-                                                $eq: ["$prioritySearchPositioning", 3]
-                                            },
-                                            {
-                                                $eq: ["$isBoosted", true]
-                                            }
-                                        ]
-                                    },
-                                    then: 4
-                                },
-
-                                // 5. START + Boost
-                                {
-                                    case: {
-                                        $and: [{
-                                                $eq: ["$subscriptionActive", 1]
-                                            },
-                                            {
-                                                $eq: ["$prioritySearchPositioning", 4]
-                                            },
-                                            {
-                                                $eq: ["$isBoosted", true]
-                                            }
-                                        ]
-                                    },
-                                    then: 5
-                                },
-
-                                // 6. PREMIUM
-                                {
-                                    case: {
-                                        $and: [{
-                                                $eq: ["$subscriptionActive", 1]
-                                            },
-                                            {
-                                                $eq: ["$prioritySearchPositioning", 2]
-                                            }
-                                        ]
-                                    },
-                                    then: 6
-                                },
-
-                                // 7. LITE
-                                {
-                                    case: {
-                                        $and: [{
-                                                $eq: ["$subscriptionActive", 1]
-                                            },
-                                            {
-                                                $eq: ["$prioritySearchPositioning", 3]
-                                            }
-                                        ]
-                                    },
-                                    then: 7
-                                },
-
-                                // 8. START
-                                {
-                                    case: {
-                                        $and: [{
-                                                $eq: ["$subscriptionActive", 1]
-                                            },
-                                            {
-                                                $eq: ["$prioritySearchPositioning", 4]
-                                            }
-                                        ]
-                                    },
-                                    then: 8
-                                }
-                            ],
-                            // 9. Expired
-                            default: 9
-                        }
-                    }
-                }
-            },
-
-            {
-                $sort: {
-                    searchPosition: 1,
-                    boostedAt: -1,
-                    isBoosted: -1,
-                    createdAt: -1,
-                }
-            }
-        ]);
-
-        console.timeEnd("CITY_AGGREGATION");
-        console.log("CITY_AGGREGATION_COUNT:", escortList.length);
-
-        const formattedEscortList = escortList?.map((escort) => ({
-            ...escort,
-            city: filters.city?.trim().replace(/\s+/g, " ") || escort.city
-        }));
-
-        return response.status(200).json({
-            message: "Filtered escorts fetched",
-            data: formattedEscortList,
-            count: formattedEscortList.length,
-            success: true,
-            error: false,
-        });
-
-    } catch (error) {
-        console.log("City filtered escort fetch error", error);
-
-        return response.status(500).json({
-            message: "Something went wrong! Fetching City Escorts",
-            success: false,
-            error: true,
-        });
+    // ✅ Boolean conversion
+    for (const key in filters) {
+      if (filters[key] === "true") filters[key] = true;
+      else if (filters[key] === "false") filters[key] = false;
     }
+    // 🔹 Parse filters
+    for (const key in request.query) {
+      if (key.startsWith("filters[")) {
+        const actualKey = key.replace(/^filters\[(.*)\]$/, "$1");
+        let value = request.query[key];
+
+        if (value === "true") value = true;
+        else if (value === "false") value = false;
+
+        if (value !== "" && value !== null && value !== undefined) {
+          filters[actualKey] = value;
+        }
+      }
+    }
+
+    // 🔹 Build query (ONLY EscortModel fields)
+    const query = {};
+
+    query.status = "Active";
+
+    // if (filters.city) query.city = filters.city;
+
+    if (filters.country) query.country = filters.country;
+
+    if (filters.name) {
+      query.name = {
+        $regex: filters.name,
+        $options: "i",
+      };
+    }
+    if (filters.isVerified === true) query.isVerified = true;
+    if (filters.isVisible === true) query.isVisible = true;
+    if (filters.incall === true) query.incall = true;
+    if (filters.outcall === true) query.outcall = true;
+    if (filters.infmty === true) query.infmty = true;
+
+    if (filters.adverties_category && filters.adverties_category !== "Any") {
+      query.adverties_category = filters.adverties_category;
+    }
+
+    if (filters.account_type && filters.account_type !== "All") {
+      query.account_type = filters.account_type;
+    }
+
+    if (filters.escortFor && filters.escortFor !== "Anyone") {
+      query.escortFor = filters.escortFor;
+    }
+
+    // ✅ GENDER (single value in DB)
+    // Gender fix
+    const genderKey = filters.gender || filters["gender[]"];
+    if (genderKey && genderKey.length > 0 && !genderKey.includes("All")) {
+      query.gender = {
+        $in: genderKey,
+      };
+    }
+
+    // ✅ OTHER FIELDS (same model)
+    if (filters.ethnicity && filters.ethnicity !== "Any") {
+      query.ethnicity = filters.ethnicity;
+    }
+
+    if (filters.bustSize && filters.bustSize !== "Any") {
+      query.bustSize = filters.bustSize;
+    }
+
+    if (filters.hairColor && filters.hairColor !== "Any") {
+      query.hairColor = filters.hairColor;
+    }
+
+    // ---------- AGE RANGE ----------
+    if (filters.age) {
+      if (filters.age.includes("-")) {
+        const [min, max] = filters.age.split("-").map(Number);
+        query.age = {
+          $gte: min,
+          $lte: max,
+        };
+      } else if (filters.age.includes("+")) {
+        const min = Number(filters.age.replace("+", ""));
+        query.age = {
+          $gte: min,
+        };
+      }
+    }
+
+    // ---------- RATE RANGE ----------
+    if (filters.rateFrom) {
+      const minRate = Number(filters.rateFrom.replace("+", ""));
+      query.rateFrom = {
+        $gte: minRate,
+      };
+    }
+
+    query["avatar.url"] = {
+      $exists: true,
+      $nin: [null, ""],
+    };
+
+    query["avatar.status"] = "Approved";
+
+    console.time("CITY_AGGREGATION");
+
+    // 🔹 Fetch escorts (NO populate)
+    const escortList = await EscortModel.aggregate([
+      // 1. Existing filters — unchanged
+      {
+        $match: query,
+      },
+
+      // 2. Current subscription fetch
+      {
+        $lookup: {
+          from: "subcribedplans",
+          localField: "currentSubscription",
+          foreignField: "_id",
+          as: "currentPlan",
+        },
+      },
+
+      // 3. Plan based city search
+      ...(filters.city
+        ? [
+            {
+              $match: {
+                $or: [
+                  {
+                    city: {
+                      $regex: `^${filters.city.trim().replace(/\s+/g, " ")}$`,
+                      $options: "i",
+                    },
+                  },
+                  {
+                    $expr: {
+                      $in: [
+                        filters.city.trim().replace(/\s+/g, " ").toUpperCase(),
+                        {
+                          $map: {
+                            input: {
+                              $slice: [
+                                {
+                                  $ifNull: ["$additionalCities", []],
+                                },
+                                {
+                                  $ifNull: [
+                                    {
+                                      $arrayElemAt: [
+                                        "$currentPlan.limits.baseLocations",
+                                        0,
+                                      ],
+                                    },
+                                    0,
+                                  ],
+                                },
+                              ],
+                            },
+                            as: "city",
+                            in: {
+                              $toUpper: "$$city",
+                            },
+                          },
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            },
+          ]
+        : []),
+
+      // 4. Priority Search + Subscription Status + Positioning
+
+      {
+        $addFields: {
+          subscriptionActive: {
+            $cond: [
+              {
+                $gt: [
+                  {
+                    $arrayElemAt: ["$currentPlan.subscriptionExpiry", 0],
+                  },
+                  new Date(),
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+
+          prioritySearch: {
+            $cond: [
+              {
+                $and: [
+                  {
+                    $eq: [
+                      {
+                        $arrayElemAt: [
+                          "$currentPlan.permissions.prioritySearch",
+                          0,
+                        ],
+                      },
+                      true,
+                    ],
+                  },
+                  {
+                    $gt: [
+                      {
+                        $arrayElemAt: ["$currentPlan.subscriptionExpiry", 0],
+                      },
+                      new Date(),
+                    ],
+                  },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+
+          prioritySearchPositioning: {
+            $cond: [
+              {
+                $and: [
+                  {
+                    $eq: [
+                      {
+                        $arrayElemAt: [
+                          "$currentPlan.permissions.prioritySearch",
+                          0,
+                        ],
+                      },
+                      true,
+                    ],
+                  },
+                  {
+                    $gt: [
+                      {
+                        $arrayElemAt: ["$currentPlan.subscriptionExpiry", 0],
+                      },
+                      new Date(),
+                    ],
+                  },
+                ],
+              },
+              {
+                $ifNull: [
+                  {
+                    $arrayElemAt: [
+                      "$currentPlan.permissions.prioritySearchPositioning",
+                      0,
+                    ],
+                  },
+                  4,
+                ],
+              },
+              5,
+            ],
+          },
+        },
+      },
+
+      // 5. Final Search Order
+
+      // 1. LUX + Boost
+      // 2. LUX
+      // 3. PREMIUM + Boost
+      // 4. LITE + Boost
+      // 5. START + Boost
+      // 6. PREMIUM
+      // 7. LITE
+      // 8. START
+      // 9. Expired
+
+      {
+        $addFields: {
+          searchPosition: {
+            $switch: {
+              branches: [
+                // 1. LUX + Boost
+                {
+                  case: {
+                    $and: [
+                      {
+                        $eq: ["$subscriptionActive", 1],
+                      },
+                      {
+                        $eq: ["$prioritySearchPositioning", 1],
+                      },
+                      {
+                        $eq: ["$isBoosted", true],
+                      },
+                    ],
+                  },
+                  then: 1,
+                },
+
+                // 2. LUX
+                {
+                  case: {
+                    $and: [
+                      {
+                        $eq: ["$subscriptionActive", 1],
+                      },
+                      {
+                        $eq: ["$prioritySearchPositioning", 1],
+                      },
+                    ],
+                  },
+                  then: 2,
+                },
+
+                // 3. PREMIUM + Boost
+                {
+                  case: {
+                    $and: [
+                      {
+                        $eq: ["$subscriptionActive", 1],
+                      },
+                      {
+                        $eq: ["$prioritySearchPositioning", 2],
+                      },
+                      {
+                        $eq: ["$isBoosted", true],
+                      },
+                    ],
+                  },
+                  then: 3,
+                },
+
+                // 4. LITE + Boost
+                {
+                  case: {
+                    $and: [
+                      {
+                        $eq: ["$subscriptionActive", 1],
+                      },
+                      {
+                        $eq: ["$prioritySearchPositioning", 3],
+                      },
+                      {
+                        $eq: ["$isBoosted", true],
+                      },
+                    ],
+                  },
+                  then: 4,
+                },
+
+                // 5. START + Boost
+                {
+                  case: {
+                    $and: [
+                      {
+                        $eq: ["$subscriptionActive", 1],
+                      },
+                      {
+                        $eq: ["$prioritySearchPositioning", 4],
+                      },
+                      {
+                        $eq: ["$isBoosted", true],
+                      },
+                    ],
+                  },
+                  then: 5,
+                },
+
+                // 6. PREMIUM
+                {
+                  case: {
+                    $and: [
+                      {
+                        $eq: ["$subscriptionActive", 1],
+                      },
+                      {
+                        $eq: ["$prioritySearchPositioning", 2],
+                      },
+                    ],
+                  },
+                  then: 6,
+                },
+
+                // 7. LITE
+                {
+                  case: {
+                    $and: [
+                      {
+                        $eq: ["$subscriptionActive", 1],
+                      },
+                      {
+                        $eq: ["$prioritySearchPositioning", 3],
+                      },
+                    ],
+                  },
+                  then: 7,
+                },
+
+                // 8. START
+                {
+                  case: {
+                    $and: [
+                      {
+                        $eq: ["$subscriptionActive", 1],
+                      },
+                      {
+                        $eq: ["$prioritySearchPositioning", 4],
+                      },
+                    ],
+                  },
+                  then: 8,
+                },
+              ],
+              // 9. Expired
+              default: 9,
+            },
+          },
+        },
+      },
+
+      {
+        $sort: {
+          searchPosition: 1,
+          boostedAt: -1,
+          isBoosted: -1,
+          createdAt: -1,
+        },
+      },
+    ]);
+
+    console.timeEnd("CITY_AGGREGATION");
+    console.log("CITY_AGGREGATION_COUNT:", escortList.length);
+
+    const formattedEscortList = escortList?.map((escort) => ({
+      ...escort,
+      city: filters.city?.trim().replace(/\s+/g, " ") || escort.city,
+    }));
+
+    return response.status(200).json({
+      message: "Filtered escorts fetched",
+      data: formattedEscortList,
+      count: formattedEscortList.length,
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    console.log("City filtered escort fetch error", error);
+
+    return response.status(500).json({
+      message: "Something went wrong! Fetching City Escorts",
+      success: false,
+      error: true,
+    });
+  }
 }
 
 // filter home escorts // popular escorts
 export async function fetchFilterHomescortscontroller(request, response) {
-    try {
-        const now = new Date();
+  try {
+    const now = new Date();
 
-        const {
-            isVerified,
-            isVisible,
-            role,
-            country,
-            city,
-            name,
-            gender,
-            account_type,
-            adverties_category,
-            page = 1,
-            limit = 15,
-        } = request.query;
+    const {
+      isVerified,
+      isVisible,
+      role,
+      country,
+      city,
+      name,
+      gender,
+      account_type,
+      adverties_category,
+      page = 1,
+      limit = 15,
+    } = request.query;
 
-        const query = {
-            $and: []
-        };
+    const query = {
+      $and: [],
+    };
 
-        if (role) query.role = role;
+    if (role) query.role = role;
 
-        if (isVerified) {
-            query.isVerified = isVerified === "true";
-        }
-
-        if (isVisible) {
-            query.isVisible = isVisible === "true";
-        }
-
-        if (country) {
-            query.country = country.toUpperCase();
-        }
-
-        // City + Additional Cities
-        const selectedCity = city?.trim().replace(/\s+/g, " ");
-
-        if (name?.trim()) {
-            const searchName = name.trim().replace(/\s+/g, " ");
-
-            query.name = {
-                $regex: searchName,
-                $options: "i"
-            };
-        }
-
-        if (gender && gender !== "All") {
-            query.gender = gender;
-        }
-
-        if (account_type && account_type !== "All") {
-            query.account_type = account_type;
-        }
-
-        if (
-            adverties_category &&
-            adverties_category !== "Any"
-        ) {
-            query.adverties_category = adverties_category;
-        }
-
-        const skip =
-            (parseInt(page) - 1) * parseInt(limit);
-
-        // Only escorts with avatar
-        query.avatar = {
-            $exists: true,
-            $ne: null,
-            $ne: ""
-        };
-
-        query.status = "Active";
-
-
-        // IMPORTANT:
-        // If no city filter was added, remove empty $and.
-        // This does NOT change any existing filtering.
-        if (query.$and.length === 0) {
-            delete query.$and;
-        }
-
-        const [escortList, total] = await Promise.all([
-
-            // Fetch escorts
-            EscortModel.aggregate([{
-                    $match: query
-                },
-
-                // Current subscription
-                {
-                    $lookup: {
-                        from: "subcribedplans",
-                        let: {
-                            subscriptionId: "$currentSubscription"
-                        },
-                        pipeline: [{
-                                $match: {
-                                    $expr: {
-                                        $eq: ["$_id", "$$subscriptionId"]
-                                    }
-                                }
-                            },
-                            {
-                                $project: {
-                                    _id: 0,
-                                    subscriptionExpiry: 1,
-                                    "permissions.prioritySearch": 1,
-                                    "permissions.prioritySearchPositioning": 1,
-                                    "limits.baseLocations": 1
-                                }
-                            }
-                        ],
-                        as: "currentPlan"
-                    }
-                },
-
-                // Plan based city search
-                ...(selectedCity ? [{
-                    $match: {
-                        $or: [{
-                                city: {
-                                    $regex: `^${selectedCity}$`,
-                                    $options: "i"
-                                }
-                            },
-                            {
-                                $expr: {
-                                    $in: [
-                                        selectedCity.toUpperCase(),
-                                        {
-                                            $map: {
-                                                input: {
-                                                    $slice: [{
-                                                            $ifNull: [
-                                                                "$additionalCities",
-                                                                []
-                                                            ]
-                                                        },
-                                                        {
-                                                            $ifNull: [{
-                                                                    $arrayElemAt: [
-                                                                        "$currentPlan.limits.baseLocations",
-                                                                        0
-                                                                    ]
-                                                                },
-                                                                0
-                                                            ]
-                                                        }
-                                                    ]
-                                                },
-                                                as: "city",
-                                                in: {
-                                                    $toUpper: "$$city"
-                                                }
-                                            }
-                                        }
-                                    ]
-                                }
-                            }
-                        ]
-                    }
-                }] : []),
-
-
-                // 1. Priority Search + Subscription Status + Positioning
-
-                // 2. Priority → Boost → Normal
-                // Final Search Order:
-                // 1. LUX + Boost
-                // 2. LUX
-                // 3. PREMIUM + Boost
-                // 4. LITE + Boost
-                // 5. START + Boost
-                // 6. PREMIUM
-                // 7. LITE
-                // 8. START
-                // 9. Expired
-
-                {
-                    $addFields: {
-                        searchPosition: {
-                            $let: {
-                                vars: {
-                                    expiry: {
-                                        $arrayElemAt: [
-                                            "$currentPlan.subscriptionExpiry",
-                                            0
-                                        ]
-                                    },
-                                    prioritySearch: {
-                                        $arrayElemAt: [
-                                            "$currentPlan.permissions.prioritySearch",
-                                            0
-                                        ]
-                                    },
-                                    priorityPosition: {
-                                        $ifNull: [{
-                                                $arrayElemAt: [
-                                                    "$currentPlan.permissions.prioritySearchPositioning",
-                                                    0
-                                                ]
-                                            },
-                                            4
-                                        ]
-                                    }
-                                },
-                                in: {
-                                    $switch: {
-                                        branches: [
-                                            // 1. LUX + Boost
-                                            {
-                                                case: {
-                                                    $and: [{
-                                                            $gt: ["$$expiry", now]
-                                                        },
-                                                        {
-                                                            $eq: ["$$prioritySearch", true]
-                                                        },
-                                                        {
-                                                            $eq: ["$$priorityPosition", 1]
-                                                        },
-                                                        {
-                                                            $eq: ["$isBoosted", true]
-                                                        }
-                                                    ]
-                                                },
-                                                then: 1
-                                            },
-
-                                            // 2. LUX
-                                            {
-                                                case: {
-                                                    $and: [{
-                                                            $gt: ["$$expiry", now]
-                                                        },
-                                                        {
-                                                            $eq: ["$$prioritySearch", true]
-                                                        },
-                                                        {
-                                                            $eq: ["$$priorityPosition", 1]
-                                                        }
-                                                    ]
-                                                },
-                                                then: 2
-                                            },
-
-                                            // 3. PREMIUM + Boost
-                                            {
-                                                case: {
-                                                    $and: [{
-                                                            $gt: ["$$expiry", now]
-                                                        },
-                                                        {
-                                                            $eq: ["$$prioritySearch", true]
-                                                        },
-                                                        {
-                                                            $eq: ["$$priorityPosition", 2]
-                                                        },
-                                                        {
-                                                            $eq: ["$isBoosted", true]
-                                                        }
-                                                    ]
-                                                },
-                                                then: 3
-                                            },
-
-                                            // 4. LITE + Boost
-                                            {
-                                                case: {
-                                                    $and: [{
-                                                            $gt: ["$$expiry", now]
-                                                        },
-                                                        {
-                                                            $eq: ["$$prioritySearch", true]
-                                                        },
-                                                        {
-                                                            $eq: ["$$priorityPosition", 3]
-                                                        },
-                                                        {
-                                                            $eq: ["$isBoosted", true]
-                                                        }
-                                                    ]
-                                                },
-                                                then: 4
-                                            },
-
-                                            // 5. START + Boost
-                                            {
-                                                case: {
-                                                    $and: [{
-                                                            $gt: ["$$expiry", now]
-                                                        },
-                                                        {
-                                                            $eq: ["$$prioritySearch", true]
-                                                        },
-                                                        {
-                                                            $eq: ["$$priorityPosition", 4]
-                                                        },
-                                                        {
-                                                            $eq: ["$isBoosted", true]
-                                                        }
-                                                    ]
-                                                },
-                                                then: 5
-                                            },
-
-                                            // 6. PREMIUM
-                                            {
-                                                case: {
-                                                    $and: [{
-                                                            $gt: ["$$expiry", now]
-                                                        },
-                                                        {
-                                                            $eq: ["$$prioritySearch", true]
-                                                        },
-                                                        {
-                                                            $eq: ["$$priorityPosition", 2]
-                                                        }
-                                                    ]
-                                                },
-                                                then: 6
-                                            },
-
-                                            // 7. LITE
-                                            {
-                                                case: {
-                                                    $and: [{
-                                                            $gt: ["$$expiry", now]
-                                                        },
-                                                        {
-                                                            $eq: ["$$prioritySearch", true]
-                                                        },
-                                                        {
-                                                            $eq: ["$$priorityPosition", 3]
-                                                        }
-                                                    ]
-                                                },
-                                                then: 7
-                                            },
-
-                                            // 8. START
-                                            {
-                                                case: {
-                                                    $and: [{
-                                                            $gt: ["$$expiry", now]
-                                                        },
-                                                        {
-                                                            $eq: ["$$prioritySearch", true]
-                                                        },
-                                                        {
-                                                            $eq: ["$$priorityPosition", 4]
-                                                        }
-                                                    ]
-                                                },
-                                                then: 8
-                                            }
-                                        ],
-                                        default: 9
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-
-                {
-                    $sort: {
-                        searchPosition: 1,
-                        isBoosted: -1,
-                        createdAt: -1,
-                        boostedAt: -1
-                    }
-                },
-
-                // Pagination AFTER sorting
-                {
-                    $skip: skip
-                },
-
-                {
-                    $limit: parseInt(limit)
-                },
-
-                // Same fields as existing Home controller
-                {
-                    $project: {
-                        escortId: 1,
-                        name: 1,
-                        age: 1,
-                        city: 1,
-                        isVerified: 1,
-                        infmty: 1,
-                        additionalCities: 1,
-                        country: 1,
-                        gender: 1,
-                        account_type: 1,
-                        adverties_category: 1,
-                        highlights: 1,
-                        avatar: 1,
-                        rateFrom: 1,
-                        isFaceBlurred: 1,
-                        "gallery.photos": {
-                            $slice: [{
-                                    $ifNull: ["$gallery.photos", []]
-                                },
-                                -6
-                            ]
-                        }
-                    }
-
-                }
-            ]),
-
-            // Total remains based ONLY on existing filters
-            EscortModel.countDocuments(query),
-        ]);
-
-
-        if (!escortList || escortList.length === 0) {
-            return response.status(404).json({
-                message: "No escorts found",
-                success: false,
-                error: true,
-                data: [],
-                total: 0
-            });
-        }
-
-
-        const formattedEscortList = escortList.map((escort) => ({
-            ...escort,
-            city: selectedCity || escort.city
-        }));
-
-
-        return response.status(200).json({
-            message: "Filtered escorts fetched",
-            data: formattedEscortList,
-            total,
-            page: parseInt(page),
-            limit: parseInt(limit),
-            success: true,
-            error: false,
-        });
-
-    } catch (error) {
-        console.log("Fetch home escort error : ", error);
-
-        console.error("Fetch home escort error:", error.message);
-        console.error("Fetch home escort stack:", error.stack);
-
-        return response.status(500).json({
-            message: "Fetching escorts profile failed!",
-            success: false,
-            error: true,
-        });
+    if (isVerified) {
+      query.isVerified = isVerified === "true";
     }
+
+    if (isVisible) {
+      query.isVisible = isVisible === "true";
+    }
+
+    if (country) {
+      query.country = country.toUpperCase();
+    }
+
+    // City + Additional Cities
+    const selectedCity = city?.trim().replace(/\s+/g, " ");
+
+    if (name?.trim()) {
+      const searchName = name.trim().replace(/\s+/g, " ");
+
+      query.name = {
+        $regex: searchName,
+        $options: "i",
+      };
+    }
+
+    if (gender && gender !== "All") {
+      query.gender = gender;
+    }
+
+    if (account_type && account_type !== "All") {
+      query.account_type = account_type;
+    }
+
+    if (adverties_category && adverties_category !== "Any") {
+      query.adverties_category = adverties_category;
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Only escorts with avatar
+    query.avatar = {
+      $exists: true,
+      $ne: null,
+      $ne: "",
+    };
+
+    query.status = "Active";
+
+    // IMPORTANT:
+    // If no city filter was added, remove empty $and.
+    // This does NOT change any existing filtering.
+    if (query.$and.length === 0) {
+      delete query.$and;
+    }
+
+    const [escortList, total] = await Promise.all([
+      // Fetch escorts
+      EscortModel.aggregate([
+        {
+          $match: query,
+        },
+
+        // Current subscription
+        {
+          $lookup: {
+            from: "subcribedplans",
+            let: {
+              subscriptionId: "$currentSubscription",
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $eq: ["$_id", "$$subscriptionId"],
+                  },
+                },
+              },
+              {
+                $project: {
+                  _id: 0,
+                  subscriptionExpiry: 1,
+                  "permissions.prioritySearch": 1,
+                  "permissions.prioritySearchPositioning": 1,
+                  "limits.baseLocations": 1,
+                },
+              },
+            ],
+            as: "currentPlan",
+          },
+        },
+
+        // Plan based city search
+        ...(selectedCity
+          ? [
+              {
+                $match: {
+                  $or: [
+                    {
+                      city: {
+                        $regex: `^${selectedCity}$`,
+                        $options: "i",
+                      },
+                    },
+                    {
+                      $expr: {
+                        $in: [
+                          selectedCity.toUpperCase(),
+                          {
+                            $map: {
+                              input: {
+                                $slice: [
+                                  {
+                                    $ifNull: ["$additionalCities", []],
+                                  },
+                                  {
+                                    $ifNull: [
+                                      {
+                                        $arrayElemAt: [
+                                          "$currentPlan.limits.baseLocations",
+                                          0,
+                                        ],
+                                      },
+                                      0,
+                                    ],
+                                  },
+                                ],
+                              },
+                              as: "city",
+                              in: {
+                                $toUpper: "$$city",
+                              },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ]
+          : []),
+
+        // 1. Priority Search + Subscription Status + Positioning
+
+        // 2. Priority → Boost → Normal
+        // Final Search Order:
+        // 1. LUX + Boost
+        // 2. LUX
+        // 3. PREMIUM + Boost
+        // 4. LITE + Boost
+        // 5. START + Boost
+        // 6. PREMIUM
+        // 7. LITE
+        // 8. START
+        // 9. Expired
+
+        {
+          $addFields: {
+            searchPosition: {
+              $let: {
+                vars: {
+                  expiry: {
+                    $arrayElemAt: ["$currentPlan.subscriptionExpiry", 0],
+                  },
+                  prioritySearch: {
+                    $arrayElemAt: [
+                      "$currentPlan.permissions.prioritySearch",
+                      0,
+                    ],
+                  },
+                  priorityPosition: {
+                    $ifNull: [
+                      {
+                        $arrayElemAt: [
+                          "$currentPlan.permissions.prioritySearchPositioning",
+                          0,
+                        ],
+                      },
+                      4,
+                    ],
+                  },
+                },
+                in: {
+                  $switch: {
+                    branches: [
+                      // 1. LUX + Boost
+                      {
+                        case: {
+                          $and: [
+                            {
+                              $gt: ["$$expiry", now],
+                            },
+                            {
+                              $eq: ["$$prioritySearch", true],
+                            },
+                            {
+                              $eq: ["$$priorityPosition", 1],
+                            },
+                            {
+                              $eq: ["$isBoosted", true],
+                            },
+                          ],
+                        },
+                        then: 1,
+                      },
+
+                      // 2. LUX
+                      {
+                        case: {
+                          $and: [
+                            {
+                              $gt: ["$$expiry", now],
+                            },
+                            {
+                              $eq: ["$$prioritySearch", true],
+                            },
+                            {
+                              $eq: ["$$priorityPosition", 1],
+                            },
+                          ],
+                        },
+                        then: 2,
+                      },
+
+                      // 3. PREMIUM + Boost
+                      {
+                        case: {
+                          $and: [
+                            {
+                              $gt: ["$$expiry", now],
+                            },
+                            {
+                              $eq: ["$$prioritySearch", true],
+                            },
+                            {
+                              $eq: ["$$priorityPosition", 2],
+                            },
+                            {
+                              $eq: ["$isBoosted", true],
+                            },
+                          ],
+                        },
+                        then: 3,
+                      },
+
+                      // 4. LITE + Boost
+                      {
+                        case: {
+                          $and: [
+                            {
+                              $gt: ["$$expiry", now],
+                            },
+                            {
+                              $eq: ["$$prioritySearch", true],
+                            },
+                            {
+                              $eq: ["$$priorityPosition", 3],
+                            },
+                            {
+                              $eq: ["$isBoosted", true],
+                            },
+                          ],
+                        },
+                        then: 4,
+                      },
+
+                      // 5. START + Boost
+                      {
+                        case: {
+                          $and: [
+                            {
+                              $gt: ["$$expiry", now],
+                            },
+                            {
+                              $eq: ["$$prioritySearch", true],
+                            },
+                            {
+                              $eq: ["$$priorityPosition", 4],
+                            },
+                            {
+                              $eq: ["$isBoosted", true],
+                            },
+                          ],
+                        },
+                        then: 5,
+                      },
+
+                      // 6. PREMIUM
+                      {
+                        case: {
+                          $and: [
+                            {
+                              $gt: ["$$expiry", now],
+                            },
+                            {
+                              $eq: ["$$prioritySearch", true],
+                            },
+                            {
+                              $eq: ["$$priorityPosition", 2],
+                            },
+                          ],
+                        },
+                        then: 6,
+                      },
+
+                      // 7. LITE
+                      {
+                        case: {
+                          $and: [
+                            {
+                              $gt: ["$$expiry", now],
+                            },
+                            {
+                              $eq: ["$$prioritySearch", true],
+                            },
+                            {
+                              $eq: ["$$priorityPosition", 3],
+                            },
+                          ],
+                        },
+                        then: 7,
+                      },
+
+                      // 8. START
+                      {
+                        case: {
+                          $and: [
+                            {
+                              $gt: ["$$expiry", now],
+                            },
+                            {
+                              $eq: ["$$prioritySearch", true],
+                            },
+                            {
+                              $eq: ["$$priorityPosition", 4],
+                            },
+                          ],
+                        },
+                        then: 8,
+                      },
+                    ],
+                    default: 9,
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        {
+          $sort: {
+            searchPosition: 1,
+            isBoosted: -1,
+            createdAt: -1,
+            boostedAt: -1,
+          },
+        },
+
+        // Pagination AFTER sorting
+        {
+          $skip: skip,
+        },
+
+        {
+          $limit: parseInt(limit),
+        },
+
+        // Same fields as existing Home controller
+        {
+          $project: {
+            escortId: 1,
+            name: 1,
+            age: 1,
+            city: 1,
+            isVerified: 1,
+            infmty: 1,
+            additionalCities: 1,
+            country: 1,
+            gender: 1,
+            account_type: 1,
+            adverties_category: 1,
+            highlights: 1,
+            avatar: 1,
+            rateFrom: 1,
+            isFaceBlurred: 1,
+            "gallery.photos": {
+              $slice: [
+                {
+                  $ifNull: ["$gallery.photos", []],
+                },
+                -6,
+              ],
+            },
+          },
+        },
+      ]),
+
+      // Total remains based ONLY on existing filters
+      EscortModel.countDocuments(query),
+    ]);
+
+    if (!escortList || escortList.length === 0) {
+      return response.status(404).json({
+        message: "No escorts found",
+        success: false,
+        error: true,
+        data: [],
+        total: 0,
+      });
+    }
+
+    const formattedEscortList = escortList.map((escort) => ({
+      ...escort,
+      city: selectedCity || escort.city,
+    }));
+
+    return response.status(200).json({
+      message: "Filtered escorts fetched",
+      data: formattedEscortList,
+      total,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    console.log("Fetch home escort error : ", error);
+
+    console.error("Fetch home escort error:", error.message);
+    console.error("Fetch home escort stack:", error.stack);
+
+    return response.status(500).json({
+      message: "Fetching escorts profile failed!",
+      success: false,
+      error: true,
+    });
+  }
 }
 
-// advance search 
+// advance search
 export const advanceSearchController = async (request, response) => {
-    try {
-        const filters = request.query; // ?city=DELHI&country=INDIA&incall=true...
+  try {
+    const filters = request.query; // ?city=DELHI&country=INDIA&incall=true...
 
-        let query = {};
+    let query = {};
 
-        // ---------- booleans ----------
-        if (filters.isVerified === "true") query.isVerified = true;
-        if (filters.isVisible === "true") query.isVisible = true;
-        if (filters.isAvailable === "true") query.isAvailable = true;
-        if (filters.tour === "true") query.tour = true;
-        if (filters.video === "true") query.video = true;
+    // ---------- booleans ----------
+    if (filters.isVerified === "true") query.isVerified = true;
+    if (filters.isVisible === "true") query.isVisible = true;
+    if (filters.isAvailable === "true") query.isAvailable = true;
+    if (filters.tour === "true") query.tour = true;
+    if (filters.video === "true") query.video = true;
 
-        if (filters.incall === "true") query.incall = true;
-        if (filters.outcall === "true") query.outcall = true;
-        if (filters.infmty === "true") query.infmty = true;
+    if (filters.incall === "true") query.incall = true;
+    if (filters.outcall === "true") query.outcall = true;
+    if (filters.infmty === "true") query.infmty = true;
 
-        // ---------- location (CAPITAL match) ----------
-        // if (filters.country) query.country = filters.country;
+    // ---------- location (CAPITAL match) ----------
+    // if (filters.country) query.country = filters.country;
 
-        if (filters.country) {
-            query.country = {
-                $regex: `^${filters.country.trim()}$`,
-                $options: "i"
-            };
-        }
-
-        // if (filters.city) query.city = filters.city;
-
-        // ---------- strings ----------
-        if (filters.day) query.day = filters.day;
-        if (filters.adverties_category)
-            query.adverties_category = filters.adverties_category;
-        if (filters.escortFor) query.escortFor = filters.escortFor;
-        if (filters.account_type) query.account_type = filters.account_type;
-        if (filters.dressSize) query.dressSize = filters.dressSize;
-        if (filters.hairColor) query.hairColor = filters.hairColor;
-
-        // ---------- age range ----------
-        if (filters.ageMin || filters.ageMax) {
-            query.age = {};
-            if (filters.ageMin) query.age.$gte = Number(filters.ageMin);
-            if (filters.ageMax) query.age.$lte = Number(filters.ageMax);
-        }
-
-        // ---------- time window ----------
-        if (filters.timeFrom && filters.timeTo) {
-            query.availableTime = {
-                $gte: filters.timeFrom,
-                $lte: filters.timeTo,
-            };
-        }
-
-        query["avatar.url"] = {
-            $exists: true,
-            $nin: [null, ""]
-        };
-
-        query["avatar.status"] = "Approved";
-
-        query.status = "Active";
-
-        // ---------- Aggregation Pipeline ----------
-        let pipeline = [
-            // join services
-            {
-                $lookup: {
-                    from: "services",
-                    localField: "services",
-                    foreignField: "_id",
-                    as: "serviceData",
-                },
-            },
-            {
-                $unwind: {
-                    path: "$serviceData",
-                    preserveNullAndEmptyArrays: true
-                }
-            },
-
-            // join rates
-            {
-                $lookup: {
-                    from: "rates",
-                    localField: "rates",
-                    foreignField: "_id",
-                    as: "rateData",
-                },
-            },
-            {
-                $unwind: {
-                    path: "$rateData",
-                    preserveNullAndEmptyArrays: true
-                }
-            },
-
-            // base filters
-            {
-                $match: query
-            },
-        ];
-
-        // ---------- Current subscription ----------
-        pipeline.push({
-            $lookup: {
-                from: "subcribedplans",
-                localField: "currentSubscription",
-                foreignField: "_id",
-                as: "currentPlan"
-            }
-        });
-
-        // ---------- Plan based city search ----------
-        if (filters.city) {
-            const selectedCity = filters.city
-                .trim()
-                .replace(/\s+/g, " ");
-
-            pipeline.push({
-                $match: {
-                    $or: [{
-                            city: {
-                                $regex: `^${selectedCity}$`,
-                                $options: "i"
-                            }
-                        },
-                        {
-                            $expr: {
-                                $in: [
-                                    selectedCity.toUpperCase(),
-                                    {
-                                        $map: {
-                                            input: {
-                                                $slice: [{
-                                                        $ifNull: [
-                                                            "$additionalCities",
-                                                            []
-                                                        ]
-                                                    },
-                                                    {
-                                                        $ifNull: [{
-                                                                $arrayElemAt: [
-                                                                    "$currentPlan.limits.baseLocations",
-                                                                    0
-                                                                ]
-                                                            },
-                                                            0
-                                                        ]
-                                                    }
-                                                ]
-                                            },
-                                            as: "city",
-                                            in: {
-                                                $toUpper: "$$city"
-                                            }
-                                        }
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                }
-            });
-        }
-
-
-        // ---------- service filter (UI: service=massage) ----------
-        if (filters.service) {
-            pipeline.push({
-                $match: {
-                    "serviceData.title": filters.service
-                },
-            });
-        }
-
-        // ---------- duration filter (UI: duration=30 min) ----------
-        if (filters.duration) {
-            pipeline.push({
-                $match: {
-                    "rateData.duration": filters.duration
-                },
-            });
-        }
-
-        // ---------- rate range (UI: rateMin, rateMax) ----------
-        if (filters.rateMin || filters.rateMax) {
-            let rateQuery = {};
-            if (filters.rateMin) rateQuery.$gte = Number(filters.rateMin);
-            if (filters.rateMax) rateQuery.$lte = Number(filters.rateMax);
-
-            pipeline.push({
-                $match: {
-                    "rateData.price": rateQuery
-                },
-            });
-        }
-
-        // ---------- Priority Search + Subscription Status + Positioning ----------
-
-        pipeline.push({
-            $addFields: {
-                subscriptionActive: {
-                    $cond: [{
-                            $gt: [{
-                                    $arrayElemAt: [
-                                        "$currentPlan.subscriptionExpiry",
-                                        0
-                                    ]
-                                },
-                                new Date()
-                            ]
-                        },
-                        1,
-                        0
-                    ]
-                },
-
-                prioritySearch: {
-                    $cond: [{
-                            $and: [{
-                                    $eq: [{
-                                            $arrayElemAt: [
-                                                "$currentPlan.permissions.prioritySearch",
-                                                0
-                                            ]
-                                        },
-                                        true
-                                    ]
-                                },
-                                {
-                                    $gt: [{
-                                            $arrayElemAt: [
-                                                "$currentPlan.subscriptionExpiry",
-                                                0
-                                            ]
-                                        },
-                                        new Date()
-                                    ]
-                                }
-                            ]
-                        },
-                        1,
-                        0
-                    ]
-                },
-
-                prioritySearchPositioning: {
-                    $cond: [{
-                            $and: [{
-                                    $eq: [{
-                                            $arrayElemAt: [
-                                                "$currentPlan.permissions.prioritySearch",
-                                                0
-                                            ]
-                                        },
-                                        true
-                                    ]
-                                },
-                                {
-                                    $gt: [{
-                                            $arrayElemAt: [
-                                                "$currentPlan.subscriptionExpiry",
-                                                0
-                                            ]
-                                        },
-                                        new Date()
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            $ifNull: [{
-                                    $arrayElemAt: [
-                                        "$currentPlan.permissions.prioritySearchPositioning",
-                                        0
-                                    ]
-                                },
-                                4
-                            ]
-                        },
-                        5
-                    ]
-                }
-            }
-        });
-
-        // ---------- Final Priority Search Order ----------
-        pipeline.push({
-            $addFields: {
-                searchPosition: {
-                    $switch: {
-                        branches: [
-                            // 1. LUX + Boost
-                            {
-                                case: {
-                                    $and: [{
-                                            $eq: ["$subscriptionActive", 1]
-                                        },
-                                        {
-                                            $eq: ["$prioritySearchPositioning", 1]
-                                        },
-                                        {
-                                            $eq: ["$isBoosted", true]
-                                        }
-                                    ]
-                                },
-                                then: 1
-                            },
-
-                            // 2. LUX
-                            {
-                                case: {
-                                    $and: [{
-                                            $eq: ["$subscriptionActive", 1]
-                                        },
-                                        {
-                                            $eq: ["$prioritySearchPositioning", 1]
-                                        }
-                                    ]
-                                },
-                                then: 2
-                            },
-
-                            // 3. PREMIUM + Boost
-                            {
-                                case: {
-                                    $and: [{
-                                            $eq: ["$subscriptionActive", 1]
-                                        },
-                                        {
-                                            $eq: ["$prioritySearchPositioning", 2]
-                                        },
-                                        {
-                                            $eq: ["$isBoosted", true]
-                                        }
-                                    ]
-                                },
-                                then: 3
-                            },
-
-                            // 4. LITE + Boost
-                            {
-                                case: {
-                                    $and: [{
-                                            $eq: ["$subscriptionActive", 1]
-                                        },
-                                        {
-                                            $eq: ["$prioritySearchPositioning", 3]
-                                        },
-                                        {
-                                            $eq: ["$isBoosted", true]
-                                        }
-                                    ]
-                                },
-                                then: 4
-                            },
-
-                            // 5. START + Boost
-                            {
-                                case: {
-                                    $and: [{
-                                            $eq: ["$subscriptionActive", 1]
-                                        },
-                                        {
-                                            $eq: ["$prioritySearchPositioning", 4]
-                                        },
-                                        {
-                                            $eq: ["$isBoosted", true]
-                                        }
-                                    ]
-                                },
-                                then: 5
-                            },
-
-                            // 6. PREMIUM
-                            {
-                                case: {
-                                    $and: [{
-                                            $eq: ["$subscriptionActive", 1]
-                                        },
-                                        {
-                                            $eq: ["$prioritySearchPositioning", 2]
-                                        }
-                                    ]
-                                },
-                                then: 6
-                            },
-
-                            // 7. LITE
-                            {
-                                case: {
-                                    $and: [{
-                                            $eq: ["$subscriptionActive", 1]
-                                        },
-                                        {
-                                            $eq: ["$prioritySearchPositioning", 3]
-                                        }
-                                    ]
-                                },
-                                then: 7
-                            },
-
-                            // 8. START
-                            {
-                                case: {
-                                    $and: [{
-                                            $eq: ["$subscriptionActive", 1]
-                                        },
-                                        {
-                                            $eq: ["$prioritySearchPositioning", 4]
-                                        }
-                                    ]
-                                },
-                                then: 8
-                            }
-                        ],
-                        // 9. Expired / no active priority plan
-                        default: 9
-                    }
-                }
-            }
-        });
-
-        // ---------- Priority Sort Before Group ----------
-        pipeline.push({
-            $sort: {
-                searchPosition: 1,
-                isBoosted: -1,
-                createdAt: -1,
-                boostedAt: -1,
-                _id: 1
-            }
-        });
-
-        // ---------- REMOVE DUPLICATES ----------
-        pipeline.push({
-            $group: {
-                _id: "$_id",
-                doc: {
-                    $first: "$$ROOT"
-                },
-            },
-        });
-
-        pipeline.push({
-            $replaceRoot: {
-                newRoot: "$doc"
-            },
-        });
-
-        // ---------- FINAL SORT AFTER GROUP ----------
-        pipeline.push({
-            $sort: {
-                searchPosition: 1,
-                isBoosted: -1,
-                createdAt: -1,
-                boostedAt: -1,
-                _id: 1
-            }
-        });
-
-        const escorts = await EscortModel.aggregate(pipeline);
-
-        const formattedEscortList = escorts?.map((escort) => ({
-            ...escort,
-            city: filters.city?.trim().replace(/\s+/g, " ") || escort.city
-        }));
-
-
-        return response.json({
-            message: "Escort found",
-            success: true,
-            error: false,
-            count: formattedEscortList.length,
-            data: formattedEscortList,
-        });
-
-    } catch (error) {
-        console.log("Fetch advanced search escort error : ", error);
-
-        response.status(500).json({
-            message: "Something went wrong! Advance search failed",
-            success: false,
-            error: true,
-        });
+    if (filters.country) {
+      query.country = {
+        $regex: `^${filters.country.trim()}$`,
+        $options: "i",
+      };
     }
+
+    // if (filters.city) query.city = filters.city;
+
+    // ---------- strings ----------
+    if (filters.day) query.day = filters.day;
+    if (filters.adverties_category)
+      query.adverties_category = filters.adverties_category;
+    if (filters.escortFor) query.escortFor = filters.escortFor;
+    if (filters.account_type) query.account_type = filters.account_type;
+    if (filters.dressSize) query.dressSize = filters.dressSize;
+    if (filters.hairColor) query.hairColor = filters.hairColor;
+
+    // ---------- age range ----------
+    if (filters.ageMin || filters.ageMax) {
+      query.age = {};
+      if (filters.ageMin) query.age.$gte = Number(filters.ageMin);
+      if (filters.ageMax) query.age.$lte = Number(filters.ageMax);
+    }
+
+    // ---------- time window ----------
+    if (filters.timeFrom && filters.timeTo) {
+      query.availableTime = {
+        $gte: filters.timeFrom,
+        $lte: filters.timeTo,
+      };
+    }
+
+    query["avatar.url"] = {
+      $exists: true,
+      $nin: [null, ""],
+    };
+
+    query["avatar.status"] = "Approved";
+
+    query.status = "Active";
+
+    // ---------- Aggregation Pipeline ----------
+    let pipeline = [
+      // join services
+      {
+        $lookup: {
+          from: "services",
+          localField: "services",
+          foreignField: "_id",
+          as: "serviceData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$serviceData",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+
+      // join rates
+      {
+        $lookup: {
+          from: "rates",
+          localField: "rates",
+          foreignField: "_id",
+          as: "rateData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$rateData",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+
+      // base filters
+      {
+        $match: query,
+      },
+    ];
+
+    // ---------- Current subscription ----------
+    pipeline.push({
+      $lookup: {
+        from: "subcribedplans",
+        localField: "currentSubscription",
+        foreignField: "_id",
+        as: "currentPlan",
+      },
+    });
+
+    // ---------- Plan based city search ----------
+    if (filters.city) {
+      const selectedCity = filters.city.trim().replace(/\s+/g, " ");
+
+      pipeline.push({
+        $match: {
+          $or: [
+            {
+              city: {
+                $regex: `^${selectedCity}$`,
+                $options: "i",
+              },
+            },
+            {
+              $expr: {
+                $in: [
+                  selectedCity.toUpperCase(),
+                  {
+                    $map: {
+                      input: {
+                        $slice: [
+                          {
+                            $ifNull: ["$additionalCities", []],
+                          },
+                          {
+                            $ifNull: [
+                              {
+                                $arrayElemAt: [
+                                  "$currentPlan.limits.baseLocations",
+                                  0,
+                                ],
+                              },
+                              0,
+                            ],
+                          },
+                        ],
+                      },
+                      as: "city",
+                      in: {
+                        $toUpper: "$$city",
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      });
+    }
+
+    // ---------- service filter (UI: service=massage) ----------
+    if (filters.service) {
+      pipeline.push({
+        $match: {
+          "serviceData.title": filters.service,
+        },
+      });
+    }
+
+    // ---------- duration filter (UI: duration=30 min) ----------
+    if (filters.duration) {
+      pipeline.push({
+        $match: {
+          "rateData.duration": filters.duration,
+        },
+      });
+    }
+
+    // ---------- rate range (UI: rateMin, rateMax) ----------
+    if (filters.rateMin || filters.rateMax) {
+      let rateQuery = {};
+      if (filters.rateMin) rateQuery.$gte = Number(filters.rateMin);
+      if (filters.rateMax) rateQuery.$lte = Number(filters.rateMax);
+
+      pipeline.push({
+        $match: {
+          "rateData.price": rateQuery,
+        },
+      });
+    }
+
+    // ---------- Priority Search + Subscription Status + Positioning ----------
+
+    pipeline.push({
+      $addFields: {
+        subscriptionActive: {
+          $cond: [
+            {
+              $gt: [
+                {
+                  $arrayElemAt: ["$currentPlan.subscriptionExpiry", 0],
+                },
+                new Date(),
+              ],
+            },
+            1,
+            0,
+          ],
+        },
+
+        prioritySearch: {
+          $cond: [
+            {
+              $and: [
+                {
+                  $eq: [
+                    {
+                      $arrayElemAt: [
+                        "$currentPlan.permissions.prioritySearch",
+                        0,
+                      ],
+                    },
+                    true,
+                  ],
+                },
+                {
+                  $gt: [
+                    {
+                      $arrayElemAt: ["$currentPlan.subscriptionExpiry", 0],
+                    },
+                    new Date(),
+                  ],
+                },
+              ],
+            },
+            1,
+            0,
+          ],
+        },
+
+        prioritySearchPositioning: {
+          $cond: [
+            {
+              $and: [
+                {
+                  $eq: [
+                    {
+                      $arrayElemAt: [
+                        "$currentPlan.permissions.prioritySearch",
+                        0,
+                      ],
+                    },
+                    true,
+                  ],
+                },
+                {
+                  $gt: [
+                    {
+                      $arrayElemAt: ["$currentPlan.subscriptionExpiry", 0],
+                    },
+                    new Date(),
+                  ],
+                },
+              ],
+            },
+            {
+              $ifNull: [
+                {
+                  $arrayElemAt: [
+                    "$currentPlan.permissions.prioritySearchPositioning",
+                    0,
+                  ],
+                },
+                4,
+              ],
+            },
+            5,
+          ],
+        },
+      },
+    });
+
+    // ---------- Final Priority Search Order ----------
+    pipeline.push({
+      $addFields: {
+        searchPosition: {
+          $switch: {
+            branches: [
+              // 1. LUX + Boost
+              {
+                case: {
+                  $and: [
+                    {
+                      $eq: ["$subscriptionActive", 1],
+                    },
+                    {
+                      $eq: ["$prioritySearchPositioning", 1],
+                    },
+                    {
+                      $eq: ["$isBoosted", true],
+                    },
+                  ],
+                },
+                then: 1,
+              },
+
+              // 2. LUX
+              {
+                case: {
+                  $and: [
+                    {
+                      $eq: ["$subscriptionActive", 1],
+                    },
+                    {
+                      $eq: ["$prioritySearchPositioning", 1],
+                    },
+                  ],
+                },
+                then: 2,
+              },
+
+              // 3. PREMIUM + Boost
+              {
+                case: {
+                  $and: [
+                    {
+                      $eq: ["$subscriptionActive", 1],
+                    },
+                    {
+                      $eq: ["$prioritySearchPositioning", 2],
+                    },
+                    {
+                      $eq: ["$isBoosted", true],
+                    },
+                  ],
+                },
+                then: 3,
+              },
+
+              // 4. LITE + Boost
+              {
+                case: {
+                  $and: [
+                    {
+                      $eq: ["$subscriptionActive", 1],
+                    },
+                    {
+                      $eq: ["$prioritySearchPositioning", 3],
+                    },
+                    {
+                      $eq: ["$isBoosted", true],
+                    },
+                  ],
+                },
+                then: 4,
+              },
+
+              // 5. START + Boost
+              {
+                case: {
+                  $and: [
+                    {
+                      $eq: ["$subscriptionActive", 1],
+                    },
+                    {
+                      $eq: ["$prioritySearchPositioning", 4],
+                    },
+                    {
+                      $eq: ["$isBoosted", true],
+                    },
+                  ],
+                },
+                then: 5,
+              },
+
+              // 6. PREMIUM
+              {
+                case: {
+                  $and: [
+                    {
+                      $eq: ["$subscriptionActive", 1],
+                    },
+                    {
+                      $eq: ["$prioritySearchPositioning", 2],
+                    },
+                  ],
+                },
+                then: 6,
+              },
+
+              // 7. LITE
+              {
+                case: {
+                  $and: [
+                    {
+                      $eq: ["$subscriptionActive", 1],
+                    },
+                    {
+                      $eq: ["$prioritySearchPositioning", 3],
+                    },
+                  ],
+                },
+                then: 7,
+              },
+
+              // 8. START
+              {
+                case: {
+                  $and: [
+                    {
+                      $eq: ["$subscriptionActive", 1],
+                    },
+                    {
+                      $eq: ["$prioritySearchPositioning", 4],
+                    },
+                  ],
+                },
+                then: 8,
+              },
+            ],
+            // 9. Expired / no active priority plan
+            default: 9,
+          },
+        },
+      },
+    });
+
+    // ---------- Priority Sort Before Group ----------
+    pipeline.push({
+      $sort: {
+        searchPosition: 1,
+        isBoosted: -1,
+        createdAt: -1,
+        boostedAt: -1,
+        _id: 1,
+      },
+    });
+
+    // ---------- REMOVE DUPLICATES ----------
+    pipeline.push({
+      $group: {
+        _id: "$_id",
+        doc: {
+          $first: "$$ROOT",
+        },
+      },
+    });
+
+    pipeline.push({
+      $replaceRoot: {
+        newRoot: "$doc",
+      },
+    });
+
+    // ---------- FINAL SORT AFTER GROUP ----------
+    pipeline.push({
+      $sort: {
+        searchPosition: 1,
+        isBoosted: -1,
+        createdAt: -1,
+        boostedAt: -1,
+        _id: 1,
+      },
+    });
+
+    const escorts = await EscortModel.aggregate(pipeline);
+
+    const formattedEscortList = escorts?.map((escort) => ({
+      ...escort,
+      city: filters.city?.trim().replace(/\s+/g, " ") || escort.city,
+    }));
+
+    return response.json({
+      message: "Escort found",
+      success: true,
+      error: false,
+      count: formattedEscortList.length,
+      data: formattedEscortList,
+    });
+  } catch (error) {
+    console.log("Fetch advanced search escort error : ", error);
+
+    response.status(500).json({
+      message: "Something went wrong! Advance search failed",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // ===================================================< News&Tour controlls >============================================================
 
-// Add NewsandTour 
+// Add NewsandTour
 export const createNewsTourcontroller = async (request, response) => {
-    try {
+  try {
+    const { escortId, userId, name, city, country, title, description } =
+      request.body;
 
-        const {
-            escortId,
-            userId,
-            name,
-            city,
-            country,
-            title,
-            description
-        } = request.body;
-
-
-        if (!escortId || !title || !description) {
-            return response.status(400).json({
-                message: "escortId, title and description are required",
-                success: false,
-                error: true,
-            });
-        }
-
-        // ✅ file validation
-        if (!request.files || request.files.length === 0) {
-            return response.status(400).json({
-                message: "At least 1 media file required",
-                success: false,
-                error: true,
-            });
-        }
-
-        if (request.files.length > 3) {
-            return response.status(400).json({
-                message: "Maximum 3 media files allowed",
-                success: false,
-                error: true,
-            });
-        }
-
-        // ✅ check escort exist
-        const escort = await EscortModel.findOne({
-            escortId
-        });
-
-        if (!escort) {
-            return response.status(404).json({
-                message: "Escort not found",
-                success: false,
-                error: true,
-            });
-        }
-
-        // ✅ upload media to cloudinary
-        const mediaUploads = await Promise.all(
-            request.files.map(async (file) => {
-
-                const result = await uploadMediaCloudinary(
-                    file,
-                    "newsandtour/post"
-                );
-
-                return {
-                    url: result.secure_url,
-                    public_id: result.public_id,
-                    type: file.mimetype.startsWith("video") ? "video" : "image"
-                };
-            })
-        );
-
-        // ✅ create post
-        const post = await NewsAndTourModel.create({
-            escortId,
-            userId,
-            city,
-            country,
-            name,
-            title,
-            description,
-            status: "active",
-            media: mediaUploads
-        });
-
-        // ✅ push post id into escort model
-        const updatedEscort = await EscortModel.findOneAndUpdate({
-            escortId
-        }, {
-            $push: {
-                newsTour: post._id
-            }
-        });
-
-
-        const admin = await AdminModel.findOne();
-        if (!admin) {
-            console.error("❌ Notification skipped: No Admin found in database.");
-        } else {
-            const load = await createAndSendNotification(request.app, {
-                recipientId: admin._id,
-                recipientModel: "Admin",
-                senderId: updatedEscort._id,
-                senderModel: "Escort",
-                type: "NEW POST",
-                title: "New News and tour published",
-                message: `${updatedEscort.name} has published a new news and tour. Click to review.`,
-                link: `/dashboard/newsandtours-moderation`
-            });
-        }
-
-        return response.status(201).json({
-            message: "News & Tour post created successfully",
-            success: true,
-            error: false,
-            data: post
-        });
-
-
-    } catch (error) {
-
-        return response.status(500).json({
-            message: "Something went wrong! Newsand Tour creation failed",
-            success: false,
-            error: true
-        });
+    if (!escortId || !title || !description) {
+      return response.status(400).json({
+        message: "escortId, title and description are required",
+        success: false,
+        error: true,
+      });
     }
+
+    // ✅ file validation
+    if (!request.files || request.files.length === 0) {
+      return response.status(400).json({
+        message: "At least 1 media file required",
+        success: false,
+        error: true,
+      });
+    }
+
+    if (request.files.length > 3) {
+      return response.status(400).json({
+        message: "Maximum 3 media files allowed",
+        success: false,
+        error: true,
+      });
+    }
+
+    // ✅ check escort exist
+    const escort = await EscortModel.findOne({
+      escortId,
+    });
+
+    if (!escort) {
+      return response.status(404).json({
+        message: "Escort not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    // ✅ upload media to cloudinary
+    const mediaUploads = await Promise.all(
+      request.files.map(async (file) => {
+        const result = await uploadMediaCloudinary(file, "newsandtour/post");
+
+        return {
+          url: result.secure_url,
+          public_id: result.public_id,
+          type: file.mimetype.startsWith("video") ? "video" : "image",
+        };
+      }),
+    );
+
+    // ✅ create post
+    const post = await NewsAndTourModel.create({
+      escortId,
+      userId,
+      city,
+      country,
+      name,
+      title,
+      description,
+      status: "active",
+      media: mediaUploads,
+    });
+
+    // ✅ push post id into escort model
+    const updatedEscort = await EscortModel.findOneAndUpdate(
+      {
+        escortId,
+      },
+      {
+        $push: {
+          newsTour: post._id,
+        },
+      },
+    );
+
+    const admin = await AdminModel.findOne();
+    if (!admin) {
+      console.error("❌ Notification skipped: No Admin found in database.");
+    } else {
+      const load = await createAndSendNotification(request.app, {
+        recipientId: admin._id,
+        recipientModel: "Admin",
+        senderId: updatedEscort._id,
+        senderModel: "Escort",
+        type: "NEW POST",
+        title: "New News and tour published",
+        message: `${updatedEscort.name} has published a new news and tour. Click to review.`,
+        link: `/dashboard/newsandtours-moderation`,
+      });
+    }
+
+    return response.status(201).json({
+      message: "News & Tour post created successfully",
+      success: true,
+      error: false,
+      data: post,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: "Something went wrong! Newsand Tour creation failed",
+      success: false,
+      error: true,
+    });
+  }
 };
 
-// individual escorts newsandtour post fetch 
+// individual escorts newsandtour post fetch
 export const fetchEscortNewsTourcontroller = async (request, response) => {
-    try {
-        const {
-            escortId
-        } = request.query;
+  try {
+    const { escortId } = request.query;
 
-        if (!escortId) {
-            return response.status(400).json({
-                message: "EscortId not found",
-                success: false,
-                error: true,
-            });
-        }
-
-        const posts = await NewsAndTourModel
-            .find({
-                escortId: escortId,
-                status: "active"
-            })
-            .populate("userId", "name")
-            .sort({
-                createdAt: -1
-            })
-            .limit(20)
-            .populate("newstourComments")
-            .populate("newstourLikes");
-
-        return response.status(200).json({
-            message: "Posts fetched successfully",
-            success: true,
-            error: false,
-            data: posts
-        });
-
-    } catch (error) {
-        console.log("NewsandTour Post fetch error", error);
-        return response.status(500).json({
-            message: "Something went wrong! post fetching failed",
-            success: false,
-            error: true
-        })
+    if (!escortId) {
+      return response.status(400).json({
+        message: "EscortId not found",
+        success: false,
+        error: true,
+      });
     }
 
-}
+    const posts = await NewsAndTourModel.find({
+      escortId: escortId,
+      status: "active",
+    })
+      .populate("userId", "name")
+      .sort({
+        createdAt: -1,
+      })
+      .limit(20)
+      .populate("newstourComments")
+      .populate("newstourLikes");
+
+    return response.status(200).json({
+      message: "Posts fetched successfully",
+      success: true,
+      error: false,
+      data: posts,
+    });
+  } catch (error) {
+    console.log("NewsandTour Post fetch error", error);
+    return response.status(500).json({
+      message: "Something went wrong! post fetching failed",
+      success: false,
+      error: true,
+    });
+  }
+};
 
 // update NewsTour
 export const updateNewsTourController = async (request, response) => {
-    try {
+  try {
+    const { _id, title, description } = request.body;
 
-        const {
-            _id,
-            title,
-            description
-        } = request.body;
+    console.log("request.body: ", request.body);
 
-        console.log("request.body: ", request.body);
-
-        if (!_id) {
-            return response.status(400).json({
-                message: "Post _id required",
-                success: false,
-                error: true
-            });
-        }
-
-        const post = await NewsAndTourModel.findById(_id);
-
-        console.log("post: ", post);
-
-        if (!post) {
-            return response.status(404).json({
-                message: "Post not found",
-                success: false,
-                error: true
-            });
-        }
-
-        let mediaUploads = post.media;
-
-        if (request.files && request.files?.length > 0) {
-
-            if (request.files.length > 3) {
-                return response.status(400).json({
-                    message: "Maximum 3 media allowed",
-                    success: false,
-                    error: true
-                });
-            }
-
-            // delete old media from cloudinary
-            if (post.media && post.media?.length > 0) {
-                for (let m of post.media) {
-
-                    if (m.public_id) {
-                        await cloudinary.uploader.destroy(
-                            m.public_id, {
-                                resource_type: m.type === "video" ? "video" : "image"
-                            }
-                        );
-                    }
-                }
-            }
-
-            // upload new media
-            mediaUploads = await Promise.all(
-                request.files.map(async (file) => {
-
-                    const result = await uploadMediaCloudinary(
-                        file,
-                        "newsandtour/post"
-                    );
-
-                    return {
-                        url: result.secure_url,
-                        public_id: result.public_id,
-                        type: result.resource_type || (
-                            file.mimetype.startsWith("video") ?
-                            "video" :
-                            "image"
-                        )
-                    };
-                })
-            );
-        }
-
-        // update post
-        const updatedPost = await NewsAndTourModel.findByIdAndUpdate(
-            _id, {
-                title: title || post.title,
-                description: description || post.description,
-                media: mediaUploads
-            }, {
-                new: true
-            }
-        );
-
-        return response.status(200).json({
-            message: "Post updated successfully",
-            success: true,
-            error: false,
-            data: updatedPost
-        });
-
-    } catch (error) {
-
-        console.log("updateNewsTourController error:", error);
-
-        return response.status(500).json({
-            message: error.message || "server error",
-            success: false,
-            error: true
-        });
-
+    if (!_id) {
+      return response.status(400).json({
+        message: "Post _id required",
+        success: false,
+        error: true,
+      });
     }
+
+    const post = await NewsAndTourModel.findById(_id);
+
+    console.log("post: ", post);
+
+    if (!post) {
+      return response.status(404).json({
+        message: "Post not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    let mediaUploads = post.media;
+
+    if (request.files && request.files?.length > 0) {
+      if (request.files.length > 3) {
+        return response.status(400).json({
+          message: "Maximum 3 media allowed",
+          success: false,
+          error: true,
+        });
+      }
+
+      // delete old media from cloudinary
+      if (post.media && post.media?.length > 0) {
+        for (let m of post.media) {
+          if (m.public_id) {
+            await cloudinary.uploader.destroy(m.public_id, {
+              resource_type: m.type === "video" ? "video" : "image",
+            });
+          }
+        }
+      }
+
+      // upload new media
+      mediaUploads = await Promise.all(
+        request.files.map(async (file) => {
+          const result = await uploadMediaCloudinary(file, "newsandtour/post");
+
+          return {
+            url: result.secure_url,
+            public_id: result.public_id,
+            type:
+              result.resource_type ||
+              (file.mimetype.startsWith("video") ? "video" : "image"),
+          };
+        }),
+      );
+    }
+
+    // update post
+    const updatedPost = await NewsAndTourModel.findByIdAndUpdate(
+      _id,
+      {
+        title: title || post.title,
+        description: description || post.description,
+        media: mediaUploads,
+      },
+      {
+        new: true,
+      },
+    );
+
+    return response.status(200).json({
+      message: "Post updated successfully",
+      success: true,
+      error: false,
+      data: updatedPost,
+    });
+  } catch (error) {
+    console.log("updateNewsTourController error:", error);
+
+    return response.status(500).json({
+      message: error.message || "server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // Delete NewsTour
 export const deleteNewsTourController = async (request, response) => {
-    try {
+  try {
+    const { _id } = request.body;
 
-        const {
-            _id
-        } = request.body;
-
-        if (!_id) {
-            return response.status(400).json({
-                message: "Post _id required",
-                success: false,
-                error: true
-            });
-        }
-
-        const post = await NewsAndTourModel.findById(_id);
-
-        if (!post) {
-            return response.status(404).json({
-                message: "Post not found",
-                success: false,
-                error: true
-            });
-        }
-
-        // ✅ Delete media from cloudinary
-        if (post.media && post.media.length > 0) {
-
-            for (let m of post.media) {
-
-                if (m.public_id) {
-                    await cloudinary.uploader.destroy(
-                        m.public_id, {
-                            resource_type: m.type === "video" ? "video" : "image"
-                        }
-                    );
-                }
-            }
-        }
-
-        await NewstourCommentsModel.deleteMany({
-            postId: _id
-        });
-        await NewstourLikesModel.deleteMany({
-            postId: _id
-        })
-
-        // ✅ delete post from DB
-        await NewsAndTourModel.findByIdAndDelete(_id);
-
-
-        // ✅ remove reference from EscortModel
-        await EscortModel.updateOne({
-            escortId: post.escortId
-        }, {
-            $pull: {
-                newsTour: _id
-            }
-        });
-
-        return response.status(200).json({
-            message: "Post deleted successfully",
-            success: true,
-            error: false
-        });
-
-    } catch (error) {
-
-        console.log("deleteNewsTourController error:", error);
-
-        return response.status(500).json({
-            message: error.message || "Server error",
-            success: false,
-            error: true
-        });
-
+    if (!_id) {
+      return response.status(400).json({
+        message: "Post _id required",
+        success: false,
+        error: true,
+      });
     }
+
+    const post = await NewsAndTourModel.findById(_id);
+
+    if (!post) {
+      return response.status(404).json({
+        message: "Post not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    // ✅ Delete media from cloudinary
+    if (post.media && post.media.length > 0) {
+      for (let m of post.media) {
+        if (m.public_id) {
+          await cloudinary.uploader.destroy(m.public_id, {
+            resource_type: m.type === "video" ? "video" : "image",
+          });
+        }
+      }
+    }
+
+    await NewstourCommentsModel.deleteMany({
+      postId: _id,
+    });
+    await NewstourLikesModel.deleteMany({
+      postId: _id,
+    });
+
+    // ✅ delete post from DB
+    await NewsAndTourModel.findByIdAndDelete(_id);
+
+    // ✅ remove reference from EscortModel
+    await EscortModel.updateOne(
+      {
+        escortId: post.escortId,
+      },
+      {
+        $pull: {
+          newsTour: _id,
+        },
+      },
+    );
+
+    return response.status(200).json({
+      message: "Post deleted successfully",
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    console.log("deleteNewsTourController error:", error);
+
+    return response.status(500).json({
+      message: error.message || "Server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // fetch All NewsTour posts by Country and city
 export const fetchAllNewsTourController = async (request, response) => {
-    try {
+  try {
+    const { country, city } = request.query;
 
-        const {
-            country,
-            city
-        } = request.query;
-
-        if (!country) {
-            return response.status(400).json({
-                message: "Country is required",
-                success: false,
-                error: true
-            });
-        }
-
-        let query = {
-            status: "active",
-            country: country
-        };
-
-        // ✅ city filter only when provided
-        if (city) {
-            query.city = city;
-        }
-
-        const newsandtours = await NewsAndTourModel
-            .find(query)
-            .populate("userId", "name")
-            .sort({
-                createdAt: -1
-            })
-            .limit(24)
-            .populate("newstourComments")
-            .populate("newstourLikes");
-
-        const formattedNewsandtours = newsandtours.map(newsandtour => ({
-            ...newsandtour.toObject(),
-            escortName: newsandtour.userId?.name
-        }));
-
-
-        return response.status(200).json({
-            message: "Newsandtours fetched successfully",
-            success: true,
-            error: false,
-            data: formattedNewsandtours
-        });
-
-    } catch (error) {
-
-        return response.status(500).json({
-            message: error.message || "Server error",
-            success: false,
-            error: true
-        });
-
+    if (!country) {
+      return response.status(400).json({
+        message: "Country is required",
+        success: false,
+        error: true,
+      });
     }
+
+    let query = {
+      status: "active",
+      country: country,
+    };
+
+    // ✅ city filter only when provided
+    if (city) {
+      query.city = city;
+    }
+
+    const newsandtours = await NewsAndTourModel.find(query)
+      .populate("userId", "name")
+      .sort({
+        createdAt: -1,
+      })
+      .limit(24)
+      .populate("newstourComments")
+      .populate("newstourLikes");
+
+    const formattedNewsandtours = newsandtours.map((newsandtour) => ({
+      ...newsandtour.toObject(),
+      escortName: newsandtour.userId?.name,
+    }));
+
+    return response.status(200).json({
+      message: "Newsandtours fetched successfully",
+      success: true,
+      error: false,
+      data: formattedNewsandtours,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || "Server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // fetch selected NewsTour by post Id
 export const fetchSelectNewsTourController = async (request, response) => {
-    try {
+  try {
+    const { _id } = request.query;
 
-        const {
-            _id
-        } = request.query;
+    console.log("request.query: ", request.query);
 
-        console.log("request.query: ", request.query);
-
-        if (!_id) {
-            return response.status(400).json({
-                message: "_id is required",
-                success: false,
-                error: true
-            });
-        }
-
-
-        const post = await NewsAndTourModel.findById(_id)
-            .populate("newstourLikes")
-            .populate({
-                path: "newstourComments",
-                populate: {
-                    path: "userId",
-                    select: "name avatar"
-                }
-            });
-
-        return response.status(200).json({
-            message: "Post fetched successfully",
-            success: true,
-            error: false,
-            data: post
-        });
-
-    } catch (error) {
-
-        return response.status(500).json({
-            message: error.message || "Server error",
-            success: false,
-            error: true
-        });
-
+    if (!_id) {
+      return response.status(400).json({
+        message: "_id is required",
+        success: false,
+        error: true,
+      });
     }
+
+    const post = await NewsAndTourModel.findById(_id)
+      .populate("newstourLikes")
+      .populate({
+        path: "newstourComments",
+        populate: {
+          path: "userId",
+          select: "name avatar",
+        },
+      });
+
+    return response.status(200).json({
+      message: "Post fetched successfully",
+      success: true,
+      error: false,
+      data: post,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || "Server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // Toggle NewsTour Like controller
 export const toggleNewstourLikeController = async (request, response) => {
-    try {
+  try {
+    const { postId, userId } = request.body;
 
-        const {
-            postId,
-            userId
-        } = request.body;
-
-
-        if (!userId) {
-            return response.status(401).json({
-                message: "User not register",
-                success: false,
-                error: true
-            })
-        }
-
-        const existingLike = await NewstourLikesModel.findOne({
-            postId,
-            userId
-        });
-
-
-        if (existingLike) {
-
-            await NewstourLikesModel.deleteOne({
-                _id: existingLike._id
-            });
-
-            await NewsAndTourModel.updateOne({
-                _id: postId
-            }, {
-                $pull: {
-                    newstourLikes: existingLike._id
-                }
-            });
-
-            return response.status(200).json({
-                message: "Like removed",
-                success: true,
-                error: false
-            });
-
-        }
-
-        const like = await NewstourLikesModel.create({
-            postId,
-            userId
-        });
-
-
-        await NewsAndTourModel.updateOne({
-            _id: postId
-        }, {
-            $push: {
-                newstourLikes: like._id
-            }
-        });
-
-        const postUpdated = await NewsAndTourModel.findOne({
-            _id: postId
-        });
-        const Client = await ClientModel.findOne({
-            clientId: userId
-        });
-
-        if (!postUpdated.userId) {
-            console.error("❌ Notification skipped: No Escort found in database.");
-        } else {
-            const load = await createAndSendNotification(request.app, {
-                recipientId: postUpdated?.userId,
-                recipientModel: "Escort",
-                senderId: Client?._id,
-                senderModel: "Client",
-                type: "NEW LIKE",
-                title: "New Like on News and Tour",
-                message: `${Client?.name} has like your news and tour. Click to view.`,
-                link: `/escortnewstour/${postUpdated?._id}`
-            });
-        }
-
-        response.status(201).json({
-            message: "Post liked",
-            success: true,
-            error: false,
-            like
-        });
-
-    } catch (error) {
-
-        response.status(500).json({
-            message: error.message || "Server error",
-            success: false,
-            error: true
-        });
-
+    if (!userId) {
+      return response.status(401).json({
+        message: "User not register",
+        success: false,
+        error: true,
+      });
     }
+
+    const existingLike = await NewstourLikesModel.findOne({
+      postId,
+      userId,
+    });
+
+    if (existingLike) {
+      await NewstourLikesModel.deleteOne({
+        _id: existingLike._id,
+      });
+
+      await NewsAndTourModel.updateOne(
+        {
+          _id: postId,
+        },
+        {
+          $pull: {
+            newstourLikes: existingLike._id,
+          },
+        },
+      );
+
+      return response.status(200).json({
+        message: "Like removed",
+        success: true,
+        error: false,
+      });
+    }
+
+    const like = await NewstourLikesModel.create({
+      postId,
+      userId,
+    });
+
+    await NewsAndTourModel.updateOne(
+      {
+        _id: postId,
+      },
+      {
+        $push: {
+          newstourLikes: like._id,
+        },
+      },
+    );
+
+    const postUpdated = await NewsAndTourModel.findOne({
+      _id: postId,
+    });
+    const Client = await ClientModel.findOne({
+      clientId: userId,
+    });
+
+    if (!postUpdated.userId) {
+      console.error("❌ Notification skipped: No Escort found in database.");
+    } else {
+      const load = await createAndSendNotification(request.app, {
+        recipientId: postUpdated?.userId,
+        recipientModel: "Escort",
+        senderId: Client?._id,
+        senderModel: "Client",
+        type: "NEW LIKE",
+        title: "New Like on News and Tour",
+        message: `${Client?.name} has like your news and tour. Click to view.`,
+        link: `/escortnewstour/${postUpdated?._id}`,
+      });
+    }
+
+    response.status(201).json({
+      message: "Post liked",
+      success: true,
+      error: false,
+      like,
+    });
+  } catch (error) {
+    response.status(500).json({
+      message: error.message || "Server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // add NewsandTour Comments
 export const addNewstourCommentController = async (request, response) => {
-    try {
+  try {
+    const { postId, userId, userType, comment } = request.body;
 
-        const {
-            postId,
-            userId,
-            userType,
-            comment
-        } = request.body;
-
-        if (!userId) {
-            return response.status(401).json({
-                message: "User not register",
-                success: false,
-                error: true
-            });
-        }
-
-        if (!comment && !request.file) {
-            return response.status(402).json({
-                message: "please add comment or media",
-                success: false,
-                error: true
-            });
-        }
-
-        let mediaData = null;
-
-        // ================= MEDIA UPLOAD =================
-        if (request.file) {
-
-            const uploadResult = await uploadMediaCloudinary(
-                request.file,
-                "escort-app/newstour/comments"
-            );
-
-            mediaData = {
-                url: uploadResult.secure_url,
-                type: uploadResult.resource_type === "video" ? "video" : "image"
-            };
-        }
-
-        // ================= CREATE COMMENT =================
-        const newComment = await NewstourCommentsModel.create({
-            postId,
-            userId,
-            userType,
-            comment,
-            media: mediaData ? [mediaData] : []
-        });
-
-        // ================= UPDATE POST =================
-        await NewsAndTourModel.updateOne({
-            _id: postId
-        }, {
-            $push: {
-                newstourComments: newComment._id
-            }
-        });
-
-        const post = await NewsAndTourModel.findById(postId);
-
-        const Client = await ClientModel.findOne({
-            userId
-        });
-
-        if (!post.userId) {
-            console.error("❌ Notification skipped: No Escort found in database.");
-        } else {
-            const load = await createAndSendNotification(request.app, {
-                recipientId: post.userId,
-                recipientModel: "Escort",
-                senderId: Client._id,
-                senderModel: "Client",
-                type: "NEW Comments",
-                title: "New Comments on News and Tour",
-                message: `${Client.name} has Comments your news and tour. Click to view.`,
-                link: `/escortnewstour/${post._id}`
-            });
-        }
-
-        return response.status(200).json({
-            message: "Comment added",
-            success: true,
-            error: false,
-            comment: newComment
-        });
-
-    } catch (error) {
-
-        return response.status(500).json({
-            message: error.message || "Server error",
-            success: false,
-            error: true
-        });
-
+    if (!userId) {
+      return response.status(401).json({
+        message: "User not register",
+        success: false,
+        error: true,
+      });
     }
+
+    if (!comment && !request.file) {
+      return response.status(402).json({
+        message: "please add comment or media",
+        success: false,
+        error: true,
+      });
+    }
+
+    let mediaData = null;
+
+    // ================= MEDIA UPLOAD =================
+    if (request.file) {
+      const uploadResult = await uploadMediaCloudinary(
+        request.file,
+        "escort-app/newstour/comments",
+      );
+
+      mediaData = {
+        url: uploadResult.secure_url,
+        type: uploadResult.resource_type === "video" ? "video" : "image",
+      };
+    }
+
+    // ================= CREATE COMMENT =================
+    const newComment = await NewstourCommentsModel.create({
+      postId,
+      userId,
+      userType,
+      comment,
+      media: mediaData ? [mediaData] : [],
+    });
+
+    // ================= UPDATE POST =================
+    await NewsAndTourModel.updateOne(
+      {
+        _id: postId,
+      },
+      {
+        $push: {
+          newstourComments: newComment._id,
+        },
+      },
+    );
+
+    const post = await NewsAndTourModel.findById(postId);
+
+    const Client = await ClientModel.findOne({
+      userId,
+    });
+
+    if (!post.userId) {
+      console.error("❌ Notification skipped: No Escort found in database.");
+    } else {
+      const load = await createAndSendNotification(request.app, {
+        recipientId: post.userId,
+        recipientModel: "Escort",
+        senderId: Client._id,
+        senderModel: "Client",
+        type: "NEW Comments",
+        title: "New Comments on News and Tour",
+        message: `${Client.name} has Comments your news and tour. Click to view.`,
+        link: `/escortnewstour/${post._id}`,
+      });
+    }
+
+    return response.status(200).json({
+      message: "Comment added",
+      success: true,
+      error: false,
+      comment: newComment,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || "Server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // fetch selected news and tour comments
 export const fetchSelectedNewsTourComments = async (request, response) => {
-    try {
-        const {
-            postId
-        } = request.query;
+  try {
+    const { postId } = request.query;
 
-        if (!postId) {
-            return response.status(400).json({
-                message: "postId required...!",
-                success: false,
-                error: true,
-            });
-        }
-
-        const postComments = await NewstourCommentsModel
-            .find({
-                postId: postId
-            })
-            .sort({
-                createdAt: -1
-            })
-            .populate({
-                path: "userId",
-                select: "name avatar"
-            });
-
-        return response.status(200).json({
-            message: "Fetch comments",
-            success: true,
-            error: false,
-            data: postComments
-        });
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || "Server error",
-            success: false,
-            error: true,
-        });
+    if (!postId) {
+      return response.status(400).json({
+        message: "postId required...!",
+        success: false,
+        error: true,
+      });
     }
-};
 
+    const postComments = await NewstourCommentsModel.find({
+      postId: postId,
+    })
+      .sort({
+        createdAt: -1,
+      })
+      .populate({
+        path: "userId",
+        select: "name avatar",
+      });
+
+    return response.status(200).json({
+      message: "Fetch comments",
+      success: true,
+      error: false,
+      data: postComments,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || "Server error",
+      success: false,
+      error: true,
+    });
+  }
+};
 
 // ==============================================< Blog controlls >==============================================
 
 // Create Blog
 export const createBlog = async (request, response) => {
-    let uploadedMedia = [];
+  let uploadedMedia = [];
 
-    try {
+  try {
+    const {
+      escortId,
+      userId,
+      userType,
+      name,
+      city,
+      country,
+      title,
+      description,
+    } = request.body;
 
-        const {
-            escortId,
-            userId,
-            userType,
-            name,
-            city,
-            country,
-            title,
-            description
-        } = request.body;
+    if (!escortId || !title || !description) {
+      return response.status(400).json({
+        message: "escortId, title and description are required",
+        success: false,
+        error: true,
+      });
+    }
 
-        if (!escortId || !title || !description) {
-            return response.status(400).json({
-                message: "escortId, title and description are required",
-                success: false,
-                error: true,
-            });
+    // ✅ file validation
+    if (!request.files || request.files.length === 0) {
+      return response.status(400).json({
+        message: "At least 1 media file required",
+        success: false,
+        error: true,
+      });
+    }
+
+    if (request.files.length > 1) {
+      return response.status(400).json({
+        message: "Maximum 1 media files allowed",
+        success: false,
+        error: true,
+      });
+    }
+
+    const escort = await EscortModel.findOne({
+      escortId,
+    });
+
+    if (!escort) {
+      return response.status(404).json({
+        message: "Escort not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    // ✅ upload media to cloudinary (with compression + validation)
+    const mediaUploads = await Promise.all(
+      request.files.map(async (file) => {
+        // 🔴 TYPE VALIDATION
+        if (
+          !file.mimetype.startsWith("image") &&
+          !file.mimetype.startsWith("video")
+        ) {
+          throw new Error("Only image or video allowed");
         }
 
-        // ✅ file validation
-        if (!request.files || request.files.length === 0) {
-            return response.status(400).json({
-                message: "At least 1 media file required",
-                success: false,
-                error: true,
-            });
+        // 🔴 VIDEO SIZE VALIDATION (no compression)
+        if (file.mimetype.startsWith("video") && file.size > 10 * 1024 * 1024) {
+          throw new Error("Video must be under 10MB");
         }
 
-        if (request.files.length > 1) {
-            return response.status(400).json({
-                message: "Maximum 1 media files allowed",
-                success: false,
-                error: true,
-            });
+        let fileBuffer = file.buffer;
+
+        // ✅ IMAGE COMPRESSION (Sharp)
+        if (file.mimetype.startsWith("image")) {
+          const compressedBuffer = await sharp(file.buffer)
+            .resize({
+              width: 1024,
+            }) // max width
+            .jpeg({
+              quality: 70,
+            }) // compression
+            .toBuffer();
+
+          fileBuffer = compressedBuffer;
+
+          // 🔴 FINAL SIZE CHECK
+          if (fileBuffer.length > 10 * 1024 * 1024) {
+            throw new Error("Compressed image still too large");
+          }
         }
 
-        const escort = await EscortModel.findOne({
-            escortId
-        });
-
-        if (!escort) {
-            return response.status(404).json({
-                message: "Escort not found",
-                success: false,
-                error: true,
-            });
-        }
-
-        // ✅ upload media to cloudinary (with compression + validation)
-        const mediaUploads = await Promise.all(
-            request.files.map(async (file) => {
-
-                // 🔴 TYPE VALIDATION
-                if (!file.mimetype.startsWith("image") && !file.mimetype.startsWith("video")) {
-                    throw new Error("Only image or video allowed");
-                }
-
-                // 🔴 VIDEO SIZE VALIDATION (no compression)
-                if (file.mimetype.startsWith("video") && file.size > 10 * 1024 * 1024) {
-                    throw new Error("Video must be under 10MB");
-                }
-
-                let fileBuffer = file.buffer;
-
-                // ✅ IMAGE COMPRESSION (Sharp)
-                if (file.mimetype.startsWith("image")) {
-
-                    const compressedBuffer = await sharp(file.buffer)
-                        .resize({
-                            width: 1024
-                        }) // max width
-                        .jpeg({
-                            quality: 70
-                        }) // compression
-                        .toBuffer();
-
-                    fileBuffer = compressedBuffer;
-
-                    // 🔴 FINAL SIZE CHECK
-                    if (fileBuffer.length > 10 * 1024 * 1024) {
-                        throw new Error("Compressed image still too large");
-                    }
-                }
-
-                // ✅ upload
-                const result = await uploadMediaCloudinary({
-                        ...file,
-                        buffer: fileBuffer
-                    },
-                    "blog/post"
-                );
-
-                const mediaObj = {
-                    url: result.secure_url,
-                    public_id: result.public_id,
-                    type: file.mimetype.startsWith("video") ? "video" : "image"
-                };
-
-                uploadedMedia.push(mediaObj);
-
-                return mediaObj;
-            })
+        // ✅ upload
+        const result = await uploadMediaCloudinary(
+          {
+            ...file,
+            buffer: fileBuffer,
+          },
+          "blog/post",
         );
 
-        const post = await BlogModel.create({
-            escortId,
-            userId,
-            userType,
-            city,
-            country,
-            name,
-            title,
-            description,
-            status: "active",
-            media: mediaUploads
-        });
+        const mediaObj = {
+          url: result.secure_url,
+          public_id: result.public_id,
+          type: file.mimetype.startsWith("video") ? "video" : "image",
+        };
 
-        const updatedEscort = await EscortModel.findOneAndUpdate({
-            escortId
-        }, {
-            $push: {
-                blog: post._id
-            }
-        });
+        uploadedMedia.push(mediaObj);
 
-        const admin = await AdminModel.findOne();
-        if (!admin) {
-            console.error("❌ Notification skipped: No Admin found in database.");
-        } else {
-            const load = await createAndSendNotification(request.app, {
-                recipientId: admin._id,
-                recipientModel: "Admin",
-                senderId: updatedEscort._id,
-                senderModel: "Escort",
-                type: "NEW BLOG",
-                title: "New blog published",
-                message: `${updatedEscort.name} has published a new blog. Click to review.`,
-                link: `/dashboard/blog-moderation`
-            });
-        }
+        return mediaObj;
+      }),
+    );
 
-        return response.status(201).json({
-            message: "Blog created successfully",
-            success: true,
-            error: false,
-            data: post
-        });
+    const post = await BlogModel.create({
+      escortId,
+      userId,
+      userType,
+      city,
+      country,
+      name,
+      title,
+      description,
+      status: "active",
+      media: mediaUploads,
+    });
 
-    } catch (error) {
-        console.log("🔥 ERROR:", error);
+    const updatedEscort = await EscortModel.findOneAndUpdate(
+      {
+        escortId,
+      },
+      {
+        $push: {
+          blog: post._id,
+        },
+      },
+    );
 
-        if (uploadedMedia.length > 0) {
-            await Promise.all(
-                uploadedMedia.map(item =>
-                    cloudinary.uploader.destroy(item.public_id, {
-                        resource_type: item.type === "video" ? "video" : "image"
-                    })
-                )
-            );
-        }
-
-
-
-        return response.status(500).json({
-            message: "Blog creation failed!" || "Server Error",
-            success: false,
-            error: true
-        });
+    const admin = await AdminModel.findOne();
+    if (!admin) {
+      console.error("❌ Notification skipped: No Admin found in database.");
+    } else {
+      const load = await createAndSendNotification(request.app, {
+        recipientId: admin._id,
+        recipientModel: "Admin",
+        senderId: updatedEscort._id,
+        senderModel: "Escort",
+        type: "NEW BLOG",
+        title: "New blog published",
+        message: `${updatedEscort.name} has published a new blog. Click to review.`,
+        link: `/dashboard/blog-moderation`,
+      });
     }
+
+    return response.status(201).json({
+      message: "Blog created successfully",
+      success: true,
+      error: false,
+      data: post,
+    });
+  } catch (error) {
+    console.log("🔥 ERROR:", error);
+
+    if (uploadedMedia.length > 0) {
+      await Promise.all(
+        uploadedMedia.map((item) =>
+          cloudinary.uploader.destroy(item.public_id, {
+            resource_type: item.type === "video" ? "video" : "image",
+          }),
+        ),
+      );
+    }
+
+    return response.status(500).json({
+      message: "Blog creation failed!" || "Server Error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // update Blog
 export const updateBlog = async (request, response) => {
-    try {
+  try {
+    const { _id, title, description } = request.body;
 
-        const {
-            _id,
-            title,
-            description
-        } = request.body;
+    console.log("request.body: ", request.body);
 
-        console.log("request.body: ", request.body);
-
-        if (!_id) {
-            return response.status(400).json({
-                message: "Post _id required",
-                success: false,
-                error: true
-            });
-        }
-
-        const post = await BlogModel.findById(_id);
-
-        console.log("post: ", post);
-
-        if (!post) {
-            return response.status(404).json({
-                message: "Post not found",
-                success: false,
-                error: true
-            });
-        }
-
-        let mediaUploads = post.media;
-
-        if (request.files && request.files?.length > 0) {
-
-            if (request.files.length > 1) {
-                return response.status(400).json({
-                    message: "Maximum 1 media allowed",
-                    success: false,
-                    error: true
-                });
-            }
-
-            // delete old media from cloudinary
-            if (post.media && post.media?.length > 0) {
-                for (let m of post.media) {
-
-                    if (m.public_id) {
-                        await cloudinary.uploader.destroy(
-                            m.public_id, {
-                                resource_type: m.type === "video" ? "video" : "image"
-                            }
-                        );
-                    }
-                }
-            }
-
-            // upload new media
-            mediaUploads = await Promise.all(
-                request.files.map(async (file) => {
-
-                    const result = await uploadMediaCloudinary(
-                        file,
-                        "blog/post"
-                    );
-
-                    return {
-                        url: result.secure_url,
-                        public_id: result.public_id,
-                        type: result.resource_type || (
-                            file.mimetype.startsWith("video") ?
-                            "video" :
-                            "image"
-                        )
-                    };
-                })
-            );
-        }
-
-        // update post
-        const updatedPost = await BlogModel.findByIdAndUpdate(
-            _id, {
-                title: title || post.title,
-                description: description || post.description,
-                media: mediaUploads
-            }, {
-                new: true
-            }
-        );
-
-        const admin = await AdminModel.findOne();
-        if (!admin) {
-            console.error("❌ Notification skipped: No Admin found in database.");
-        } else {
-            const load = await createAndSendNotification(request.app, {
-                recipientId: admin._id,
-                recipientModel: "Admin",
-                senderId: updatedPost._id,
-                senderModel: "Escort",
-                type: "UPDATED BLOG",
-                title: "Updated blog published",
-                message: `${updatedPost.name} has published a updated blog. Click to review.`,
-                link: `/dashboard/blog-moderation`
-            });
-        }
-
-        return response.status(200).json({
-            message: "Post updated successfully",
-            success: true,
-            error: false,
-            data: updatedPost
-        });
-
-    } catch (error) {
-
-        console.log("update blog error:", error);
-
-        return response.status(500).json({
-            message: "Blog updation failed!" || "server error",
-            success: false,
-            error: true
-        });
-
+    if (!_id) {
+      return response.status(400).json({
+        message: "Post _id required",
+        success: false,
+        error: true,
+      });
     }
+
+    const post = await BlogModel.findById(_id);
+
+    console.log("post: ", post);
+
+    if (!post) {
+      return response.status(404).json({
+        message: "Post not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    let mediaUploads = post.media;
+
+    if (request.files && request.files?.length > 0) {
+      if (request.files.length > 1) {
+        return response.status(400).json({
+          message: "Maximum 1 media allowed",
+          success: false,
+          error: true,
+        });
+      }
+
+      // delete old media from cloudinary
+      if (post.media && post.media?.length > 0) {
+        for (let m of post.media) {
+          if (m.public_id) {
+            await cloudinary.uploader.destroy(m.public_id, {
+              resource_type: m.type === "video" ? "video" : "image",
+            });
+          }
+        }
+      }
+
+      // upload new media
+      mediaUploads = await Promise.all(
+        request.files.map(async (file) => {
+          const result = await uploadMediaCloudinary(file, "blog/post");
+
+          return {
+            url: result.secure_url,
+            public_id: result.public_id,
+            type:
+              result.resource_type ||
+              (file.mimetype.startsWith("video") ? "video" : "image"),
+          };
+        }),
+      );
+    }
+
+    // update post
+    const updatedPost = await BlogModel.findByIdAndUpdate(
+      _id,
+      {
+        title: title || post.title,
+        description: description || post.description,
+        media: mediaUploads,
+      },
+      {
+        new: true,
+      },
+    );
+
+    const admin = await AdminModel.findOne();
+    if (!admin) {
+      console.error("❌ Notification skipped: No Admin found in database.");
+    } else {
+      const load = await createAndSendNotification(request.app, {
+        recipientId: admin._id,
+        recipientModel: "Admin",
+        senderId: updatedPost._id,
+        senderModel: "Escort",
+        type: "UPDATED BLOG",
+        title: "Updated blog published",
+        message: `${updatedPost.name} has published a updated blog. Click to review.`,
+        link: `/dashboard/blog-moderation`,
+      });
+    }
+
+    return response.status(200).json({
+      message: "Post updated successfully",
+      success: true,
+      error: false,
+      data: updatedPost,
+    });
+  } catch (error) {
+    console.log("update blog error:", error);
+
+    return response.status(500).json({
+      message: "Blog updation failed!" || "server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // Delete blog
 export const deleteBlog = async (request, response) => {
-    try {
+  try {
+    const { _id } = request.body;
 
-        const {
-            _id
-        } = request.body;
-
-        if (!_id) {
-            return response.status(400).json({
-                message: "Post _id required",
-                success: false,
-                error: true
-            });
-        }
-
-        const post = await BlogModel.findById(_id);
-
-        if (!post) {
-            return response.status(404).json({
-                message: "Blog not found",
-                success: false,
-                error: true
-            });
-        }
-
-        // ✅ Delete media from cloudinary
-        if (post.media && post.media.length > 0) {
-
-            for (let m of post.media) {
-
-                if (m.public_id) {
-                    await cloudinary.uploader.destroy(
-                        m.public_id, {
-                            resource_type: m.type === "video" ? "video" : "image"
-                        }
-                    );
-                }
-            }
-        }
-
-        await BlogCommentsModel.deleteMany({
-            postId: _id
-        });
-        await BlogLikesModel.deleteMany({
-            postId: _id
-        });
-
-        // ✅ delete post from DB
-        await BlogModel.findByIdAndDelete(_id);
-
-        // ✅ remove reference from EscortModel
-        await EscortModel.updateOne({
-            escortId: post.escortId
-        }, {
-            $pull: {
-                blog: _id
-            }
-        });
-
-        return response.status(200).json({
-            message: "Post deleted successfully",
-            success: true,
-            error: false
-        });
-
-    } catch (error) {
-
-        console.log("deleteNewsTourController error:", error);
-
-        return response.status(500).json({
-            message: "bolg delete failed!" || "Server error",
-            success: false,
-            error: true
-        });
-
+    if (!_id) {
+      return response.status(400).json({
+        message: "Post _id required",
+        success: false,
+        error: true,
+      });
     }
+
+    const post = await BlogModel.findById(_id);
+
+    if (!post) {
+      return response.status(404).json({
+        message: "Blog not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    // ✅ Delete media from cloudinary
+    if (post.media && post.media.length > 0) {
+      for (let m of post.media) {
+        if (m.public_id) {
+          await cloudinary.uploader.destroy(m.public_id, {
+            resource_type: m.type === "video" ? "video" : "image",
+          });
+        }
+      }
+    }
+
+    await BlogCommentsModel.deleteMany({
+      postId: _id,
+    });
+    await BlogLikesModel.deleteMany({
+      postId: _id,
+    });
+
+    // ✅ delete post from DB
+    await BlogModel.findByIdAndDelete(_id);
+
+    // ✅ remove reference from EscortModel
+    await EscortModel.updateOne(
+      {
+        escortId: post.escortId,
+      },
+      {
+        $pull: {
+          blog: _id,
+        },
+      },
+    );
+
+    return response.status(200).json({
+      message: "Post deleted successfully",
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    console.log("deleteNewsTourController error:", error);
+
+    return response.status(500).json({
+      message: "bolg delete failed!" || "Server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
-// Block blog commnets 
+// Block blog commnets
 export const blockBlogComments = async (request, response) => {
-    try {
+  try {
+    const { _id, userId } = request.body;
 
-        const {
-            _id,
-            userId
-        } = request.body;
-
-        if (!_id) {
-            return response.status(400).json({
-                message: "Blog _id required",
-                success: false,
-                error: true
-            });
-        }
-
-        const blog = await BlogModel.findById(_id);
-
-        if (!blog) {
-            return response.status(404).json({
-                message: "Blog not found",
-                success: false,
-                error: true
-            });
-        }
-
-        // ✅ TOGGLE LOGIC
-        blog.isCommentsBlocked = !blog.isCommentsBlocked;
-
-        await blog.save();
-
-        return response.status(200).json({
-            message: blog.isCommentsBlocked ?
-                "Comments blocked successfully" : "Comments unblocked successfully",
-            success: true,
-            error: false,
-            data: blog
-        });
-
-    } catch (error) {
-
-        console.log("deleteNewsTourController error:", error);
-
-        return response.status(500).json({
-            message: "comments blocked/unblocked action failed!" || "Server error",
-            success: false,
-            error: true
-        });
-
+    if (!_id) {
+      return response.status(400).json({
+        message: "Blog _id required",
+        success: false,
+        error: true,
+      });
     }
+
+    const blog = await BlogModel.findById(_id);
+
+    if (!blog) {
+      return response.status(404).json({
+        message: "Blog not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    // ✅ TOGGLE LOGIC
+    blog.isCommentsBlocked = !blog.isCommentsBlocked;
+
+    await blog.save();
+
+    return response.status(200).json({
+      message: blog.isCommentsBlocked
+        ? "Comments blocked successfully"
+        : "Comments unblocked successfully",
+      success: true,
+      error: false,
+      data: blog,
+    });
+  } catch (error) {
+    console.log("deleteNewsTourController error:", error);
+
+    return response.status(500).json({
+      message: "comments blocked/unblocked action failed!" || "Server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // fetch All Blog posts by Country and city
 export const fetchAllBlogs = async (request, response) => {
-    try {
+  try {
+    const { country, city } = request.query;
 
-        const {
-            country,
-            city
-        } = request.query;
-
-        if (!country) {
-            return response.status(400).json({
-                message: "Country is required",
-                success: false,
-                error: true
-            });
-        }
-
-        let query = {
-            status: "active",
-            country: country
-        };
-
-        // ✅ city filter only when provided
-        if (city) {
-            query.city = city;
-        }
-
-        const posts = await BlogModel
-            .find(query)
-            .sort({
-                createdAt: -1
-            })
-            .limit(24)
-            .populate({
-                path: "userId",
-                select: "name avatar"
-            })
-
-        if (!posts.length) {
-            return response.status(404).json({
-                message: "blogs not available",
-                success: false,
-                error: true
-            });
-        }
-
-        return response.status(200).json({
-            message: "Blogs fetched successfully",
-            success: true,
-            error: false,
-            data: posts
-        });
-
-    } catch (error) {
-
-        return response.status(500).json({
-            message: "Somethig wrong while fetching data!" || "Server error",
-            success: false,
-            error: true
-        });
-
+    if (!country) {
+      return response.status(400).json({
+        message: "Country is required",
+        success: false,
+        error: true,
+      });
     }
+
+    let query = {
+      status: "active",
+      country: country,
+    };
+
+    // ✅ city filter only when provided
+    if (city) {
+      query.city = city;
+    }
+
+    const posts = await BlogModel.find(query)
+      .sort({
+        createdAt: -1,
+      })
+      .limit(24)
+      .populate({
+        path: "userId",
+        select: "name avatar",
+      });
+
+    if (!posts.length) {
+      return response.status(404).json({
+        message: "blogs not available",
+        success: false,
+        error: true,
+      });
+    }
+
+    return response.status(200).json({
+      message: "Blogs fetched successfully",
+      success: true,
+      error: false,
+      data: posts,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: "Somethig wrong while fetching data!" || "Server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // fetch selected Blog by post Id
 export const fetchSelectBlog = async (request, response) => {
-    try {
+  try {
+    const { _id } = request.query;
 
-        const {
-            _id
-        } = request.query;
-
-        // check id exist
-        if (!_id) {
-            return response.status(400).json({
-                message: "_id is required",
-                success: false,
-                error: true
-            });
-        }
-
-        const post = await BlogModel
-            .findById(_id)
-            .populate({
-                path: "blogLikes"
-            })
-            .populate({
-                path: "blogComments"
-            })
-            .populate({
-                path: "userId",
-                select: "name avatar"
-            });
-
-        // check blog exist
-        if (!post) {
-            return response.status(404).json({
-                message: "Blog not found",
-                success: false,
-                error: true
-            });
-        }
-
-        return response.status(200).json({
-            message: "Blog fetched successfully",
-            success: true,
-            error: false,
-            data: post
-        });
-
-    } catch (error) {
-
-        console.error("fetchSelectBlog error:", error);
-
-        return response.status(500).json({
-            message: "Something went wrong while fetching data!" || "Server error",
-            success: false,
-            error: true
-        });
+    // check id exist
+    if (!_id) {
+      return response.status(400).json({
+        message: "_id is required",
+        success: false,
+        error: true,
+      });
     }
+
+    const post = await BlogModel.findById(_id)
+      .populate({
+        path: "blogLikes",
+      })
+      .populate({
+        path: "blogComments",
+      })
+      .populate({
+        path: "userId",
+        select: "name avatar",
+      });
+
+    // check blog exist
+    if (!post) {
+      return response.status(404).json({
+        message: "Blog not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    return response.status(200).json({
+      message: "Blog fetched successfully",
+      success: true,
+      error: false,
+      data: post,
+    });
+  } catch (error) {
+    console.error("fetchSelectBlog error:", error);
+
+    return response.status(500).json({
+      message: "Something went wrong while fetching data!" || "Server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // fetch all blogs of escort
 export const fetchEscortBlog = async (request, response) => {
-    try {
-        const {
-            escortId
-        } = request.query;
+  try {
+    const { escortId } = request.query;
 
-        if (!escortId) {
-            return response.status(400).json({
-                message: "EscortId not found",
-                success: false,
-                error: true,
-            });
-        }
-
-        const posts = await BlogModel
-            .find({
-                escortId: escortId,
-                status: "active"
-            })
-            .sort({
-                createdAt: -1
-            })
-            .limit(15)
-            .populate({
-                path: "userId",
-                select: "name avatar"
-            })
-            .populate({
-                path: "blogComments"
-            })
-            .populate({
-                path: "blogLikes"
-            });
-
-        return response.status(200).json({
-            message: "Posts fetched successfully",
-            success: true,
-            error: false,
-            data: posts
-        });
-
-    } catch (error) {
-        return response.status(500).json({
-            message: "Something went wrong while fetching data!" || "Server Error",
-            success: false,
-            error: true
-        })
+    if (!escortId) {
+      return response.status(400).json({
+        message: "EscortId not found",
+        success: false,
+        error: true,
+      });
     }
 
-}
+    const posts = await BlogModel.find({
+      escortId: escortId,
+      status: "active",
+    })
+      .sort({
+        createdAt: -1,
+      })
+      .limit(15)
+      .populate({
+        path: "userId",
+        select: "name avatar",
+      })
+      .populate({
+        path: "blogComments",
+      })
+      .populate({
+        path: "blogLikes",
+      });
+
+    return response.status(200).json({
+      message: "Posts fetched successfully",
+      success: true,
+      error: false,
+      data: posts,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: "Something went wrong while fetching data!" || "Server Error",
+      success: false,
+      error: true,
+    });
+  }
+};
 
 // Toggle Blog Like controller
 export const toggleBlogLike = async (request, response) => {
-    try {
+  try {
+    const { postId, userId } = request.body;
 
-        const {
-            postId,
-            userId
-        } = request.body;
+    console.log("like request body : ", request.body);
 
-        console.log("like request body : ", request.body);
-
-        if (!userId) {
-            return response.status(401).json({
-                message: "User not register",
-                success: false,
-                error: true
-            })
-        }
-
-        const existingLike = await BlogLikesModel.findOne({
-            postId,
-            userId
-        });
-
-        console.log("existingLike : ", existingLike);
-
-        if (existingLike) {
-
-            await BlogLikesModel.deleteOne({
-                _id: existingLike._id
-            });
-
-            await BlogModel.updateOne({
-                _id: postId
-            }, {
-                $pull: {
-                    blogLikes: existingLike._id
-                }
-            });
-
-            return response.status(200).json({
-                message: "Like removed",
-                success: true,
-                error: false
-            });
-
-        }
-
-        const like = await BlogLikesModel.create({
-            postId,
-            userId
-        });
-
-        console.log("Like : ", like);
-
-        await BlogModel.updateOne({
-            _id: postId
-        }, {
-            $push: {
-                blogLikes: like._id
-            }
-        });
-
-        const post = await BlogModel.findById(postId);
-
-        const Client = await ClientModel.findOne({
-            userId
-        });
-
-        if (!post.userId) {
-            console.error("❌ Notification skipped: No Escort found in database.");
-        } else {
-            const load = await createAndSendNotification(request.app, {
-                recipientId: post.userId,
-                recipientModel: "Escort",
-                senderId: Client._id,
-                senderModel: "Client",
-                type: "NEW LIKE",
-                title: "New Like on blog",
-                message: `${Client.name} has Like your blog. Click to view.`,
-                link: `/blog`
-            });
-        }
-
-        response.status(201).json({
-            message: "Post liked",
-            success: true,
-            error: false,
-            like
-        });
-
-    } catch (error) {
-        console.log("like error: ", error);
-
-        response.status(500).json({
-            message: "Something went wrong while post liked!" || "Server error",
-            success: false,
-            error: true
-        });
-
+    if (!userId) {
+      return response.status(401).json({
+        message: "User not register",
+        success: false,
+        error: true,
+      });
     }
+
+    const existingLike = await BlogLikesModel.findOne({
+      postId,
+      userId,
+    });
+
+    console.log("existingLike : ", existingLike);
+
+    if (existingLike) {
+      await BlogLikesModel.deleteOne({
+        _id: existingLike._id,
+      });
+
+      await BlogModel.updateOne(
+        {
+          _id: postId,
+        },
+        {
+          $pull: {
+            blogLikes: existingLike._id,
+          },
+        },
+      );
+
+      return response.status(200).json({
+        message: "Like removed",
+        success: true,
+        error: false,
+      });
+    }
+
+    const like = await BlogLikesModel.create({
+      postId,
+      userId,
+    });
+
+    console.log("Like : ", like);
+
+    await BlogModel.updateOne(
+      {
+        _id: postId,
+      },
+      {
+        $push: {
+          blogLikes: like._id,
+        },
+      },
+    );
+
+    const post = await BlogModel.findById(postId);
+
+    const Client = await ClientModel.findOne({
+      userId,
+    });
+
+    if (!post.userId) {
+      console.error("❌ Notification skipped: No Escort found in database.");
+    } else {
+      const load = await createAndSendNotification(request.app, {
+        recipientId: post.userId,
+        recipientModel: "Escort",
+        senderId: Client._id,
+        senderModel: "Client",
+        type: "NEW LIKE",
+        title: "New Like on blog",
+        message: `${Client.name} has Like your blog. Click to view.`,
+        link: `/blog`,
+      });
+    }
+
+    response.status(201).json({
+      message: "Post liked",
+      success: true,
+      error: false,
+      like,
+    });
+  } catch (error) {
+    console.log("like error: ", error);
+
+    response.status(500).json({
+      message: "Something went wrong while post liked!" || "Server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // add Blog Comments
 export const addBlogComment = async (request, response) => {
-    try {
+  try {
+    const { postId, userId, userType, comment } = request.body;
 
-        const {
-            postId,
-            userId,
-            userType,
-            comment
-        } = request.body;
-
-        if (!userId) {
-            return response.status(401).json({
-                message: "User not register",
-                success: false,
-                error: true
-            });
-        }
-
-        if (!comment && !request.file) {
-            return response.status(402).json({
-                message: "please add comment or media",
-                success: false,
-                error: true
-            });
-        }
-
-        let mediaData = null;
-
-        // ================= MEDIA UPLOAD =================
-        if (request.file) {
-
-            const uploadResult = await uploadMediaCloudinary(
-                request.file,
-                "escort-app/blog/comments"
-            );
-
-            mediaData = {
-                url: uploadResult.secure_url,
-                type: uploadResult.resource_type === "video" ? "video" : "image"
-            };
-        }
-
-        // ================= CREATE COMMENT =================
-        const newComment = await BlogCommentsModel.create({
-            postId,
-            userId,
-            userType,
-            comment,
-            media: mediaData ? [mediaData] : []
-        });
-
-        // ================= UPDATE POST =================
-        await BlogModel.updateOne({
-            _id: postId
-        }, {
-            $push: {
-                blogComments: newComment._id
-            }
-        });
-
-        const post = await BlogModel.findById(postId);
-
-        const Client = await ClientModel.findOne({
-            userId
-        });
-
-        if (!post.userId) {
-            console.error("❌ Notification skipped: No Escort found in database.");
-        } else {
-            const load = await createAndSendNotification(request.app, {
-                recipientId: post.userId,
-                recipientModel: "Escort",
-                senderId: Client._id,
-                senderModel: "Client",
-                type: "NEW COMMENTS",
-                title: "New Comments on blog",
-                message: `${Client.name} has Comments your blog. Click to view.`,
-                link: `/blog`
-            });
-        }
-
-        return response.status(200).json({
-            message: "Comment added",
-            success: true,
-            error: false,
-            comment: newComment
-        });
-
-    } catch (error) {
-
-        return response.status(500).json({
-            message: "Something went wrong while add coments" || "Server error",
-            success: false,
-            error: true
-        });
-
+    if (!userId) {
+      return response.status(401).json({
+        message: "User not register",
+        success: false,
+        error: true,
+      });
     }
+
+    if (!comment && !request.file) {
+      return response.status(402).json({
+        message: "please add comment or media",
+        success: false,
+        error: true,
+      });
+    }
+
+    let mediaData = null;
+
+    // ================= MEDIA UPLOAD =================
+    if (request.file) {
+      const uploadResult = await uploadMediaCloudinary(
+        request.file,
+        "escort-app/blog/comments",
+      );
+
+      mediaData = {
+        url: uploadResult.secure_url,
+        type: uploadResult.resource_type === "video" ? "video" : "image",
+      };
+    }
+
+    // ================= CREATE COMMENT =================
+    const newComment = await BlogCommentsModel.create({
+      postId,
+      userId,
+      userType,
+      comment,
+      media: mediaData ? [mediaData] : [],
+    });
+
+    // ================= UPDATE POST =================
+    await BlogModel.updateOne(
+      {
+        _id: postId,
+      },
+      {
+        $push: {
+          blogComments: newComment._id,
+        },
+      },
+    );
+
+    const post = await BlogModel.findById(postId);
+
+    const Client = await ClientModel.findOne({
+      userId,
+    });
+
+    if (!post.userId) {
+      console.error("❌ Notification skipped: No Escort found in database.");
+    } else {
+      const load = await createAndSendNotification(request.app, {
+        recipientId: post.userId,
+        recipientModel: "Escort",
+        senderId: Client._id,
+        senderModel: "Client",
+        type: "NEW COMMENTS",
+        title: "New Comments on blog",
+        message: `${Client.name} has Comments your blog. Click to view.`,
+        link: `/blog`,
+      });
+    }
+
+    return response.status(200).json({
+      message: "Comment added",
+      success: true,
+      error: false,
+      comment: newComment,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: "Something went wrong while add coments" || "Server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // fetch selected Blog comments
 export const fetchSelectedBlogComments = async (request, response) => {
-    try {
-        const {
-            postId
-        } = request.query;
+  try {
+    const { postId } = request.query;
 
-        if (!postId) {
-            return response.status(400).json({
-                message: "postId required...!",
-                success: false,
-                error: true,
-            });
-        }
-
-        const postComments = await BlogCommentsModel
-            .find({
-                postId: postId
-            })
-            .sort({
-                createdAt: -1
-            })
-            .populate({
-                path: "userId",
-                select: "name avatar"
-            });
-
-        return response.status(200).json({
-            message: "Fetch comments",
-            success: true,
-            error: false,
-            data: postComments
-        });
-
-    } catch (error) {
-        return response.status(500).json({
-            message: "Something went wrong while fetching data!" || "Server error",
-            success: false,
-            error: true,
-        });
+    if (!postId) {
+      return response.status(400).json({
+        message: "postId required...!",
+        success: false,
+        error: true,
+      });
     }
+
+    const postComments = await BlogCommentsModel.find({
+      postId: postId,
+    })
+      .sort({
+        createdAt: -1,
+      })
+      .populate({
+        path: "userId",
+        select: "name avatar",
+      });
+
+    return response.status(200).json({
+      message: "Fetch comments",
+      success: true,
+      error: false,
+      data: postComments,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: "Something went wrong while fetching data!" || "Server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // =======================================================< Add Bookings and Availability >==========================================================================================================
 
 // add booking
 export const addBooking = async (request, response) => {
+  try {
+    const {
+      userId,
+      escortId,
 
-    try {
+      date,
 
-        const {
-            userId,
-            escortId,
+      startTime,
+      endTime,
 
-            date,
+      isAllDay,
+      notAvailable,
 
-            startTime,
-            endTime,
+      status,
+      title,
 
-            isAllDay,
-            notAvailable,
+      type, // booking | availability
 
-            status,
-            title,
+      availabilityMode, // single | multiple | weekly
 
-            type, // booking | availability
+      repeatWeekly,
 
-            availabilityMode, // single | multiple | weekly
+      weekDays = [],
+    } = request.body;
 
-            repeatWeekly,
+    // =========================================
+    // VALIDATION
+    // =========================================
 
-            weekDays = []
-
-        } = request.body;
-
-        // =========================================
-        // VALIDATION
-        // =========================================
-
-        if (!userId || !escortId || !type) {
-
-            return response.status(400).json({
-
-                message: "Required fields missing",
-                success: false,
-                error: true
-
-            });
-
-        }
-
-        // =========================================
-        // DATE VALIDATION
-        // =========================================
-
-        if (
-            (availabilityMode === "single" ||
-                type === "booking") &&
-            !date
-        ) {
-
-            return response.status(400).json({
-
-                message: "Date is required",
-                success: false,
-                error: true
-
-            });
-
-        }
-
-        // =========================================
-        // WEEK DAYS VALIDATION
-        // =========================================
-
-        if (
-            (availabilityMode === "multiple" ||
-                availabilityMode === "weekly") &&
-            weekDays.length === 0
-        ) {
-
-            return response.status(400).json({
-
-                message: "Please select week days",
-                success: false,
-                error: true
-
-            });
-
-        }
-
-        // =========================================
-        // SAME TIME VALIDATION
-        // =========================================
-
-        if (
-            !isAllDay &&
-            !notAvailable &&
-            startTime === endTime
-        ) {
-
-            return response.status(400).json({
-
-                message: "Start and end time cannot be same",
-
-                success: false,
-                error: true
-
-            });
-
-        }
-
-        // =========================================
-        // TIME SETUP
-        // =========================================
-
-        let start = startTime;
-        let end = endTime;
-
-        if (isAllDay || notAvailable) {
-
-            start = "00:00";
-            end = "23:59";
-
-        }
-
-        // =========================================
-        // DAYS MAP
-        // =========================================
-
-        const daysMap = {
-
-            Sunday: 0,
-            Monday: 1,
-            Tuesday: 2,
-            Wednesday: 3,
-            Thursday: 4,
-            Friday: 5,
-            Saturday: 6
-
-        };
-
-        // =========================================
-        // GET NEXT DATE BY DAY
-        // =========================================
-
-        const getNextDateByDay = (targetDay) => {
-
-            const today = new Date();
-
-            const currentDay =
-                today.getDay();
-
-            const targetDayIndex =
-                daysMap[targetDay];
-
-            let diff =
-                targetDayIndex - currentDay;
-
-            // passed day => next week
-            if (diff < 0) {
-
-                diff += 7;
-
-            }
-
-            const nextDate =
-                new Date(today);
-
-            nextDate.setDate(
-                today.getDate() + diff
-            );
-
-            return nextDate
-                .toISOString()
-                .split("T")[0];
-
-        };
-
-        // =========================================
-        // CONFLICT CHECK
-        // =========================================
-
-        const checkConflict = async (
-            selectedDate,
-            start,
-            end,
-            type
-        ) => {
-
-            let startDateTime =
-                new Date(
-                    `${selectedDate}T${start}:00`
-                );
-
-            let endDateTime =
-                new Date(
-                    `${selectedDate}T${end}:00`
-                );
-
-            // =====================================
-            // OVERNIGHT SUPPORT
-            // =====================================
-
-            if (
-                endDateTime <= startDateTime
-            ) {
-
-                endDateTime.setDate(
-                    endDateTime.getDate() + 1
-                );
-
-            }
-
-            // =====================================
-            // GET EXISTING SLOTS
-            // =====================================
-
-            const existingSlots =
-                await BookingModel.find({
-
-                    escortId,
-                    date: selectedDate
-
-                });
-
-            // =====================================
-            // LOOP
-            // =====================================
-
-            for (const slot of existingSlots) {
-
-                let slotStart =
-                    new Date(
-                        `${slot.date}T${slot.startTime}:00`
-                    );
-
-                let slotEnd =
-                    new Date(
-                        `${slot.date}T${slot.endTime}:00`
-                    );
-
-                // overnight existing slot
-                if (
-                    slotEnd <= slotStart
-                ) {
-
-                    slotEnd.setDate(
-                        slotEnd.getDate() + 1
-                    );
-
-                }
-
-                // =================================
-                // OVERLAP CHECK
-                // =================================
-
-                const overlap =
-
-                    startDateTime < slotEnd &&
-                    endDateTime > slotStart;
-
-                if (!overlap) continue;
-
-                // =================================
-                // FULL DAY BLOCK
-                // =================================
-
-                if (
-                    slot.notAvailable
-                ) {
-
-                    return true;
-
-                }
-
-                // =================================
-                // BOOKING RULES
-                // =================================
-
-                if (type === "booking") {
-
-                    // booking vs booking
-                    if (
-                        slot.type === "booking"
-                    ) {
-
-                        return true;
-
-                    }
-
-                    // booking inside availability allowed
-                    if (
-                        slot.type === "availability"
-                    ) {
-
-                        continue;
-
-                    }
-
-                }
-
-                // =================================
-                // AVAILABILITY RULES
-                // =================================
-
-                if (
-                    type === "availability"
-                ) {
-
-                    // availability can NEVER overlap booking
-                    if (
-                        slot.type === "booking"
-                    ) {
-
-                        return true;
-
-                    }
-
-                    // availability overlap availability
-                    if (
-                        slot.type === "availability"
-                    ) {
-
-                        return true;
-
-                    }
-
-                }
-
-            }
-
-            return false;
-
-        };
-
-        // =========================================
-        // CREATE RECORD
-        // =========================================
-
-        const createRecord = async (
-            selectedDate
-        ) => {
-
-            const hasConflict =
-                await checkConflict(
-                    selectedDate,
-                    start,
-                    end,
-                    type
-                );
-
-            if (hasConflict) {
-
-                return null;
-
-            }
-
-            const booking =
-                await BookingModel.create({
-
-                    userId,
-                    escortId,
-
-                    date: selectedDate,
-
-                    startTime: start,
-                    endTime: end,
-
-                    isAllDay,
-                    notAvailable,
-
-                    status: status || "active",
-
-                    title,
-
-                    type,
-
-                    availabilityMode,
-
-                    repeatWeekly,
-
-                    weekDays
-
-                });
-
-            // =====================================
-            // PUSH INTO ESCORT
-            // =====================================
-
-            await EscortModel.findOneAndUpdate(
-
-                {
-                    escortId
-                },
-
-                {
-
-                    $push: {
-                        bookings: booking._id
-                    }
-
-                }
-
-            );
-
-            return booking;
-
-        };
-
-        // =========================================
-        // MAIN LOGIC
-        // =========================================
-
-        let createdRecords = [];
-
-        // =========================================
-        // SINGLE
-        // =========================================
-
-        if (
-            availabilityMode === "single" ||
-            type === "booking"
-        ) {
-
-            const booking =
-                await createRecord(date);
-
-            if (!booking) {
-
-                return response
-                    .status(400)
-                    .json({
-
-                        message: type === "booking" ?
-                            "Time slot already booked" : "Availability conflicts with booking",
-
-                        success: false,
-                        error: true
-
-                    });
-
-            }
-
-            createdRecords.push(
-                booking
-            );
-
-        }
-
-        // =========================================
-        // MULTIPLE
-        // =========================================
-        else if (
-            availabilityMode === "multiple"
-        ) {
-
-            for (const day of weekDays) {
-
-                const calculatedDate =
-                    getNextDateByDay(day);
-
-                const booking =
-                    await createRecord(
-                        calculatedDate
-                    );
-
-                if (booking) {
-
-                    createdRecords.push(
-                        booking
-                    );
-
-                }
-
-            }
-
-        }
-
-        // =========================================
-        // WEEKLY
-        // =========================================
-        else if (
-            availabilityMode === "weekly"
-        ) {
-
-            const today =
-                new Date();
-
-            const currentDay =
-                today.getDay();
-
-            for (const day of weekDays) {
-
-                const dayIndex =
-                    daysMap[day];
-
-                // current week remaining days only
-                if (
-                    dayIndex >= currentDay
-                ) {
-
-                    const calculatedDate =
-                        getNextDateByDay(day);
-
-                    const booking =
-                        await createRecord(
-                            calculatedDate
-                        );
-
-                    if (booking) {
-
-                        createdRecords.push(
-                            booking
-                        );
-
-                    }
-
-                }
-
-            }
-
-        }
-
-        // =========================================
-        // SUCCESS
-        // =========================================
-
-        return response.status(201).json({
-
-            message: type === "booking" ?
-                "Booking added successfully" : "Availability added successfully",
-
-            success: true,
-            error: false,
-
-            totalCreated: createdRecords.length,
-
-            data: createdRecords
-
-        });
-
-    } catch (error) {
-
-        console.log("create booking error", error);
-
-        return response.status(500).json({
-
-            message: "Something went wrong while aad booking" || "Server error",
-            success: false,
-            error: true
-
-        });
-
+    if (!userId || !escortId || !type) {
+      return response.status(400).json({
+        message: "Required fields missing",
+        success: false,
+        error: true,
+      });
     }
 
-};
+    // =========================================
+    // DATE VALIDATION
+    // =========================================
 
+    if ((availabilityMode === "single" || type === "booking") && !date) {
+      return response.status(400).json({
+        message: "Date is required",
+        success: false,
+        error: true,
+      });
+    }
+
+    // =========================================
+    // WEEK DAYS VALIDATION
+    // =========================================
+
+    if (
+      (availabilityMode === "multiple" || availabilityMode === "weekly") &&
+      weekDays.length === 0
+    ) {
+      return response.status(400).json({
+        message: "Please select week days",
+        success: false,
+        error: true,
+      });
+    }
+
+    // =========================================
+    // SAME TIME VALIDATION
+    // =========================================
+
+    if (!isAllDay && !notAvailable && startTime === endTime) {
+      return response.status(400).json({
+        message: "Start and end time cannot be same",
+
+        success: false,
+        error: true,
+      });
+    }
+
+    // =========================================
+    // TIME SETUP
+    // =========================================
+
+    let start = startTime;
+    let end = endTime;
+
+    if (isAllDay || notAvailable) {
+      start = "00:00";
+      end = "23:59";
+    }
+
+    // =========================================
+    // DAYS MAP
+    // =========================================
+
+    const daysMap = {
+      Sunday: 0,
+      Monday: 1,
+      Tuesday: 2,
+      Wednesday: 3,
+      Thursday: 4,
+      Friday: 5,
+      Saturday: 6,
+    };
+
+    // =========================================
+    // GET NEXT DATE BY DAY
+    // =========================================
+
+    const getNextDateByDay = (targetDay) => {
+      const today = new Date();
+
+      const currentDay = today.getDay();
+
+      const targetDayIndex = daysMap[targetDay];
+
+      let diff = targetDayIndex - currentDay;
+
+      // passed day => next week
+      if (diff < 0) {
+        diff += 7;
+      }
+
+      const nextDate = new Date(today);
+
+      nextDate.setDate(today.getDate() + diff);
+
+      return nextDate.toISOString().split("T")[0];
+    };
+
+    // =========================================
+    // CONFLICT CHECK
+    // =========================================
+
+    const checkConflict = async (selectedDate, start, end, type) => {
+      let startDateTime = new Date(`${selectedDate}T${start}:00`);
+
+      let endDateTime = new Date(`${selectedDate}T${end}:00`);
+
+      // =====================================
+      // OVERNIGHT SUPPORT
+      // =====================================
+
+      if (endDateTime <= startDateTime) {
+        endDateTime.setDate(endDateTime.getDate() + 1);
+      }
+
+      // =====================================
+      // GET EXISTING SLOTS
+      // =====================================
+
+      const existingSlots = await BookingModel.find({
+        escortId,
+        date: selectedDate,
+      });
+
+      // =====================================
+      // LOOP
+      // =====================================
+
+      for (const slot of existingSlots) {
+        let slotStart = new Date(`${slot.date}T${slot.startTime}:00`);
+
+        let slotEnd = new Date(`${slot.date}T${slot.endTime}:00`);
+
+        // overnight existing slot
+        if (slotEnd <= slotStart) {
+          slotEnd.setDate(slotEnd.getDate() + 1);
+        }
+
+        // =================================
+        // OVERLAP CHECK
+        // =================================
+
+        const overlap = startDateTime < slotEnd && endDateTime > slotStart;
+
+        if (!overlap) continue;
+
+        // =================================
+        // FULL DAY BLOCK
+        // =================================
+
+        if (slot.notAvailable) {
+          return true;
+        }
+
+        // =================================
+        // BOOKING RULES
+        // =================================
+
+        if (type === "booking") {
+          // booking vs booking
+          if (slot.type === "booking") {
+            return true;
+          }
+
+          // booking inside availability allowed
+          if (slot.type === "availability") {
+            continue;
+          }
+        }
+
+        // =================================
+        // AVAILABILITY RULES
+        // =================================
+
+        if (type === "availability") {
+          // availability can NEVER overlap booking
+          if (slot.type === "booking") {
+            return true;
+          }
+
+          // availability overlap availability
+          if (slot.type === "availability") {
+            return true;
+          }
+        }
+      }
+
+      return false;
+    };
+
+    // =========================================
+    // CREATE RECORD
+    // =========================================
+
+    const createRecord = async (selectedDate) => {
+      const hasConflict = await checkConflict(selectedDate, start, end, type);
+
+      if (hasConflict) {
+        return null;
+      }
+
+      const booking = await BookingModel.create({
+        userId,
+        escortId,
+
+        date: selectedDate,
+
+        startTime: start,
+        endTime: end,
+
+        isAllDay,
+        notAvailable,
+
+        status: status || "active",
+
+        title,
+
+        type,
+
+        availabilityMode,
+
+        repeatWeekly,
+
+        weekDays,
+      });
+
+      // =====================================
+      // PUSH INTO ESCORT
+      // =====================================
+
+      await EscortModel.findOneAndUpdate(
+        {
+          escortId,
+        },
+
+        {
+          $push: {
+            bookings: booking._id,
+          },
+        },
+      );
+
+      return booking;
+    };
+
+    // =========================================
+    // MAIN LOGIC
+    // =========================================
+
+    let createdRecords = [];
+
+    // =========================================
+    // SINGLE
+    // =========================================
+
+    if (availabilityMode === "single" || type === "booking") {
+      const booking = await createRecord(date);
+
+      if (!booking) {
+        return response.status(400).json({
+          message:
+            type === "booking"
+              ? "Time slot already booked"
+              : "Availability conflicts with booking",
+
+          success: false,
+          error: true,
+        });
+      }
+
+      createdRecords.push(booking);
+    }
+
+    // =========================================
+    // MULTIPLE
+    // =========================================
+    else if (availabilityMode === "multiple") {
+      for (const day of weekDays) {
+        const calculatedDate = getNextDateByDay(day);
+
+        const booking = await createRecord(calculatedDate);
+
+        if (booking) {
+          createdRecords.push(booking);
+        }
+      }
+    }
+
+    // =========================================
+    // WEEKLY
+    // =========================================
+    else if (availabilityMode === "weekly") {
+      const today = new Date();
+
+      const currentDay = today.getDay();
+
+      for (const day of weekDays) {
+        const dayIndex = daysMap[day];
+
+        // current week remaining days only
+        if (dayIndex >= currentDay) {
+          const calculatedDate = getNextDateByDay(day);
+
+          const booking = await createRecord(calculatedDate);
+
+          if (booking) {
+            createdRecords.push(booking);
+          }
+        }
+      }
+    }
+
+    // =========================================
+    // SUCCESS
+    // =========================================
+
+    return response.status(201).json({
+      message:
+        type === "booking"
+          ? "Booking added successfully"
+          : "Availability added successfully",
+
+      success: true,
+      error: false,
+
+      totalCreated: createdRecords.length,
+
+      data: createdRecords,
+    });
+  } catch (error) {
+    console.log("create booking error", error);
+
+    return response.status(500).json({
+      message: "Something went wrong while aad booking" || "Server error",
+      success: false,
+      error: true,
+    });
+  }
+};
 
 // fetch booking
 export const fetchBookings = async (request, response) => {
-    try {
+  try {
+    const { escortId, date } = request.query;
 
-        const {
-            escortId,
-            date
-        } = request.query;
-
-        if (!escortId) {
-            return response.status(400).json({
-                message: "escortId is required",
-                success: false,
-                error: true
-            });
-        }
-
-        // ✅ Filter (date optional hai)
-        let query = {
-            escortId
-        };
-
-        if (date) {
-            query.date = date;
-        }
-
-        const bookings = await BookingModel.find(query)
-            .sort({
-                date: 1,
-                startTime: 1
-            });
-
-        return response.status(200).json({
-            message: "Bookings fetched successfully",
-            success: true,
-            error: false,
-            data: bookings
-        });
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || "Server error",
-            success: false,
-            error: true
-        });
+    if (!escortId) {
+      return response.status(400).json({
+        message: "escortId is required",
+        success: false,
+        error: true,
+      });
     }
+
+    // ✅ Filter (date optional hai)
+    let query = {
+      escortId,
+    };
+
+    if (date) {
+      query.date = date;
+    }
+
+    const bookings = await BookingModel.find(query).sort({
+      date: 1,
+      startTime: 1,
+    });
+
+    return response.status(200).json({
+      message: "Bookings fetched successfully",
+      success: true,
+      error: false,
+      data: bookings,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || "Server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
-// update booking 
-export const updateBooking = async (
-    request,
-    response
-) => {
+// update booking
+export const updateBooking = async (request, response) => {
+  try {
+    const {
+      _id,
 
-    try {
+      date,
 
-        const {
+      startTime,
+      endTime,
 
-            _id,
+      isAllDay,
+      notAvailable,
 
-            date,
+      status,
+      title,
 
-            startTime,
-            endTime,
+      type,
 
-            isAllDay,
-            notAvailable,
+      availabilityMode,
 
-            status,
-            title,
+      repeatWeekly,
 
-            type,
+      weekDays = [],
+    } = request.body;
 
-            availabilityMode,
+    // =========================================
+    // VALIDATION
+    // =========================================
 
-            repeatWeekly,
+    if (!_id) {
+      return response.status(400).json({
+        message: "Booking ID is required",
 
-            weekDays = []
-
-        } = request.body;
-
-        // =========================================
-        // VALIDATION
-        // =========================================
-
-        if (!_id) {
-
-            return response.status(400).json({
-
-                message: "Booking ID is required",
-
-                success: false,
-                error: true
-
-            });
-
-        }
-
-        // =========================================
-        // FIND BOOKING
-        // =========================================
-
-        const booking =
-            await BookingModel.findById(_id);
-
-        if (!booking) {
-
-            return response.status(404).json({
-
-                message: "Booking not found",
-
-                success: false,
-                error: true
-
-            });
-
-        }
-
-        // =========================================
-        // DATE VALIDATION
-        // =========================================
-
-        if (
-            (availabilityMode === "single" ||
-                type === "booking") &&
-            !date
-        ) {
-
-            return response.status(400).json({
-
-                message: "Date is required",
-
-                success: false,
-                error: true
-
-            });
-
-        }
-
-        // =========================================
-        // WEEK DAYS VALIDATION
-        // =========================================
-
-        if (
-            (availabilityMode === "multiple" ||
-                availabilityMode === "weekly") &&
-            weekDays.length === 0
-        ) {
-
-            return response.status(400).json({
-
-                message: "Please select week days",
-
-                success: false,
-                error: true
-
-            });
-
-        }
-
-        // =========================================
-        // SAME TIME VALIDATION
-        // =========================================
-
-        if (
-            !isAllDay &&
-            !notAvailable &&
-            startTime === endTime
-        ) {
-
-            return response.status(400).json({
-
-                message: "Start and end time cannot be same",
-
-                success: false,
-                error: true
-
-            });
-
-        }
-
-        // =========================================
-        // TIME SETUP
-        // =========================================
-
-        let start =
-            startTime || booking.startTime;
-
-        let end =
-            endTime || booking.endTime;
-
-        if (
-            isAllDay ||
-            notAvailable
-        ) {
-
-            start = "00:00";
-            end = "23:59";
-
-        }
-
-        // =========================================
-        // DATE SETUP
-        // =========================================
-
-        const selectedDate =
-            date || booking.date;
-
-        // =========================================
-        // CREATE DATE OBJECTS
-        // =========================================
-
-        let startDateTime =
-            new Date(
-                `${selectedDate}T${start}:00`
-            );
-
-        let endDateTime =
-            new Date(
-                `${selectedDate}T${end}:00`
-            );
-
-        // =========================================
-        // OVERNIGHT SUPPORT
-        // =========================================
-
-        if (
-            endDateTime <= startDateTime
-        ) {
-
-            endDateTime.setDate(
-                endDateTime.getDate() + 1
-            );
-
-        }
-
-        // =========================================
-        // GET EXISTING BOOKINGS
-        // =========================================
-
-        const existingSlots =
-            await BookingModel.find({
-
-                escortId: booking.escortId,
-
-                date: selectedDate,
-
-                _id: {
-                    $ne: _id
-                }
-
-            });
-
-        // =========================================
-        // CONFLICT CHECK
-        // =========================================
-
-        for (const slot of existingSlots) {
-
-            let slotStart =
-                new Date(
-                    `${slot.date}T${slot.startTime}:00`
-                );
-
-            let slotEnd =
-                new Date(
-                    `${slot.date}T${slot.endTime}:00`
-                );
-
-            // overnight existing slot
-            if (
-                slotEnd <= slotStart
-            ) {
-
-                slotEnd.setDate(
-                    slotEnd.getDate() + 1
-                );
-
-            }
-
-            // =====================================
-            // OVERLAP CHECK
-            // =====================================
-
-            const overlap =
-
-                startDateTime < slotEnd &&
-                endDateTime > slotStart;
-
-            if (!overlap) continue;
-
-            // =====================================
-            // FULL DAY BLOCK
-            // =====================================
-
-            if (
-                slot.notAvailable
-            ) {
-
-                return response.status(400).json({
-
-                    message: "This date is marked unavailable",
-
-                    success: false,
-                    error: true
-
-                });
-
-            }
-
-            // =====================================
-            // BOOKING RULES
-            // =====================================
-
-            if (
-                type === "booking"
-            ) {
-
-                // booking vs booking
-                if (
-                    slot.type === "booking"
-                ) {
-
-                    return response.status(400).json({
-
-                        message: "Time slot already booked",
-
-                        success: false,
-                        error: true
-
-                    });
-
-                }
-
-                // booking inside availability allowed
-                if (
-                    slot.type === "availability"
-                ) {
-
-                    continue;
-
-                }
-
-            }
-
-            // =====================================
-            // AVAILABILITY RULES
-            // =====================================
-
-            if (
-                type === "availability"
-            ) {
-
-                // availability can NEVER overlap booking
-                if (
-                    slot.type === "booking"
-                ) {
-
-                    return response.status(400).json({
-
-                        message: "Availability conflicts with booking",
-
-                        success: false,
-                        error: true
-
-                    });
-
-                }
-
-                // availability overlap availability
-                if (
-                    slot.type === "availability"
-                ) {
-
-                    return response.status(400).json({
-
-                        message: "Availability already exists in this time slot",
-
-                        success: false,
-                        error: true
-
-                    });
-
-                }
-
-            }
-
-        }
-
-        // =========================================
-        // UPDATE FIELDS
-        // =========================================
-
-        booking.date =
-            selectedDate;
-
-        booking.startTime =
-            start;
-
-        booking.endTime =
-            end;
-
-        booking.isAllDay =
-            isAllDay ??
-            booking.isAllDay;
-
-        booking.notAvailable =
-            notAvailable ??
-            booking.notAvailable;
-
-        booking.status =
-            status ||
-            booking.status;
-
-        booking.title =
-            title || "";
-
-        booking.type =
-            type ||
-            booking.type;
-
-        booking.availabilityMode =
-            availabilityMode ||
-            booking.availabilityMode;
-
-        booking.repeatWeekly =
-            repeatWeekly ??
-            booking.repeatWeekly;
-
-        booking.weekDays =
-            weekDays;
-
-        // =========================================
-        // SAVE
-        // =========================================
-
-        await booking.save();
-
-        // =========================================
-        // SUCCESS
-        // =========================================
-
-        return response.status(200).json({
-
-            message: type === "booking" ?
-                "Booking updated successfully" : "Availability updated successfully",
-
-            success: true,
-            error: false,
-
-            data: booking
-
-        });
-
-    } catch (error) {
-
-        console.log(
-            "update booking error",
-            error
-        );
-
-        return response.status(500).json({
-
-            message: error.message ||
-                "Server error",
-
-            success: false,
-            error: true
-
-        });
-
+        success: false,
+        error: true,
+      });
     }
 
+    // =========================================
+    // FIND BOOKING
+    // =========================================
+
+    const booking = await BookingModel.findById(_id);
+
+    if (!booking) {
+      return response.status(404).json({
+        message: "Booking not found",
+
+        success: false,
+        error: true,
+      });
+    }
+
+    // =========================================
+    // DATE VALIDATION
+    // =========================================
+
+    if ((availabilityMode === "single" || type === "booking") && !date) {
+      return response.status(400).json({
+        message: "Date is required",
+
+        success: false,
+        error: true,
+      });
+    }
+
+    // =========================================
+    // WEEK DAYS VALIDATION
+    // =========================================
+
+    if (
+      (availabilityMode === "multiple" || availabilityMode === "weekly") &&
+      weekDays.length === 0
+    ) {
+      return response.status(400).json({
+        message: "Please select week days",
+
+        success: false,
+        error: true,
+      });
+    }
+
+    // =========================================
+    // SAME TIME VALIDATION
+    // =========================================
+
+    if (!isAllDay && !notAvailable && startTime === endTime) {
+      return response.status(400).json({
+        message: "Start and end time cannot be same",
+
+        success: false,
+        error: true,
+      });
+    }
+
+    // =========================================
+    // TIME SETUP
+    // =========================================
+
+    let start = startTime || booking.startTime;
+
+    let end = endTime || booking.endTime;
+
+    if (isAllDay || notAvailable) {
+      start = "00:00";
+      end = "23:59";
+    }
+
+    // =========================================
+    // DATE SETUP
+    // =========================================
+
+    const selectedDate = date || booking.date;
+
+    // =========================================
+    // CREATE DATE OBJECTS
+    // =========================================
+
+    let startDateTime = new Date(`${selectedDate}T${start}:00`);
+
+    let endDateTime = new Date(`${selectedDate}T${end}:00`);
+
+    // =========================================
+    // OVERNIGHT SUPPORT
+    // =========================================
+
+    if (endDateTime <= startDateTime) {
+      endDateTime.setDate(endDateTime.getDate() + 1);
+    }
+
+    // =========================================
+    // GET EXISTING BOOKINGS
+    // =========================================
+
+    const existingSlots = await BookingModel.find({
+      escortId: booking.escortId,
+
+      date: selectedDate,
+
+      _id: {
+        $ne: _id,
+      },
+    });
+
+    // =========================================
+    // CONFLICT CHECK
+    // =========================================
+
+    for (const slot of existingSlots) {
+      let slotStart = new Date(`${slot.date}T${slot.startTime}:00`);
+
+      let slotEnd = new Date(`${slot.date}T${slot.endTime}:00`);
+
+      // overnight existing slot
+      if (slotEnd <= slotStart) {
+        slotEnd.setDate(slotEnd.getDate() + 1);
+      }
+
+      // =====================================
+      // OVERLAP CHECK
+      // =====================================
+
+      const overlap = startDateTime < slotEnd && endDateTime > slotStart;
+
+      if (!overlap) continue;
+
+      // =====================================
+      // FULL DAY BLOCK
+      // =====================================
+
+      if (slot.notAvailable) {
+        return response.status(400).json({
+          message: "This date is marked unavailable",
+
+          success: false,
+          error: true,
+        });
+      }
+
+      // =====================================
+      // BOOKING RULES
+      // =====================================
+
+      if (type === "booking") {
+        // booking vs booking
+        if (slot.type === "booking") {
+          return response.status(400).json({
+            message: "Time slot already booked",
+
+            success: false,
+            error: true,
+          });
+        }
+
+        // booking inside availability allowed
+        if (slot.type === "availability") {
+          continue;
+        }
+      }
+
+      // =====================================
+      // AVAILABILITY RULES
+      // =====================================
+
+      if (type === "availability") {
+        // availability can NEVER overlap booking
+        if (slot.type === "booking") {
+          return response.status(400).json({
+            message: "Availability conflicts with booking",
+
+            success: false,
+            error: true,
+          });
+        }
+
+        // availability overlap availability
+        if (slot.type === "availability") {
+          return response.status(400).json({
+            message: "Availability already exists in this time slot",
+
+            success: false,
+            error: true,
+          });
+        }
+      }
+    }
+
+    // =========================================
+    // UPDATE FIELDS
+    // =========================================
+
+    booking.date = selectedDate;
+
+    booking.startTime = start;
+
+    booking.endTime = end;
+
+    booking.isAllDay = isAllDay ?? booking.isAllDay;
+
+    booking.notAvailable = notAvailable ?? booking.notAvailable;
+
+    booking.status = status || booking.status;
+
+    booking.title = title || "";
+
+    booking.type = type || booking.type;
+
+    booking.availabilityMode = availabilityMode || booking.availabilityMode;
+
+    booking.repeatWeekly = repeatWeekly ?? booking.repeatWeekly;
+
+    booking.weekDays = weekDays;
+
+    // =========================================
+    // SAVE
+    // =========================================
+
+    await booking.save();
+
+    // =========================================
+    // SUCCESS
+    // =========================================
+
+    return response.status(200).json({
+      message:
+        type === "booking"
+          ? "Booking updated successfully"
+          : "Availability updated successfully",
+
+      success: true,
+      error: false,
+
+      data: booking,
+    });
+  } catch (error) {
+    console.log("update booking error", error);
+
+    return response.status(500).json({
+      message: error.message || "Server error",
+
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // Delete booking
 export const deleteBooking = async (request, response) => {
-    try {
+  try {
+    const { _id } = request.body;
 
-        const {
-            _id
-        } = request.body;
-
-        if (!_id) {
-            return response.status(400).json({
-                message: "Booking ID is required",
-                success: false,
-                error: true
-            });
-        }
-
-        const booking = await BookingModel.findByIdAndDelete(_id);
-
-        if (!booking) {
-            return response.status(404).json({
-                message: "Booking not found",
-                success: false,
-                error: true
-            });
-        }
-
-        return response.status(200).json({
-            message: "Booking deleted successfully",
-            success: true,
-            error: false
-        });
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || "Server error",
-            success: false,
-            error: true
-        });
+    if (!_id) {
+      return response.status(400).json({
+        message: "Booking ID is required",
+        success: false,
+        error: true,
+      });
     }
+
+    const booking = await BookingModel.findByIdAndDelete(_id);
+
+    if (!booking) {
+      return response.status(404).json({
+        message: "Booking not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    return response.status(200).json({
+      message: "Booking deleted successfully",
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || "Server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // fetch select booking details
 export const fetchSelectBooking = async (request, response) => {
-    try {
+  try {
+    const { _id } = request.query;
 
-        const {
-            _id
-        } = request.query;
-
-        if (!_id) {
-            return response.status(400).json({
-                message: "Booking ID is required",
-                success: false,
-                error: true
-            });
-        }
-
-        const booking = await BookingModel.findById(_id);
-
-        if (!booking) {
-            return response.status(404).json({
-                message: "Booking not found",
-                success: false,
-                error: true
-            });
-        }
-
-        return response.status(200).json({
-            message: "Booking fetched successfully",
-            success: true,
-            error: false,
-            data: booking
-        });
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || "Server error",
-            success: false,
-            error: true
-        });
+    if (!_id) {
+      return response.status(400).json({
+        message: "Booking ID is required",
+        success: false,
+        error: true,
+      });
     }
+
+    const booking = await BookingModel.findById(_id);
+
+    if (!booking) {
+      return response.status(404).json({
+        message: "Booking not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    return response.status(200).json({
+      message: "Booking fetched successfully",
+      success: true,
+      error: false,
+      data: booking,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || "Server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // cancel booking / availability
 export const cancelBooking = async (request, response) => {
-    try {
+  try {
+    const { _id } = request.body;
 
-        const {
-            _id
-        } = request.body;
-
-        if (!_id) {
-            return response.status(400).json({
-                message: "Booking ID is required",
-                success: false,
-                error: true
-            });
-        }
-
-        const booking = await BookingModel.findByIdAndUpdate(
-            _id, {
-                status: "cancel"
-            }, {
-                new: true
-            }
-        );
-
-        return response.status(200).json({
-            message: "Booking updated successfully",
-            success: true,
-            error: false,
-            data: booking
-        });
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || "Server error",
-            success: false,
-            error: true
-        });
+    if (!_id) {
+      return response.status(400).json({
+        message: "Booking ID is required",
+        success: false,
+        error: true,
+      });
     }
+
+    const booking = await BookingModel.findByIdAndUpdate(
+      _id,
+      {
+        status: "cancel",
+      },
+      {
+        new: true,
+      },
+    );
+
+    return response.status(200).json({
+      message: "Booking updated successfully",
+      success: true,
+      error: false,
+      data: booking,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || "Server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
-// change status => complete 
+// change status => complete
 export const complteBooking = async (request, response) => {
-    try {
+  try {
+    const { _id } = request.body;
 
-        const {
-            _id
-        } = request.body;
-
-        if (!_id) {
-            return response.status(400).json({
-                message: "Booking ID is required",
-                success: false,
-                error: true
-            });
-        }
-
-        const booking = await BookingModel.findByIdAndUpdate(
-            _id, {
-                status: "completed"
-            }, {
-                new: true
-            }
-        );
-
-        return response.status(200).json({
-            message: "Booking updated successfully",
-            success: true,
-            error: false,
-            data: booking
-        });
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || "Server error",
-            success: false,
-            error: true
-        });
+    if (!_id) {
+      return response.status(400).json({
+        message: "Booking ID is required",
+        success: false,
+        error: true,
+      });
     }
+
+    const booking = await BookingModel.findByIdAndUpdate(
+      _id,
+      {
+        status: "completed",
+      },
+      {
+        new: true,
+      },
+    );
+
+    return response.status(200).json({
+      message: "Booking updated successfully",
+      success: true,
+      error: false,
+      data: booking,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || "Server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // ==========================================< Add , Fetch, update, and delete Tour  >=====================================================================
 
 // add tour
 export const addTour = async (request, response) => {
-    try {
-        const {
-            escortId,
-            userId,
-            city,
-            startDate,
-            endDate,
-            tourNotes
-        } = request.body;
+  try {
+    const { escortId, userId, city, startDate, endDate, tourNotes } =
+      request.body;
 
-        // 🔴 Required validation
-        if (!escortId || !city || !startDate || !endDate) {
-            return response.status(400).json({
-                message: "EscortId, City, Start Date and End Date are required",
-                success: false,
-                error: true
-            });
-        }
-
-        // 🔴 Convert to Date (IMPORTANT)
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-
-        // 🔴 Date validation
-        if (start > end) {
-            return response.status(400).json({
-                message: "Start date cannot be after end date",
-                success: false,
-                error: true
-            });
-        }
-
-        const getTourStatus = (start, end) => {
-            const today = new Date();
-
-            // 🔴 Clone dates (important)
-            const s = new Date(start);
-            const e = new Date(end);
-            const t = new Date(today);
-
-            s.setHours(0, 0, 0, 0);
-            e.setHours(0, 0, 0, 0);
-            t.setHours(0, 0, 0, 0);
-
-            if (s <= t && e >= t) return "ongoing";
-            if (e < t) return "completed";
-            return "upcoming";
-        };
-
-        const status = getTourStatus(start, end);
-
-        // 🔥 Overlapping check (escort-wise)
-        const existingTour = await TourModel.findOne({
-            escortId: escortId,
-            status: {
-                $ne: "cancelled"
-            },
-            $or: [{
-                startDate: {
-                    $lte: end
-                },
-                endDate: {
-                    $gte: start
-                },
-            }, ],
-        });
-
-        if (existingTour) {
-            return response.status(400).json({
-                message: "Tour dates overlap with existing tour",
-                success: false,
-                error: true
-            });
-        }
-
-        // ✅ Create new tour
-        const newTour = new TourModel({
-            escortId,
-            userId,
-            city,
-            startDate: start,
-            endDate: end,
-            tourNotes,
-            status
-        });
-
-        const savedTour = await newTour.save();
-
-        const updatedEscort = await EscortModel.findOneAndUpdate({
-            escortId: escortId
-        }, {
-            $push: {
-                tours: savedTour._id
-            }
-        }, {
-            new: true
-        });
-
-        return response.status(201).json({
-            message: "Tour added successfully",
-            success: true,
-            error: false,
-            data: savedTour,
-        });
-
-    } catch (error) {
-        console.error("Add Tour Error:", error);
-
-        return response.status(500).json({
-            message: "Something went wrong while add tour" || "Internal server error",
-            success: false,
-            error: true,
-        });
+    // 🔴 Required validation
+    if (!escortId || !city || !startDate || !endDate) {
+      return response.status(400).json({
+        message: "EscortId, City, Start Date and End Date are required",
+        success: false,
+        error: true,
+      });
     }
+
+    // 🔴 Convert to Date (IMPORTANT)
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    // 🔴 Date validation
+    if (start > end) {
+      return response.status(400).json({
+        message: "Start date cannot be after end date",
+        success: false,
+        error: true,
+      });
+    }
+
+    const getTourStatus = (start, end) => {
+      const today = new Date();
+
+      // 🔴 Clone dates (important)
+      const s = new Date(start);
+      const e = new Date(end);
+      const t = new Date(today);
+
+      s.setHours(0, 0, 0, 0);
+      e.setHours(0, 0, 0, 0);
+      t.setHours(0, 0, 0, 0);
+
+      if (s <= t && e >= t) return "ongoing";
+      if (e < t) return "completed";
+      return "upcoming";
+    };
+
+    const status = getTourStatus(start, end);
+
+    // 🔥 Overlapping check (escort-wise)
+    const existingTour = await TourModel.findOne({
+      escortId: escortId,
+      status: {
+        $ne: "cancelled",
+      },
+      $or: [
+        {
+          startDate: {
+            $lte: end,
+          },
+          endDate: {
+            $gte: start,
+          },
+        },
+      ],
+    });
+
+    if (existingTour) {
+      return response.status(400).json({
+        message: "Tour dates overlap with existing tour",
+        success: false,
+        error: true,
+      });
+    }
+
+    // ✅ Create new tour
+    const newTour = new TourModel({
+      escortId,
+      userId,
+      city,
+      startDate: start,
+      endDate: end,
+      tourNotes,
+      status,
+    });
+
+    const savedTour = await newTour.save();
+
+    const updatedEscort = await EscortModel.findOneAndUpdate(
+      {
+        escortId: escortId,
+      },
+      {
+        $push: {
+          tours: savedTour._id,
+        },
+      },
+      {
+        new: true,
+      },
+    );
+
+    return response.status(201).json({
+      message: "Tour added successfully",
+      success: true,
+      error: false,
+      data: savedTour,
+    });
+  } catch (error) {
+    console.error("Add Tour Error:", error);
+
+    return response.status(500).json({
+      message: "Something went wrong while add tour" || "Internal server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // fetching tour by date and status
 export const getToursByDate = async (request, response) => {
-    try {
-        const {
-            escortId,
-            startDate,
-            endDate,
-            status
-        } = request.query;
+  try {
+    const { escortId, startDate, endDate, status } = request.query;
 
-        if (!escortId || !startDate || !endDate) {
-            return response.status(400).json({
-                message: "escortId and date are required",
-                success: false,
-                error: true,
-            });
-        }
-
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-
-        let query = {
-            escortId,
-            startDate: {
-                $lte: end
-            },
-            endDate: {
-                $gte: start
-            },
-        };
-
-        if (status && status !== "all") {
-            query.status = status;
-        }
-
-        const tours = await TourModel.find(query);
-
-        return response.status(200).json({
-            message: "Tours fetched for selected date",
-            success: true,
-            error: false,
-            count: tours.length,
-            data: tours,
-        });
-
-    } catch (error) {
-        console.error("Get Tours By Date Error:", error);
-
-        return response.status(500).json({
-            message: "Something went wrong while fetching data " || "Internal server error",
-            success: false,
-            error: true,
-        });
+    if (!escortId || !startDate || !endDate) {
+      return response.status(400).json({
+        message: "escortId and date are required",
+        success: false,
+        error: true,
+      });
     }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    let query = {
+      escortId,
+      startDate: {
+        $lte: end,
+      },
+      endDate: {
+        $gte: start,
+      },
+    };
+
+    if (status && status !== "all") {
+      query.status = status;
+    }
+
+    const tours = await TourModel.find(query);
+
+    return response.status(200).json({
+      message: "Tours fetched for selected date",
+      success: true,
+      error: false,
+      count: tours.length,
+      data: tours,
+    });
+  } catch (error) {
+    console.error("Get Tours By Date Error:", error);
+
+    return response.status(500).json({
+      message:
+        "Something went wrong while fetching data " || "Internal server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // update tour
 export const updateTour = async (request, response) => {
-    try {
-        const {
-            escortId,
-            _id,
-            city,
-            startDate,
-            endDate,
-            tourNotes
-        } = request.body;
+  try {
+    const { escortId, _id, city, startDate, endDate, tourNotes } = request.body;
 
-        // 🔴 Check tourId
-        if (!_id) {
-            return response.status(400).json({
-                message: "TourId is required",
-                success: false,
-                error: true,
-            });
-        }
-
-        // 🔍 Existing tour check
-        const existingTour = await TourModel.findById(_id);
-
-        if (!existingTour) {
-            return response.status(404).json({
-                message: "Tour not found",
-                success: false,
-                error: true,
-            });
-        }
-
-        // 🔴 Convert dates if provided
-        const start = startDate ? new Date(startDate) : existingTour.startDate;
-        const end = endDate ? new Date(endDate) : existingTour.endDate;
-
-        // ❗ Invalid date check
-        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-            return response.status(400).json({
-                message: "Invalid date format",
-                success: false,
-                error: true,
-            });
-        }
-
-        // 🔴 Date validation
-        if (start > end) {
-            return response.status(400).json({
-                message: "Start date cannot be after end date",
-                success: false,
-                error: true,
-            });
-        }
-
-        // 🔥 Overlap check (exclude current tour)
-        const overlapTour = await TourModel.findOne({
-            escortId: escortId || existingTour.escortId,
-            _id: {
-                $ne: _id
-            }, // ❗ exclude current
-            $or: [{
-                startDate: {
-                    $lte: end
-                },
-                endDate: {
-                    $gte: start
-                },
-            }, ],
-        });
-
-        if (overlapTour) {
-            return response.status(400).json({
-                message: "Updated dates overlap with another tour",
-                success: false,
-                error: true,
-            });
-        }
-
-        // ✅ Update fields
-        existingTour.city = city || existingTour.city;
-        existingTour.startDate = start;
-        existingTour.endDate = end;
-        existingTour.tourNotes = tourNotes ?? existingTour.tourNotes;
-        existingTour.escortId = escortId || existingTour.escortId;
-
-        const updatedTour = await existingTour.save();
-
-        return response.status(200).json({
-            message: "Tour updated successfully",
-            success: true,
-            error: false,
-            data: updatedTour,
-        });
-
-    } catch (error) {
-        console.error("Update Tour Error:", error);
-
-        return response.status(500).json({
-            message: "Something went wrong while update tour" || "Internal server error",
-            success: false,
-            error: true,
-        });
+    // 🔴 Check tourId
+    if (!_id) {
+      return response.status(400).json({
+        message: "TourId is required",
+        success: false,
+        error: true,
+      });
     }
+
+    // 🔍 Existing tour check
+    const existingTour = await TourModel.findById(_id);
+
+    if (!existingTour) {
+      return response.status(404).json({
+        message: "Tour not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    // 🔴 Convert dates if provided
+    const start = startDate ? new Date(startDate) : existingTour.startDate;
+    const end = endDate ? new Date(endDate) : existingTour.endDate;
+
+    // ❗ Invalid date check
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return response.status(400).json({
+        message: "Invalid date format",
+        success: false,
+        error: true,
+      });
+    }
+
+    // 🔴 Date validation
+    if (start > end) {
+      return response.status(400).json({
+        message: "Start date cannot be after end date",
+        success: false,
+        error: true,
+      });
+    }
+
+    // 🔥 Overlap check (exclude current tour)
+    const overlapTour = await TourModel.findOne({
+      escortId: escortId || existingTour.escortId,
+      _id: {
+        $ne: _id,
+      }, // ❗ exclude current
+      $or: [
+        {
+          startDate: {
+            $lte: end,
+          },
+          endDate: {
+            $gte: start,
+          },
+        },
+      ],
+    });
+
+    if (overlapTour) {
+      return response.status(400).json({
+        message: "Updated dates overlap with another tour",
+        success: false,
+        error: true,
+      });
+    }
+
+    // ✅ Update fields
+    existingTour.city = city || existingTour.city;
+    existingTour.startDate = start;
+    existingTour.endDate = end;
+    existingTour.tourNotes = tourNotes ?? existingTour.tourNotes;
+    existingTour.escortId = escortId || existingTour.escortId;
+
+    const updatedTour = await existingTour.save();
+
+    return response.status(200).json({
+      message: "Tour updated successfully",
+      success: true,
+      error: false,
+      data: updatedTour,
+    });
+  } catch (error) {
+    console.error("Update Tour Error:", error);
+
+    return response.status(500).json({
+      message:
+        "Something went wrong while update tour" || "Internal server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // delete tour
 export const deleteTour = async (request, response) => {
-    try {
-        const {
-            _id,
-            userId
-        } = request.body;
+  try {
+    const { _id, userId } = request.body;
 
-        // 🔴 Check tourId
-        if (!_id) {
-            return response.status(400).json({
-                message: "TourId is required",
-                success: false,
-                error: true,
-            });
-        }
-
-        // 🔍 Check if tour exists
-        const existingTour = await TourModel.findById(_id);
-
-        if (!existingTour) {
-            return response.status(404).json({
-                message: "Tour not found",
-                success: false,
-                error: true,
-            });
-        }
-
-        // 🔐 Optional: Ownership check (VERY IMPORTANT)
-        if (existingTour.userId.toString() !== userId) {
-            return response.status(403).json({
-                message: "Unauthorized to delete this tour",
-                success: false,
-                error: true,
-            });
-        }
-
-        // ❗ Optional: Prevent delete if active
-        const today = new Date();
-        if (existingTour.startDate <= today && existingTour.endDate >= today) {
-            return response.status(400).json({
-                message: "Cannot delete an ongoing tour",
-                success: false,
-                error: true,
-            });
-        }
-
-        // ✅ Delete
-        await TourModel.findByIdAndDelete(_id);
-
-        return response.status(200).json({
-            message: "Tour deleted successfully",
-            success: true,
-            error: false,
-        });
-
-    } catch (error) {
-        console.error("Delete Tour Error:", error);
-
-        return response.status(500).json({
-            message: "Something went wrong while delete tour" || "Internal server error",
-            success: false,
-            error: true,
-        });
+    // 🔴 Check tourId
+    if (!_id) {
+      return response.status(400).json({
+        message: "TourId is required",
+        success: false,
+        error: true,
+      });
     }
+
+    // 🔍 Check if tour exists
+    const existingTour = await TourModel.findById(_id);
+
+    if (!existingTour) {
+      return response.status(404).json({
+        message: "Tour not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    // 🔐 Optional: Ownership check (VERY IMPORTANT)
+    if (existingTour.userId.toString() !== userId) {
+      return response.status(403).json({
+        message: "Unauthorized to delete this tour",
+        success: false,
+        error: true,
+      });
+    }
+
+    // ❗ Optional: Prevent delete if active
+    const today = new Date();
+    if (existingTour.startDate <= today && existingTour.endDate >= today) {
+      return response.status(400).json({
+        message: "Cannot delete an ongoing tour",
+        success: false,
+        error: true,
+      });
+    }
+
+    // ✅ Delete
+    await TourModel.findByIdAndDelete(_id);
+
+    return response.status(200).json({
+      message: "Tour deleted successfully",
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    console.error("Delete Tour Error:", error);
+
+    return response.status(500).json({
+      message:
+        "Something went wrong while delete tour" || "Internal server error",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // cancel tour
 export const cancelTour = async (request, response) => {
-    try {
-        const {
-            _id,
-            userId
-        } = request.body;
+  try {
+    const { _id, userId } = request.body;
 
-        // 🔴 validation
-        if (!_id) {
-            return response.status(400).json({
-                message: "TourId is required",
-                success: false,
-                error: true,
-            });
-        }
-
-        // 🔍 find tour
-        const existingTour = await TourModel.findById(_id);
-
-        if (!existingTour) {
-            return response.status(404).json({
-                message: "Tour not found",
-                success: false,
-                error: true,
-            });
-        }
-
-        // 🔐 ownership check
-        if (existingTour.userId.toString() !== userId) {
-            return response.status(403).json({
-                message: "Unauthorized to cancel this tour",
-                success: false,
-                error: true,
-            });
-        }
-
-        // ❗ already cancelled check
-        if (existingTour.status === "cancelled") {
-            return response.status(400).json({
-                message: "Tour is already Cancelled",
-                success: false,
-                error: true,
-            });
-        }
-
-        // ✅ update status
-        existingTour.status = "cancelled";
-
-        const updatedTour = await existingTour.save();
-
-        return response.status(200).json({
-            message: "Tour cancelled successfully",
-            success: true,
-            error: false,
-            data: updatedTour,
-        });
-
-    } catch (error) {
-        console.error("Cancel Tour Error:", error);
-
-        return response.status(500).json({
-            message: error.message || "Internal server error",
-            success: false,
-            error: true,
-        });
+    // 🔴 validation
+    if (!_id) {
+      return response.status(400).json({
+        message: "TourId is required",
+        success: false,
+        error: true,
+      });
     }
+
+    // 🔍 find tour
+    const existingTour = await TourModel.findById(_id);
+
+    if (!existingTour) {
+      return response.status(404).json({
+        message: "Tour not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    // 🔐 ownership check
+    if (existingTour.userId.toString() !== userId) {
+      return response.status(403).json({
+        message: "Unauthorized to cancel this tour",
+        success: false,
+        error: true,
+      });
+    }
+
+    // ❗ already cancelled check
+    if (existingTour.status === "cancelled") {
+      return response.status(400).json({
+        message: "Tour is already Cancelled",
+        success: false,
+        error: true,
+      });
+    }
+
+    // ✅ update status
+    existingTour.status = "cancelled";
+
+    const updatedTour = await existingTour.save();
+
+    return response.status(200).json({
+      message: "Tour cancelled successfully",
+      success: true,
+      error: false,
+      data: updatedTour,
+    });
+  } catch (error) {
+    console.error("Cancel Tour Error:", error);
+
+    return response.status(500).json({
+      message: error.message || "Internal server error",
+      success: false,
+      error: true,
+    });
+  }
 };
-
-
 
 // ===========================================< Get Escort Contact >=====================================================
 
 export const getEscortContact = async (request, response) => {
-    try {
-        const {
-            _id,
-            type
-        } = request.body;
+  try {
+    const { _id, type } = request.body;
 
-        const escort = await EscortModel.findById(_id);
+    const escort = await EscortModel.findById(_id);
 
-        if (!escort || !escort.mobile) {
-            return response.status(404).json({
-                message: "Contact not available",
-                success: false,
-                error: true
-            });
-        }
-
-        if (escort.displayContact === false) {
-            return response.status(403).json({
-                message: "This escort has disabled contact access",
-                success: false,
-                error: true
-            });
-        }
-
-        let mobile = escort.mobile;
-        let countryCode = escort.countryCode || "";
-
-        try {
-            if (mobile.startsWith("enc:")) {
-                mobile = decrypt(mobile.replace("enc:", ""));
-            } else {
-                mobile = decrypt(mobile); // fallback
-            }
-        } catch {
-            return response.status(500).json({
-                message: "Invalid mobile data",
-                success: false,
-                error: true
-            });
-        }
-
-        let link = "";
-
-        if (type === "sms") {
-            let mobileNumber = mobile.replace(/\D/g, "");
-
-            mobileNumber = countryCode + mobileNumber;
-
-            link = `sms:+${mobileNumber}`;
-        }
-
-        if (type === "call") {
-            let mobileNumber = mobile.replace(/\D/g, "");
-
-            mobileNumber = countryCode + mobileNumber;
-
-            link = `tel:+${mobileNumber}`;
-        }
-
-
-
-        if (type === "whatsapp") {
-            let mobileNumber = mobile.replace(/\D/g, "");
-
-            // ⚠️ TEMP FIX (default code)
-            mobileNumber = countryCode + mobileNumber;
-
-            link = `https://wa.me/${mobileNumber}`;
-        }
-
-
-        return response.json({
-            message: "fetched success",
-            success: true,
-            error: false,
-            link,
-
-        });
-
-    } catch (error) {
-        console.log("contact click error : ", error);
-        return response.status(500).json({
-            message: "Contact to escort failed!",
-            success: false,
-            error: true
-        });
+    if (!escort || !escort.mobile) {
+      return response.status(404).json({
+        message: "Contact not available",
+        success: false,
+        error: true,
+      });
     }
+
+    if (escort.displayContact === false) {
+      return response.status(403).json({
+        message: "This escort has disabled contact access",
+        success: false,
+        error: true,
+      });
+    }
+
+    let mobile = escort.mobile;
+    let countryCode = escort.countryCode || "";
+
+    try {
+      if (mobile.startsWith("enc:")) {
+        mobile = decrypt(mobile.replace("enc:", ""));
+      } else {
+        mobile = decrypt(mobile); // fallback
+      }
+    } catch {
+      return response.status(500).json({
+        message: "Invalid mobile data",
+        success: false,
+        error: true,
+      });
+    }
+
+    let link = "";
+
+    if (type === "sms") {
+      let mobileNumber = mobile.replace(/\D/g, "");
+
+      mobileNumber = countryCode + mobileNumber;
+
+      link = `sms:+${mobileNumber}`;
+    }
+
+    if (type === "call") {
+      let mobileNumber = mobile.replace(/\D/g, "");
+
+      mobileNumber = countryCode + mobileNumber;
+
+      link = `tel:+${mobileNumber}`;
+    }
+
+    if (type === "whatsapp") {
+      let mobileNumber = mobile.replace(/\D/g, "");
+
+      // ⚠️ TEMP FIX (default code)
+      mobileNumber = countryCode + mobileNumber;
+
+      link = `https://wa.me/${mobileNumber}`;
+    }
+
+    return response.json({
+      message: "fetched success",
+      success: true,
+      error: false,
+      link,
+    });
+  } catch (error) {
+    console.log("contact click error : ", error);
+    return response.status(500).json({
+      message: "Contact to escort failed!",
+      success: false,
+      error: true,
+    });
+  }
 };
 
 // ===========================================================<Escort profile :  update , edit , hide , delete >==========================================================================================
 
-// edit and update escort account details 
+// edit and update escort account details
 export async function updateEscortProfile(request, response) {
-    try {
-        const {
-            _id,
-            name,
-            onlineStatus,
-            contactVisible,
-            muteNotifications
-        } = request.body;
+  try {
+    const { _id, name, onlineStatus, contactVisible, muteNotifications } =
+      request.body;
 
-        if (!_id) {
-            return response.status(400).json({
-                message: "User id required",
-                success: false,
-                error: true
-            });
-        }
-
-        // ✅ only defined fields
-        const updateData = {};
-        if (name !== undefined) updateData.name = name;
-        if (onlineStatus !== undefined) updateData.onlineStatus = onlineStatus;
-        if (contactVisible !== undefined) {
-            updateData.contactVisible = contactVisible;
-            updateData.displayContact = contactVisible;
-        };
-        if (muteNotifications !== undefined) updateData.muteNotifications = muteNotifications;
-
-        const updatedEscort = await EscortModel.findByIdAndUpdate(
-            _id, {
-                $set: updateData
-            }, {
-                new: true,
-                runValidators: true
-            }
-        );
-
-        if (!updatedEscort) {
-            return response.status(404).json({
-                message: "Escort not found",
-                success: false,
-                error: true
-            });
-        }
-
-        return response.status(200).json({
-            message: "Profile updated successfully",
-            success: true,
-            error: false,
-            data: updatedEscort
-        });
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || "Internal server error",
-            error: true,
-            success: false
-        });
+    if (!_id) {
+      return response.status(400).json({
+        message: "User id required",
+        success: false,
+        error: true,
+      });
     }
+
+    // ✅ only defined fields
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (onlineStatus !== undefined) updateData.onlineStatus = onlineStatus;
+    if (contactVisible !== undefined) {
+      updateData.contactVisible = contactVisible;
+      updateData.displayContact = contactVisible;
+    }
+    if (muteNotifications !== undefined)
+      updateData.muteNotifications = muteNotifications;
+
+    const updatedEscort = await EscortModel.findByIdAndUpdate(
+      _id,
+      {
+        $set: updateData,
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
+
+    if (!updatedEscort) {
+      return response.status(404).json({
+        message: "Escort not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    return response.status(200).json({
+      message: "Profile updated successfully",
+      success: true,
+      error: false,
+      data: updatedEscort,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || "Internal server error",
+      error: true,
+      success: false,
+    });
+  }
 }
 
 // Hide un hide escort profile
 export async function hideEscortProfile(request, response) {
-    try {
-        const {
-            _id,
-            isVisible
-        } = request.body;
+  try {
+    const { _id, isVisible } = request.body;
 
-        if (!_id) {
-            return response.status(400).json({
-                message: "User id required",
-                success: false,
-                error: true
-            });
-        }
-
-        const updatedEscort = await EscortModel.findByIdAndUpdate(
-            _id, {
-                $set: {
-                    isVisible: isVisible
-                }
-            }, // ✅ dynamic value
-            {
-                new: true
-            }
-        );
-
-        if (!updatedEscort) {
-            return response.status(404).json({
-                message: "Escort not found",
-                success: false,
-                error: true
-            });
-        }
-
-        return response.status(200).json({
-            message: `Profile ${isVisible ? "visible" : "hidden"} successfully`,
-            success: true,
-            error: false,
-            data: updatedEscort
-        });
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || "Internal server error",
-            error: true,
-            success: false
-        });
+    if (!_id) {
+      return response.status(400).json({
+        message: "User id required",
+        success: false,
+        error: true,
+      });
     }
+
+    const updatedEscort = await EscortModel.findByIdAndUpdate(
+      _id,
+      {
+        $set: {
+          isVisible: isVisible,
+        },
+      }, // ✅ dynamic value
+      {
+        new: true,
+      },
+    );
+
+    if (!updatedEscort) {
+      return response.status(404).json({
+        message: "Escort not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    return response.status(200).json({
+      message: `Profile ${isVisible ? "visible" : "hidden"} successfully`,
+      success: true,
+      error: false,
+      data: updatedEscort,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || "Internal server error",
+      error: true,
+      success: false,
+    });
+  }
 }
 
 //  permanent delete escort profile
 export async function deleteEscortProfile(request, response) {
-    try {
-        const {
-            _id
-        } = request.body;
+  try {
+    const { _id } = request.body;
 
-        if (!_id) {
-            return response.status(400).json({
-                message: "User id required",
-                success: false,
-                error: true
-            });
-        }
-
-        const escort = await EscortModel.findById(_id);
-
-        if (!escort) {
-            return response.status(400).json({
-                message: "User not found",
-                success: false,
-                error: true
-            });
-        }
-
-        // ✅ delete escort
-
-        await BlogModel.deleteMany({
-            userId: _id
-        });
-        await ServiceModel.deleteMany({
-            userId: _id
-        });
-        await RatesModel.deleteMany({
-            userId: _id
-        });
-        await NewsAndTourModel.deleteMany({
-            userId: _id
-        });
-        await TourModel.deleteMany({
-            userId: _id
-        });
-        await BookingModel.deleteMany({
-            userId: _id
-        });
-
-        await NotificationModel.deleteMany({
-            $or: [{
-                    recipient: escort._id,
-                    recipientModel: "Escort"
-                },
-                {
-                    sender: escort._id,
-                    senderModel: "Escort"
-                }
-            ]
-        });
-
-        const deletedEscort = await EscortModel.findByIdAndDelete(_id);
-
-        return response.status(200).json({
-            message: "Escort profile and related data deleted",
-            success: true,
-            error: false
-        });
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || "Internal server error",
-            success: false,
-            error: true
-        });
+    if (!_id) {
+      return response.status(400).json({
+        message: "User id required",
+        success: false,
+        error: true,
+      });
     }
+
+    const escort = await EscortModel.findById(_id);
+
+    if (!escort) {
+      return response.status(400).json({
+        message: "User not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    // ✅ delete escort
+
+    await BlogModel.deleteMany({
+      userId: _id,
+    });
+    await ServiceModel.deleteMany({
+      userId: _id,
+    });
+    await RatesModel.deleteMany({
+      userId: _id,
+    });
+    await NewsAndTourModel.deleteMany({
+      userId: _id,
+    });
+    await TourModel.deleteMany({
+      userId: _id,
+    });
+    await BookingModel.deleteMany({
+      userId: _id,
+    });
+
+    await NotificationModel.deleteMany({
+      $or: [
+        {
+          recipient: escort._id,
+          recipientModel: "Escort",
+        },
+        {
+          sender: escort._id,
+          senderModel: "Escort",
+        },
+      ],
+    });
+
+    const deletedEscort = await EscortModel.findByIdAndDelete(_id);
+
+    return response.status(200).json({
+      message: "Escort profile and related data deleted",
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || "Internal server error",
+      success: false,
+      error: true,
+    });
+  }
 }
 
-//  edit escort profile details 
+//  edit escort profile details
 export async function editEscortProfileDetails(request, response) {
-    try {
-        const {
-            _id,
-            name,
-            landline,
-            website,
-            social,
-            age,
-            height,
-            gender,
-            sexuality,
-            eyeColor,
-            bustSize,
-            hairColor,
-            hairStyle,
-            dressSize,
-            ethnicity,
-            speakingLanguage,
-            preferData,
-            about,
-            country,
-            city,
-            incall,
-            outcall,
-            infmty,
-            rateFrom,
-            additionalCities,
-        } = request.body;
+  try {
+    const {
+      _id,
+      name,
+      landline,
+      website,
+      social,
+      age,
+      height,
+      gender,
+      sexuality,
+      eyeColor,
+      bustSize,
+      hairColor,
+      hairStyle,
+      dressSize,
+      ethnicity,
+      speakingLanguage,
+      preferData,
+      about,
+      country,
+      city,
+      incall,
+      outcall,
+      infmty,
+      rateFrom,
+      additionalCities,
+    } = request.body;
 
-        // ✅ REQUIRED CHECK
-        if (!_id) {
-            return response.status(400).json({
-                message: "User id required",
-                success: false,
-                error: true
-            });
-        }
-
-        // ✅ PREPARE UPDATE OBJECT (ONLY VALID DATA)
-        const updateData = {};
-
-        if (name !== undefined) updateData.name = name;
-        if (landline !== undefined) updateData.landline = landline;
-        if (website !== undefined) updateData.website = website;
-        if (social !== undefined) updateData.social = social;
-
-        if (age !== undefined) updateData.age = Number(age); // 🔥 number safe
-        if (height !== undefined) updateData.height = height;
-
-        if (gender !== undefined) updateData.gender = gender;
-        if (sexuality !== undefined) updateData.sexuality = sexuality;
-
-        if (eyeColor !== undefined) updateData.eyeColor = eyeColor;
-        if (bustSize !== undefined) updateData.bustSize = bustSize;
-
-        if (hairColor !== undefined) updateData.hairColor = hairColor;
-        if (hairStyle !== undefined) updateData.hairStyle = hairStyle;
-
-        if (dressSize !== undefined) updateData.dressSize = dressSize;
-        if (ethnicity !== undefined) updateData.ethnicity = ethnicity;
-
-        if (Array.isArray(speakingLanguage)) updateData.speakingLanguage = speakingLanguage; // 🔥 safe
-        if (Array.isArray(preferData)) updateData.preferData = preferData;
-
-        if (about !== undefined) updateData.about = about;
-
-        if (incall !== undefined) updateData.incall = incall;
-        if (outcall !== undefined) updateData.outcall = outcall;
-        if (infmty !== undefined) updateData.infmty = infmty;
-        if (rateFrom) updateData.rateFrom = rateFrom;
-
-
-        if (country !== undefined) updateData.country = country;
-        if (city !== undefined) updateData.city = city;
-
-        if (Array.isArray(additionalCities)) updateData.additionalCities = additionalCities;
-
-        // ✅ UPDATE USER
-        const updatedEscort = await EscortModel.findByIdAndUpdate(
-            _id, {
-                $set: updateData
-            }, {
-                new: true
-            }
-        );
-
-        if (!updatedEscort) {
-            return response.status(404).json({
-                message: "Escort not found",
-                success: false,
-                error: true
-            });
-        }
-
-        return response.status(200).json({
-            message: "Profile updated successfully",
-            success: true,
-            error: false,
-            data: updatedEscort
-        });
-
-    } catch (error) {
-        return response.status(500).json({
-            message: error.message || "Internal server error",
-            success: false,
-            error: true
-        });
+    // ✅ REQUIRED CHECK
+    if (!_id) {
+      return response.status(400).json({
+        message: "User id required",
+        success: false,
+        error: true,
+      });
     }
+
+    // ✅ PREPARE UPDATE OBJECT (ONLY VALID DATA)
+    const updateData = {};
+
+    if (name !== undefined) updateData.name = name;
+    if (landline !== undefined) updateData.landline = landline;
+    if (website !== undefined) updateData.website = website;
+    if (social !== undefined) updateData.social = social;
+
+    if (age !== undefined) updateData.age = Number(age); // 🔥 number safe
+    if (height !== undefined) updateData.height = height;
+
+    if (gender !== undefined) updateData.gender = gender;
+    if (sexuality !== undefined) updateData.sexuality = sexuality;
+
+    if (eyeColor !== undefined) updateData.eyeColor = eyeColor;
+    // Bust Size logic
+    if (gender === "Male") {
+      updateData.bustSize = null;
+    } else if (bustSize !== undefined) {
+      updateData.bustSize = bustSize;
+    }
+    if (hairColor !== undefined) updateData.hairColor = hairColor;
+    if (hairStyle !== undefined) updateData.hairStyle = hairStyle;
+
+    if (dressSize !== undefined) updateData.dressSize = dressSize;
+    if (ethnicity !== undefined) updateData.ethnicity = ethnicity;
+
+    if (Array.isArray(speakingLanguage))
+      updateData.speakingLanguage = speakingLanguage; // 🔥 safe
+    if (Array.isArray(preferData)) updateData.preferData = preferData;
+
+    if (about !== undefined) updateData.about = about;
+
+    if (incall !== undefined) updateData.incall = incall;
+    if (outcall !== undefined) updateData.outcall = outcall;
+    if (infmty !== undefined) updateData.infmty = infmty;
+    if (rateFrom) updateData.rateFrom = rateFrom;
+
+    if (country !== undefined) updateData.country = country;
+    if (city !== undefined) updateData.city = city;
+
+    if (Array.isArray(additionalCities))
+      updateData.additionalCities = additionalCities;
+
+    // ✅ UPDATE USER
+    const updatedEscort = await EscortModel.findByIdAndUpdate(
+      _id,
+      {
+        $set: updateData,
+      },
+      {
+        new: true,
+      },
+    );
+
+    if (!updatedEscort) {
+      return response.status(404).json({
+        message: "Escort not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    return response.status(200).json({
+      message: "Profile updated successfully",
+      success: true,
+      error: false,
+      data: updatedEscort,
+    });
+  } catch (error) {
+    return response.status(500).json({
+      message: error.message || "Internal server error",
+      success: false,
+      error: true,
+    });
+  }
 }
