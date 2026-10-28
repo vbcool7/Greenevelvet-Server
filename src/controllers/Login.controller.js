@@ -216,7 +216,6 @@ export async function loginUsercontroller(request, response) {
         }
 
 
-
         const payload = {
             userId: role === "Escort" ? user.escortId : user.clientId,
             role: role,
@@ -227,7 +226,7 @@ export async function loginUsercontroller(request, response) {
         const token = jwt.sign(
             payload,
             process.env.JWT_SECRET, {
-                expiresIn: "1m"
+                expiresIn: "3d"
             }
         );
 
