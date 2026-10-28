@@ -226,7 +226,7 @@ export async function loginUsercontroller(request, response) {
         const token = jwt.sign(
             payload,
             process.env.JWT_SECRET, {
-                expiresIn: "3d"
+                expiresIn: "1d"
             }
         );
 

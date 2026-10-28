@@ -18,6 +18,8 @@ import {
     encrypt
 } from "../utils/crypto.js";
 
+import ReviewModel from '../models/reviewModel.js'
+
 // client register controll
 export async function registerClientcontroller(request, response) {
     try {
@@ -360,44 +362,61 @@ export async function logoutClientcontroller(request, response) {
 // fetch client details
 export async function fetchClientcontroller(request, response) {
     try {
-        const {
-            clientId
-        } = request.query;
+        const { clientId } = request.query;
 
         if (!clientId) {
             return response.status(400).json({
                 message: "provide clientId",
                 success: false,
                 error: true
-            })
+            });
         }
 
         const clientDetails = await ClientModel.findOne({
             clientId
-        }).select("-password");
+        })
+            .select("-password")
+            .lean();
 
-        if (clientDetails.length === 0) {
-            return response.status(400).json({
-                message: "client not found",
+        if (!clientDetails) {
+            return response.status(404).json({
+                message: "Client not found",
                 success: false,
                 error: true
-            })
+            });
         }
 
+        // Total reviews given by this client
+        const totalGivenReviews = await ReviewModel.countDocuments({
+            clientId: clientDetails._id
+        });
+
+        // Total favorites
+        const totalFavorites = clientDetails.favorites?.length || 0;
+
+        // Total bookings stored in client's bookings array
+        const totalBookings = clientDetails.bookings?.length || 0;
 
         return response.status(200).json({
-            message: "fetched success",
+            message: "Client details fetched successfully",
             success: true,
             error: false,
-            data: clientDetails
-        })
+            data: {
+                ...clientDetails,
+                totalFavorites,
+                totalGivenReviews,
+                totalBookings
+            }
+        });
 
     } catch (error) {
+        console.error("Fetch Client Error:", error);
+
         return response.status(500).json({
-            message: error.message || error,
+            message: error.message || "Internal server error",
             success: false,
             error: true
-        })
+        });
     }
 }
 
