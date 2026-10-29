@@ -557,6 +557,17 @@ const EscortSchema = new mongoose.Schema(
             type: String,
             default: "",
           },
+          likesCount: {
+            type: Number,
+            default: 0,
+            min: 0,
+          },
+
+          dislikesCount: {
+            type: Number,
+            default: 0,
+            min: 0,
+          },
         },
       ],
       videos: [

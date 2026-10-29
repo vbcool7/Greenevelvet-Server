@@ -20,6 +20,7 @@ import chatRouter from "./routes/chatRoutes.js";
 import prioritySupportRouter from "./routes/prioritySupport.route.js";
 import reviewRouter from "./routes/review.route.js";
 import storyRouter from "./routes/story.route.js";
+import imageVoteRouter from "./routes/imageVote.route.js";
 
 const app = express();
 
@@ -82,6 +83,8 @@ app.use('/chat', chatRouter);
 app.use('/support', prioritySupportRouter);
 app.use('/review', reviewRouter);
 app.use('/story', storyRouter);
+app.use('/poll', imageVoteRouter);
+
 
 
 /* Global Error Handler */

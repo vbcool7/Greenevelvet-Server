@@ -122,7 +122,7 @@ const ClientSchema = new mongoose.Schema({
 
     /* ================= RELATIONS (REFERENCES) ================= */
     favorites: [{
-        type: mongoose.Schema.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: "Escort"
     }],
     bookings: [{
@@ -175,10 +175,7 @@ const ClientSchema = new mongoose.Schema({
         default: 0,
         min: 0 // Balance negative mein nahi jana chahiye
     },
-    favorites: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Escort'
-    }],
+   
     recentViews: [{
         escortId: {
             type: mongoose.Schema.Types.ObjectId,
