@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 import EscortModel from "../models/escortModel.js";
 import ImageVoteModel from "../models/ImageVoteModel.js";
 
-
 export const voteOnEscortImage = async (req, res) => {
   const session = await mongoose.startSession();
 
