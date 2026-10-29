@@ -2,6 +2,9 @@ import mongoose from "mongoose";
 import EscortModel from "../models/escortModel.js";
 import ImageVoteModel from "../models/imageVoteModel.js";
 
+
+// add vote on escort image
+
 export const voteOnEscortImage = async (req, res) => {
   const session = await mongoose.startSession();
 
@@ -166,5 +169,48 @@ export const voteOnEscortImage = async (req, res) => {
     });
   } finally {
     await session.endSession();
+  }
+};
+
+
+
+// fetch client's vote on escort image
+
+export const getMyImageVotes = async (req, res) => {
+  try {
+    const { escortId } = req.params;
+    const clientId = req.user._id;
+
+    if (!mongoose.isValidObjectId(escortId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid escort ID.",
+      });
+    }
+
+    const votes = await ImageVoteModel.find({
+      clientId,
+      escortId,
+    })
+      .select("imageId voteType -_id")
+      .lean();
+
+    const myVotes = {};
+
+    votes.forEach((vote) => {
+      myVotes[String(vote.imageId)] = vote.voteType;
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: { myVotes },
+    });
+  } catch (error) {
+    console.error("getMyImageVotes error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch your image votes.",
+    });
   }
 };

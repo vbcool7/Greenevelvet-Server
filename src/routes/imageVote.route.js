@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { voteOnEscortImage } from "../controllers/imageVote.controller.js";
+import { getMyImageVotes, voteOnEscortImage } from "../controllers/imageVote.controller.js";
 import { protect } from "../middleware/auth.js";
 
 const imageVoteRouter = Router();
@@ -11,4 +11,9 @@ imageVoteRouter.post(
   voteOnEscortImage,
 );
 
+imageVoteRouter.get(
+  "/:escortId/photos/my-votes",
+  protect(["Client"]),
+  getMyImageVotes,
+);
 export default imageVoteRouter;
