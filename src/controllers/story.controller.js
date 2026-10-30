@@ -323,7 +323,7 @@ export const fetchEscortStories = async (req, res) => {
         $gt: now,
       },
     })
-      .select("_id escortId mediaType mediaUrl caption createdAt expiresAt")
+      .select("_id escortId mediaType mediaUrl caption createdAt expiresAt likeCount totalViews")
       .sort({
         createdAt: 1,
       })
