@@ -520,10 +520,48 @@ export const getStoryViewers = async (req, res) => {
       });
     }
 
-    const viewers = await StoryViewModel.find({ storyId })
-      .populate("clientId", "name avatar")
+    const { role = "All" } = req.query;
+
+    // Validate role filter
+    if (!["All", "Client", "Escort"].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        error: true,
+        message: "Invalid viewer role.",
+      });
+    }
+
+    const filter = { storyId };
+
+    if (role !== "All") {
+      filter.viewerRole = role;
+    }
+
+    const viewerRecords = await StoryViewModel.find(filter)
       .sort({ createdAt: -1 })
       .lean();
+
+    // Fetch profile details according to viewerRole
+    const viewers = await Promise.all(
+      viewerRecords.map(async (view) => {
+        let profile = null;
+
+        if (view.viewerRole === "Client") {
+          profile = await ClientModel.findById(view.clientId)
+            .select("name avatar")
+            .lean();
+        } else if (view.viewerRole === "Escort") {
+          profile = await EscortModel.findById(view.clientId)
+            .select("name avatar")
+            .lean();
+        }
+
+        return {
+          ...view,
+          viewer: profile,
+        };
+      }),
+    );
 
     return res.status(200).json({
       success: true,
