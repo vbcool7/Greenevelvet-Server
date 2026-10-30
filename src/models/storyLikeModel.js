@@ -19,6 +19,11 @@ const storyLikeSchema = new mongoose.Schema(
       ref: "Client",
       required: true,
     },
+    viewerRole: {
+      type: String,
+      enum: ["Client", "Escort"],
+      required: true,
+    },
 
     expiresAt: {
       type: Date,
@@ -31,7 +36,7 @@ const storyLikeSchema = new mongoose.Schema(
 );
 
 // One client can like a story only once
-storyLikeSchema.index({ storyId: 1, clientId: 1 }, { unique: true });
+storyLikeSchema.index({ storyId: 1, clientId: 1, viewerRole: 1 }, { unique: true });
 
 // Automatically delete expired story likes
 storyLikeSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });

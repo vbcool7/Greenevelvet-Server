@@ -19,6 +19,11 @@ const storyViewSchema = new mongoose.Schema(
       ref: "Client",
       required: true,
     },
+    viewerRole: {
+      type: String,
+      enum: ["Client", "Escort"],
+      required: true,
+    },
   },
   {
     timestamps: true,
@@ -26,7 +31,7 @@ const storyViewSchema = new mongoose.Schema(
 );
 
 // One client can view one story only once
-storyViewSchema.index({ storyId: 1, clientId: 1 }, { unique: true });
+storyViewSchema.index({ storyId: 1, clientId: 1, viewerRole: 1 }, { unique: true });
 
 const StoryViewModel = mongoose.model("StoryView", storyViewSchema);
 

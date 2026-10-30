@@ -420,21 +420,32 @@ export const deleteStory = async (req, res) => {
 export const addStoryView = async (req, res) => {
   try {
     const { storyId } = req.body;
-    const clientId = req.user?._id;
 
-    if (!storyId) {
-      return res.status(400).json({
+    const viewerId = req.user._id;
+    const viewerRole = req.user.role;
+
+    if (!["Client", "Escort"].includes(viewerRole)) {
+      return res.status(403).json({
         success: false,
         error: true,
-        message: "Story ID is required.",
+        message: "You are not allowed to view stories.",
       });
     }
 
-    // Check story exists and is active
+    if (!mongoose.Types.ObjectId.isValid(storyId)) {
+      return res.status(400).json({
+        success: false,
+        error: true,
+        message: "Invalid story ID.",
+      });
+    }
+
+    const now = new Date();
+
     const story = await StoryModel.findOne({
       _id: storyId,
       status: "active",
-      expiresAt: { $gt: new Date() },
+      expiresAt: { $gt: now },
     });
 
     if (!story) {
@@ -445,14 +456,30 @@ export const addStoryView = async (req, res) => {
       });
     }
 
-    // Save view only once per client per story
+    // Do not save own story view
+    if (
+      viewerRole === "Escort" &&
+      String(story.escortId) === String(viewerId)
+    ) {
+      return res.status(200).json({
+        success: true,
+        error: false,
+        message: "Own story view is not counted.",
+      });
+    }
+
     await StoryViewModel.updateOne(
-      { storyId, clientId },
+      {
+        storyId: story._id,
+        clientId: viewerId,
+        viewerRole,
+      },
       {
         $setOnInsert: {
-          storyId,
+          storyId: story._id,
           escortId: story.escortId,
-          clientId,
+          clientId: viewerId,
+          viewerRole,
         },
       },
       { upsert: true },
@@ -461,7 +488,7 @@ export const addStoryView = async (req, res) => {
     return res.status(200).json({
       success: true,
       error: false,
-      message: "Story view recorded successfully.",
+      message: "Story view saved successfully.",
     });
   } catch (error) {
     console.error("Add story view error:", error);
@@ -469,7 +496,7 @@ export const addStoryView = async (req, res) => {
     return res.status(500).json({
       success: false,
       error: true,
-      message: "Failed to record story view.",
+      message: "Failed to save story view.",
     });
   }
 };
