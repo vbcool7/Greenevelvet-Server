@@ -417,6 +417,7 @@ export const deleteStory = async (req, res) => {
 
 // ------------------------[ Story Views ]------------------------------//
 
+
 export const addStoryView = async (req, res) => {
   try {
     const { storyId } = req.body;
@@ -456,7 +457,7 @@ export const addStoryView = async (req, res) => {
       });
     }
 
-    // Do not save own story view
+    // Do not count own story view
     if (
       viewerRole === "Escort" &&
       String(story.escortId) === String(viewerId)
@@ -465,10 +466,14 @@ export const addStoryView = async (req, res) => {
         success: true,
         error: false,
         message: "Own story view is not counted.",
+        data: {
+          totalViews: story.totalViews || 0,
+        },
       });
     }
 
-    await StoryViewModel.updateOne(
+    // Save view only if this user has not viewed this story before
+    const result = await StoryViewModel.updateOne(
       {
         storyId: story._id,
         clientId: viewerId,
@@ -485,10 +490,26 @@ export const addStoryView = async (req, res) => {
       { upsert: true },
     );
 
+    let updatedStory = story;
+
+    // Increment totalViews only for a newly inserted view
+    if (result.upsertedCount > 0) {
+      updatedStory = await StoryModel.findByIdAndUpdate(
+        story._id,
+        {
+          $inc: { totalViews: 1 },
+        },
+        { new: true },
+      );
+    }
+
     return res.status(200).json({
       success: true,
       error: false,
       message: "Story view saved successfully.",
+      data: {
+        totalViews: updatedStory?.totalViews || 0,
+      },
     });
   } catch (error) {
     console.error("Add story view error:", error);
@@ -608,6 +629,178 @@ export const getMyViewedStories = async (req, res) => {
       success: false,
       error: true,
       message: "Failed to fetch viewed stories.",
+    });
+  }
+};
+
+// ------------------------[ Story Like ]------------------------------//
+
+export const toggleStoryLike = async (req, res) => {
+  try {
+    const { storyId } = req.body;
+    const userId = req.user._id;
+    const viewerRole = req.user.role;
+
+    if (!["Client", "Escort"].includes(viewerRole)) {
+      return res.status(403).json({
+        success: false,
+        error: true,
+        message: "You are not allowed to like stories.",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(storyId)) {
+      return res.status(400).json({
+        success: false,
+        error: true,
+        message: "Invalid story ID.",
+      });
+    }
+
+    const story = await StoryModel.findOne({
+      _id: storyId,
+      status: "active",
+      expiresAt: { $gt: new Date() },
+    });
+
+    if (!story) {
+      return res.status(404).json({
+        success: false,
+        error: true,
+        message: "Story not found or expired.",
+      });
+    }
+
+    if (viewerRole === "Escort" && String(story.escortId) === String(userId)) {
+      return res.status(403).json({
+        success: false,
+        error: true,
+        message: "You cannot like your own story.",
+      });
+    }
+
+    const existingLike = await StoryLikeModel.findOne({
+      storyId,
+      clientId: userId,
+      viewerRole,
+    });
+
+    let isLiked;
+    let updatedStory;
+
+    if (existingLike) {
+      await StoryLikeModel.deleteOne({
+        _id: existingLike._id,
+      });
+
+      updatedStory = await StoryModel.findOneAndUpdate(
+        {
+          _id: storyId,
+          likeCount: { $gt: 0 },
+        },
+        {
+          $inc: { likeCount: -1 },
+        },
+        { new: true },
+      );
+
+      isLiked = false;
+    } else {
+      await StoryLikeModel.create({
+        storyId,
+        escortId: story.escortId,
+        clientId: userId,
+        viewerRole,
+        expiresAt: story.expiresAt,
+      });
+
+      updatedStory = await StoryModel.findByIdAndUpdate(
+        storyId,
+        {
+          $inc: { likeCount: 1 },
+        },
+        { new: true },
+      );
+
+      isLiked = true;
+    }
+
+    return res.status(200).json({
+      success: true,
+      error: false,
+      message: isLiked ? "Story liked." : "Story unliked.",
+      data: {
+        isLiked,
+        totalLikes: updatedStory?.likeCount ?? 0,
+      },
+    });
+  } catch (error) {
+    console.error("Toggle story like error:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: true,
+      message: "Failed to update story like.",
+    });
+  }
+};
+
+export const getStoryLikes = async (req, res) => {
+  try {
+    const { storyId } = req.params;
+    const userId = req.user._id;
+    const viewerRole = req.user.role;
+
+    if (!["Client", "Escort"].includes(viewerRole)) {
+      return res.status(403).json({
+        success: false,
+        error: true,
+        message: "You are not allowed to view story likes.",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(storyId)) {
+      return res.status(400).json({
+        success: false,
+        error: true,
+        message: "Invalid story ID.",
+      });
+    }
+
+    const story = await StoryModel.findOne({
+      _id: storyId,
+      status: "active",
+      expiresAt: { $gt: new Date() },
+    }).select("_id");
+
+    if (!story) {
+      return res.status(404).json({
+        success: false,
+        error: true,
+        message: "Story not found or expired.",
+      });
+    }
+
+    const existingLike = await StoryLikeModel.exists({
+      storyId,
+      clientId: userId,
+      viewerRole,
+    });
+
+    return res.status(200).json({
+      success: true,
+      error: false,
+      data: {
+        isLiked: Boolean(existingLike),
+      },
+    });
+  } catch (error) {
+    console.error("Get story likes error:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: true,
+      message: "Failed to fetch story likes.",
     });
   }
 };

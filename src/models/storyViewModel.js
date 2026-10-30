@@ -16,9 +16,9 @@ const storyViewSchema = new mongoose.Schema(
 
     clientId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Client",
       required: true,
     },
+    
     viewerRole: {
       type: String,
       enum: ["Client", "Escort"],

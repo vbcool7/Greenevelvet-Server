@@ -8,6 +8,7 @@ import {
   fetchStoryEscorts,
   getMyViewedStories,
   getStoryViewers,
+  toggleStoryLike,
 } from "../controllers/story.controller.js";
 import upload from "../middleware/multer.js";
 
@@ -29,8 +30,23 @@ storyRouter.delete("/delete-story/:storyId", protect(["Escort"]), deleteStory);
 
 storyRouter.post("/add-view", protect(["Client", "Escort"]), addStoryView);
 storyRouter.get("/viewers/:storyId", protect(["Escort"]), getStoryViewers);
-storyRouter.get("/my-viewed-stories", protect(["Client", "Escort"]), getMyViewedStories);
+storyRouter.get(
+  "/my-viewed-stories",
+  protect(["Client", "Escort"]),
+  getMyViewedStories,
+);
 
 //------------------ Story like rotes-------------//
+storyRouter.post(
+  "/toggle-like",
+  protect(["Client", "Escort"]),
+  toggleStoryLike,
+);
+
+storyRouter.get(
+  "/my-liked-stories/:storyId",
+  protect(["Client", "Escort"]),
+  getMyViewedStories,
+);
 
 export default storyRouter;
