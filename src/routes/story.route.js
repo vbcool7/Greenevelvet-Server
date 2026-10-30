@@ -27,7 +27,7 @@ storyRouter.delete("/delete-story/:storyId", protect(["Escort"]), deleteStory);
 
 //------------------ Story view rotes-------------//
 
-storyRouter.post("/view", protect(["Client", "Escort"]), addStoryView);
+storyRouter.post("/add-view", protect(["Client", "Escort"]), addStoryView);
 storyRouter.get("/viewers/:storyId", protect(["Escort"]), getStoryViewers);
 storyRouter.get("/my-viewed-stories", protect(["Client", "Escort"]), getMyViewedStories);
 
