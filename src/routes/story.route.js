@@ -7,6 +7,7 @@ import {
   fetchEscortStories,
   fetchStoryEscorts,
   getMyViewedStories,
+  getStoryLikes,
   getStoryViewers,
   toggleStoryLike,
 } from "../controllers/story.controller.js";
@@ -46,7 +47,7 @@ storyRouter.post(
 storyRouter.get(
   "/my-liked-stories/:storyId",
   protect(["Client", "Escort"]),
-  getMyViewedStories,
+  getStoryLikes,
 );
 
 export default storyRouter;
