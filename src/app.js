@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import escortRouter from "./routes/escort.route.js";
-import clientRouter from "./routes/client.route.js"
+import clientRouter from "./routes/client.route.js";
 import adminRouter from "./routes/admin.route.js";
 import loginRouter from "./routes/login.route.js";
 import geoRouter from "./routes/geo.route.js";
@@ -21,79 +21,83 @@ import prioritySupportRouter from "./routes/prioritySupport.route.js";
 import reviewRouter from "./routes/review.route.js";
 import storyRouter from "./routes/story.route.js";
 import imageVoteRouter from "./routes/imageVote.route.js";
+import partnerApplicationRouter from "./routes/partnerApplication.route.js";
+import bannerRouter from "./routes/banner.route.js";
 
 const app = express();
 
-app.use(cors({
+app.use(
+  cors({
     credentials: true,
     origin: [
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "https://admin.greenevelvet.com",
-        "https://greenevelvet.com",
-        "https://www.greenevelvet.com",
-    ]
-}))
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "https://admin.greenevelvet.com",
+      "https://greenevelvet.com",
+      "https://www.greenevelvet.com",
+    ],
+  }),
+);
 
-
-
-app.use(express.json())
-app.use(express.urlencoded({
-    extended: true
-}));
+app.use(express.json());
+app.use(
+  express.urlencoded({
+    extended: true,
+  }),
+);
 
 app.use(cookieParser());
 
 /* Health Check */
 app.get("/", (req, res) => {
-    res.status(200).json({
-        status: "OK",
-        success: true,
-        message: "API is running successfully"
-    });
+  res.status(200).json({
+    status: "OK",
+    success: true,
+    message: "API is running successfully",
+  });
 });
 
 app.get("/health", (req, res) => {
-    res.status(200).json({
-        status: "OK",
-        success: true,
-        message: "Server is running"
-    });
+  res.status(200).json({
+    status: "OK",
+    success: true,
+    message: "Server is running",
+  });
 });
 
 app.set("trust proxy", true);
 
 /* Routes */
-app.use('/dashboard', dashboardRouter);
-app.use('/geo', geoRouter);
-app.use('/admin', adminRouter);
-app.use('/escort', escortRouter);
-app.use('/client', clientRouter);
-app.use('/user', loginRouter);
-app.use('/visit', visitRouter);
-app.use('/cms', cmsRouter);
-app.use('/subscription', subscriptionRouter);
-app.use('/contact', contactRouter);
-app.use('/settings', settingsRouter);
-app.use('/nowpayments', subcribedRouter);
-app.use('/uglymugs', uglymugsRouter);
-app.use('/extra', extraRouter);
-app.use('/notification', notificationRouter);
-app.use('/chat', chatRouter);
-app.use('/support', prioritySupportRouter);
-app.use('/review', reviewRouter);
-app.use('/story', storyRouter);
-app.use('/poll', imageVoteRouter);
-
-
+app.use("/dashboard", dashboardRouter);
+app.use("/geo", geoRouter);
+app.use("/admin", adminRouter);
+app.use("/escort", escortRouter);
+app.use("/client", clientRouter);
+app.use("/user", loginRouter);
+app.use("/visit", visitRouter);
+app.use("/cms", cmsRouter);
+app.use("/subscription", subscriptionRouter);
+app.use("/contact", contactRouter);
+app.use("/settings", settingsRouter);
+app.use("/nowpayments", subcribedRouter);
+app.use("/uglymugs", uglymugsRouter);
+app.use("/extra", extraRouter);
+app.use("/notification", notificationRouter);
+app.use("/chat", chatRouter);
+app.use("/support", prioritySupportRouter);
+app.use("/review", reviewRouter);
+app.use("/story", storyRouter);
+app.use("/poll", imageVoteRouter);
+app.use("/partner", partnerApplicationRouter);
+app.use("/banner", bannerRouter);
 
 /* Global Error Handler */
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(err.statusCode || 500).json({
-        success: false,
-        message: err.message || "Internal Server Error"
-    });
+  console.error(err.stack);
+  res.status(err.statusCode || 500).json({
+    success: false,
+    message: err.message || "Internal Server Error",
+  });
 });
 
 export default app;

@@ -1,15 +1,9 @@
 import sgMail from "@sendgrid/mail";
 
-
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-
 // ✅ Send Escort Registration Notification to Admin
-export const sendRegistrationNotification = async ({
-  email,
-  modelName
-}) => {
-
+export const sendRegistrationNotification = async ({ email, modelName }) => {
   const isValidEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
@@ -94,11 +88,10 @@ export const sendRegistrationNotification = async ({
 
     await sgMail.send(msg);
     console.log(`Registration notification sent to ${email}`);
-
   } catch (error) {
     console.error(
       `Notification email not sent to ${email}:`,
-      error.response?.body || error.message
+      error.response?.body || error.message,
     );
   }
 };
@@ -106,7 +99,7 @@ export const sendRegistrationNotification = async ({
 // ✅ Send Client Registration Notification to Admin
 export const sendClientRegistrationNotification = async ({
   email,
-  clientName
+  clientName,
 }) => {
   const isValidEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -192,27 +185,28 @@ export const sendClientRegistrationNotification = async ({
 
     await sgMail.send(msg);
     console.log(`Client registration notification sent to ${email}`);
-
   } catch (error) {
     console.error(
       `Notification email not sent to ${email}:`,
-      error.response?.body || error.message
+      error.response?.body || error.message,
     );
   }
 };
-
-
-
 
 // ✅ Send Registration Reminder Email to Escort
 export const sendRegistrationReminderEmail = async ({
   email,
   modelName,
   redirectUrl,
-  customMessage
+  customMessage,
 }) => {
-
-  console.log("send mail query check ", email, modelName, redirectUrl, customMessage);
+  console.log(
+    "send mail query check ",
+    email,
+    modelName,
+    redirectUrl,
+    customMessage,
+  );
 
   const isValidEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -223,8 +217,11 @@ export const sendRegistrationReminderEmail = async ({
     return;
   }
 
-  const defaultMessage = "We noticed that your registration process is incomplete. Please click the button below to resume and complete your profile setup on Greene Velvet.";
-  const messageBody = customMessage ? customMessage.replace(/\n/g, '<br>') : defaultMessage;
+  const defaultMessage =
+    "We noticed that your registration process is incomplete. Please click the button below to resume and complete your profile setup on Greene Velvet.";
+  const messageBody = customMessage
+    ? customMessage.replace(/\n/g, "<br>")
+    : defaultMessage;
 
   const html = `
 <!DOCTYPE html>
@@ -305,19 +302,16 @@ export const sendRegistrationReminderEmail = async ({
     await sgMail.send(msg);
     console.log(`Registration reminder email sent to ${email}`);
     return {
-      success: true
+      success: true,
     };
-
   } catch (error) {
     console.error(
       `Reminder email not sent to ${email}:`,
-      error.response?.body || error.message
+      error.response?.body || error.message,
     );
     throw error;
   }
 };
-
-
 
 // send Priority email support
 export const sendPrioritySupportReplyEmail = async ({
@@ -325,11 +319,9 @@ export const sendPrioritySupportReplyEmail = async ({
   fullname,
   subject,
   reply,
-  status
+  status,
 }) => {
-
-  const isValidEmail = (email) =>
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   if (!isValidEmail(email)) {
     console.log(`Invalid email format: ${email} - skipping`);
@@ -337,11 +329,11 @@ export const sendPrioritySupportReplyEmail = async ({
   }
 
   // Status color badge condition
-  const isResolved = status?.toLowerCase() === 'resolved';
-  const statusBg = isResolved ? '#DEF7EC' : '#FEF3C7';
-  const statusColor = isResolved ? '#03543F' : '#92400E';
+  const isResolved = status?.toLowerCase() === "resolved";
+  const statusBg = isResolved ? "#DEF7EC" : "#FEF3C7";
+  const statusColor = isResolved ? "#03543F" : "#92400E";
 
-  const formattedReply = reply ? reply.replace(/\n/g, '<br>') : '';
+  const formattedReply = reply ? reply.replace(/\n/g, "<br>") : "";
 
   const html = `
 <!DOCTYPE html>
@@ -378,7 +370,7 @@ export const sendPrioritySupportReplyEmail = async ({
             </h2>
 
             <p style="margin:0 0 12px 0;color:#333333;font-size:15px;line-height:22px;">
-              Hello <strong>${fullname || 'User'}</strong>,
+              Hello <strong>${fullname || "User"}</strong>,
             </p>
 
             <p style="margin:0 0 20px 0;color:#555555;font-size:14px;line-height:22px;">
@@ -389,7 +381,7 @@ export const sendPrioritySupportReplyEmail = async ({
             <div style="background-color:#F8FAFC; border:1px solid #E2E8F0; padding:12px 16px; border-radius:8px; margin-bottom:20px;">
               <span style="font-size:12px; color:#64748B; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Ticket Status:</span>
               <span style="display:inline-block; margin-left:8px; padding:3px 10px; background-color:${statusBg}; color:${statusColor}; font-size:12px; font-weight:700; border-radius:12px; text-transform:capitalize;">
-                ${status || 'Updated'}
+                ${status || "Updated"}
               </span>
             </div>
 
@@ -432,25 +424,23 @@ export const sendPrioritySupportReplyEmail = async ({
     const msg = {
       to: email,
       from: `"GREENE VELVET Support" <${process.env.SENDER_EMAIL}>`,
-      subject: `Re: [${status || 'Update'}] ${subject} - Greene Velvet Support`,
+      subject: `Re: [${status || "Update"}] ${subject} - Greene Velvet Support`,
       html: html,
     };
 
     await sgMail.send(msg);
     console.log(`Priority support reply email sent to ${email}`);
     return {
-      success: true
+      success: true,
     };
-
   } catch (error) {
     console.error(
       `Support email not sent to ${email}:`,
-      error.response?.body || error.message
+      error.response?.body || error.message,
     );
     throw error;
   }
 };
-
 
 // Send Media Upload notification to admin
 export const sendMediaUploadNotification = async ({
@@ -568,7 +558,187 @@ export const sendMediaUploadNotification = async ({
   } catch (error) {
     console.error(
       `Media notification email not sent to ${email}:`,
-      error.response?.body || error.message
+      error.response?.body || error.message,
     );
+  }
+};
+
+// send admin reply to partner application request
+
+export const sendPartnerApplicationReplyEmail = async ({
+  email,
+  fullname,
+  reply,
+  status,
+}) => {
+  const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  if (!isValidEmail(email)) {
+    console.log(`Invalid email format: ${email} - skipping`);
+    return {
+      success: false,
+      message: "Invalid email address",
+    };
+  }
+
+  // Status color badge condition
+  const statusColors = {
+    Approved: {
+      bg: "#DEF7EC",
+      color: "#03543F",
+    },
+    Rejected: {
+      bg: "#FDE8E8",
+      color: "#9B1C1C",
+    },
+    "Under Review": {
+      bg: "#FEF3C7",
+      color: "#92400E",
+    },
+    Pending: {
+      bg: "#E0F2FE",
+      color: "#075985",
+    },
+  };
+
+  const statusStyle = statusColors[status] || {
+    bg: "#E0F2FE",
+    color: "#075985",
+  };
+
+  // Escape HTML to safely display admin reply
+  const escapeHtml = (value = "") =>
+    String(value).replace(
+      /[&<>"']/g,
+      (char) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[char],
+    );
+
+  const formattedReply = escapeHtml(reply).replace(/\n/g, "<br>");
+
+  const safeName = escapeHtml(fullname || "Partner");
+
+  const safeStatus = escapeHtml(status || "Updated");
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background-color:#f9f9f9;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" style="padding:40px 0;">
+  <tr>
+    <td align="center">
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width:480px;background:#ffffff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.05);border:1px solid #eeeeee;overflow:hidden;">
+
+        <!-- Header Accent -->
+        <tr>
+          <td height="5" style="background-color:#00A68F;"></td>
+        </tr>
+
+        <!-- Brand Section -->
+        <tr>
+          <td style="padding:35px 40px 10px 40px;text-align:center;">
+            <h1 style="margin:0;color:#00A68F;font-size:24px;font-weight:800;letter-spacing:1.5px;">
+              GREENE VELVET
+            </h1>
+            <p style="margin:4px 0 0 0;color:#666666;font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">
+              Australia's Premium Escort Directory
+            </p>
+          </td>
+        </tr>
+
+        <!-- Main Content -->
+        <tr>
+          <td style="padding:20px 40px 35px 40px;text-align:left;">
+
+            <h2 style="margin:0 0 16px 0;color:#1a1a1a;font-size:20px;font-weight:600;text-align:center;">
+              Partnership Application Update
+            </h2>
+
+            <p style="margin:0 0 12px 0;color:#333333;font-size:15px;line-height:22px;">
+              Hello <strong>${safeName}</strong>,
+            </p>
+
+            <p style="margin:0 0 20px 0;color:#555555;font-size:14px;line-height:22px;">
+              Our partnership team has reviewed your application and has an update for you.
+            </p>
+
+            <!-- Application Status -->
+            <div style="background-color:#F8FAFC;border:1px solid #E2E8F0;padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+              <span style="font-size:12px;color:#64748B;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">
+                Application Status:
+              </span>
+
+              <span style="display:inline-block;margin-left:8px;padding:3px 10px;background-color:${statusStyle.bg};color:${statusStyle.color};font-size:12px;font-weight:700;border-radius:12px;">
+                ${safeStatus}
+              </span>
+            </div>
+
+            <!-- Admin Reply -->
+            <div style="background-color:#FFFBEB;border-left:4px solid #00A68F;padding:16px;border-radius:4px;margin-bottom:25px;">
+              <p style="margin:0 0 6px 0;font-size:12px;color:#00A68F;font-weight:700;text-transform:uppercase;">
+                Partnership Team Response:
+              </p>
+
+              <div style="margin:0;font-size:14px;color:#334155;line-height:22px;">
+                ${formattedReply}
+              </div>
+            </div>
+
+            <p style="margin:20px 0 0 0;color:#888888;font-size:13px;line-height:20px;text-align:center;">
+              If you have any further questions, please feel free to contact our team.<br>
+              <span style="font-size:12px;">Thank you for your interest in partnering with GREENE VELVET.</span>
+            </p>
+
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:20px 40px;background-color:#fcfcfc;border-top:1px solid #eeeeee;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#888888;line-height:18px;">
+              © ${new Date().getFullYear()} <b>GREENE VELVET</b>. All rights reserved.<br>
+              Australia's Exclusive Premium Escort Directory Platform.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+`;
+
+  try {
+    const msg = {
+      to: email,
+      from: `"GREENE VELVET Partnerships" <${process.env.SENDER_EMAIL}>`,
+      subject: `Partnership Application ${status || "Update"} - GREENE VELVET`,
+      html,
+    };
+
+    await sgMail.send(msg);
+
+    console.log(`Partner application reply email sent to ${email}`);
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error(
+      `Partner application email not sent to ${email}:`,
+      error.response?.body || error.message,
+    );
+
+    throw error;
   }
 };
