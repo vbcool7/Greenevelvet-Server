@@ -15,6 +15,8 @@ const bannerSchema = new mongoose.Schema(
         "Leaderboard",
         "Full Banner",
         "Medium Rectangle",
+        "Large Rectangle",
+        "Half Page",
         "Wide Skyscraper",
         "Mobile Banner",
         "Square Banner",
