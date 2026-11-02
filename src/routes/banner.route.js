@@ -17,7 +17,7 @@ bannerRouter.post(
   createBanner,
 );
 
-bannerRouter.get("/get-all-banners", protect(["Admin"]), getAllBanners);
+bannerRouter.get("/get-all-banners", getAllBanners);
 
 bannerRouter.patch(
   `/update-banner/:bannerId`,
