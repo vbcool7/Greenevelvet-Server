@@ -323,7 +323,9 @@ export const fetchEscortStories = async (req, res) => {
         $gt: now,
       },
     })
-      .select("_id escortId mediaType mediaUrl caption createdAt expiresAt likeCount totalViews")
+      .select(
+        "_id escortId mediaType mediaUrl caption createdAt expiresAt likeCount totalViews",
+      )
       .sort({
         createdAt: 1,
       })
@@ -417,19 +419,32 @@ export const deleteStory = async (req, res) => {
 
 // ------------------------[ Story Views ]------------------------------//
 
-
 export const addStoryView = async (req, res) => {
   try {
-    const { storyId } = req.body;
+    const { storyId, guestViewerId } = req.body;
 
-    const viewerId = req.user._id;
-    const viewerRole = req.user.role;
+    const isLoggedIn = Boolean(req.user?._id);
+    const viewerId = req.user?._id;
+    const viewerRole = isLoggedIn ? req.role : "Guest";
 
-    if (!["Client", "Escort"].includes(viewerRole)) {
+    if (isLoggedIn && !["Client", "Escort"].includes(viewerRole)) {
       return res.status(403).json({
         success: false,
         error: true,
         message: "You are not allowed to view stories.",
+      });
+    }
+
+    if (
+      !isLoggedIn &&
+      (typeof guestViewerId !== "string" ||
+        guestViewerId.trim().length < 10 ||
+        guestViewerId.trim().length > 100)
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: true,
+        message: "Valid guest viewer ID is required.",
       });
     }
 
@@ -441,12 +456,10 @@ export const addStoryView = async (req, res) => {
       });
     }
 
-    const now = new Date();
-
     const story = await StoryModel.findOne({
       _id: storyId,
       status: "active",
-      expiresAt: { $gt: now },
+      expiresAt: { $gt: new Date() },
     });
 
     if (!story) {
@@ -468,47 +481,72 @@ export const addStoryView = async (req, res) => {
         message: "Own story view is not counted.",
         data: {
           totalViews: story.totalViews || 0,
+          alreadyViewed: false,
         },
       });
     }
 
-    // Save view only if this user has not viewed this story before
-    const result = await StoryViewModel.updateOne(
-      {
-        storyId: story._id,
-        clientId: viewerId,
-        viewerRole,
-      },
-      {
-        $setOnInsert: {
+    const normalizedGuestId = guestViewerId?.trim();
+
+    const viewerFilter = isLoggedIn
+      ? {
           storyId: story._id,
-          escortId: story.escortId,
           clientId: viewerId,
           viewerRole,
-        },
-      },
-      { upsert: true },
-    );
+        }
+      : {
+          storyId: story._id,
+          guestViewerId: normalizedGuestId,
+        };
 
-    let updatedStory = story;
+    const viewData = {
+      storyId: story._id,
+      escortId: story.escortId,
+      viewerRole,
+      ...(isLoggedIn
+        ? { clientId: viewerId }
+        : { guestViewerId: normalizedGuestId }),
+    };
 
-    // Increment totalViews only for a newly inserted view
-    if (result.upsertedCount > 0) {
-      updatedStory = await StoryModel.findByIdAndUpdate(
-        story._id,
-        {
-          $inc: { totalViews: 1 },
-        },
-        { new: true },
+    let alreadyViewed = false;
+
+    try {
+      const result = await StoryViewModel.updateOne(
+        viewerFilter,
+        { $setOnInsert: viewData },
+        { upsert: true },
       );
+
+      if (result.upsertedCount > 0) {
+        await StoryModel.updateOne(
+          { _id: story._id },
+          { $inc: { totalViews: 1 } },
+        );
+      } else {
+        alreadyViewed = true;
+      }
+    } catch (error) {
+      // A simultaneous duplicate request must not increment views again
+      if (error.code === 11000) {
+        alreadyViewed = true;
+      } else {
+        throw error;
+      }
     }
+
+    const updatedStory = await StoryModel.findById(story._id).select(
+      "totalViews",
+    );
 
     return res.status(200).json({
       success: true,
       error: false,
-      message: "Story view saved successfully.",
+      message: alreadyViewed
+        ? "Story was already viewed."
+        : "Story view saved successfully.",
       data: {
         totalViews: updatedStory?.totalViews || 0,
+        alreadyViewed,
       },
     });
   } catch (error) {
@@ -606,11 +644,37 @@ export const getStoryViewers = async (req, res) => {
 
 export const getMyViewedStories = async (req, res) => {
   try {
-    const clientId = req.user._id;
+    const isLoggedIn = Boolean(req.user?._id);
 
-    const viewedStories = await StoryViewModel.find({
-      clientId,
-    })
+    let filter;
+
+    if (isLoggedIn) {
+      filter = {
+        clientId: req.user._id,
+        viewerRole: req.role,
+      };
+    } else {
+      const { guestViewerId } = req.query;
+
+      if (
+        typeof guestViewerId !== "string" ||
+        guestViewerId.trim().length < 10 ||
+        guestViewerId.trim().length > 100
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: true,
+          message: "Valid guest viewer ID is required.",
+        });
+      }
+
+      filter = {
+        guestViewerId: guestViewerId.trim(),
+        viewerRole: "Guest",
+      };
+    }
+
+    const viewedStories = await StoryViewModel.find(filter)
       .select("storyId")
       .lean();
 

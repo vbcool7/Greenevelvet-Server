@@ -3,86 +3,166 @@ import AdminModel from "../models/adminModel.js";
 import EscortModel from "../models/escortModel.js";
 import ClientModel from "../models/clientModel.js";
 
-export const protect = (roles = []) => async (req, res, next) => {
+export const protect =
+  (roles = []) =>
+  async (req, res, next) => {
+    try {
+      // 🔹 1. Header check (SAFE)
+      const authHeader = req?.headers?.authorization;
+
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({
+          message: "No token provided",
+          success: false,
+          error: true,
+        });
+      }
+
+      // 🔹 2. Token extract
+      const token = authHeader.split(" ")[1];
+
+      // 🔹 3. Verify token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      // 🔹 4. Role check (MULTIPLE SUPPORT 🔥)
+      if (roles.length > 0 && !roles.includes(decoded.role)) {
+        return res.status(403).json({
+          message: "Access denied",
+          success: false,
+          error: true,
+        });
+      }
+
+      const userId = decoded._id;
+
+      let user;
+
+      // 🔹 5. Fetch user based on role
+      switch (decoded.role) {
+        case "Admin":
+          user = await AdminModel.findById(userId).select("-password");
+          break;
+
+        case "Escort":
+          user = await EscortModel.findById(userId).select("-password");
+          break;
+
+        case "Client":
+          user = await ClientModel.findById(userId).select("-password");
+          break;
+
+        default:
+          return res.status(403).json({
+            message: "Invalid role",
+            success: false,
+            error: true,
+          });
+      }
+
+      // 🔹 6. Null check
+      if (!user) {
+        return res.status(401).json({
+          message: "User not found",
+          success: false,
+          error: true,
+        });
+      }
+
+      // 🔹 7. Attach user
+      req.user = user;
+      req.role = decoded.role;
+
+      next();
+    } catch (error) {
+      console.log("AUTH ERROR MESSAGE:", error.message);
+      console.log("AUTH ERROR:", error);
+
+      return res.status(401).json({
+        message:
+          error.name === "TokenExpiredError"
+            ? "Token expired"
+            : "Not authorized",
+        success: false,
+        error: true,
+      });
+    }
+  };
+
+export const optionalProtect = async (req, res, next) => {
   try {
-    // 🔹 1. Header check (SAFE)
     const authHeader = req?.headers?.authorization;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    // No token: continue as Guest
+    if (!authHeader) {
+      req.user = null;
+      req.role = "Guest";
+      return next();
+    }
+
+    // Token provided but invalid header format
+    if (!authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
-        message: "No token provided",
         success: false,
-        error: true
+        error: true,
+        message: "Invalid authorization header.",
       });
     }
 
-    // 🔹 2. Token extract
     const token = authHeader.split(" ")[1];
 
-    // 🔹 3. Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // 🔹 4. Role check (MULTIPLE SUPPORT 🔥)
-    if (roles.length > 0 && !roles.includes(decoded.role)) {
-      return res.status(403).json({
-        message: "Access denied",
+    if (!token) {
+      return res.status(401).json({
         success: false,
-        error: true
+        error: true,
+        message: "Invalid token.",
       });
     }
 
-    const userId = decoded._id;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Only Client and Escort can view as authenticated users
+    if (!["Client", "Escort"].includes(decoded.role)) {
+      return res.status(403).json({
+        success: false,
+        error: true,
+        message: "Access denied.",
+      });
+    }
 
     let user;
 
-    // 🔹 5. Fetch user based on role
     switch (decoded.role) {
-      case "Admin":
-        user = await AdminModel.findById(userId).select("-password");
+      case "Client":
+        user = await ClientModel.findById(decoded._id).select("-password");
         break;
 
       case "Escort":
-        user = await EscortModel.findById(userId).select("-password");
+        user = await EscortModel.findById(decoded._id).select("-password");
         break;
-
-      case "Client":
-        user = await ClientModel.findById(userId).select("-password");
-        break;
-
-      default:
-        return res.status(403).json({
-          message: "Invalid role",
-          success: false,
-          error: true
-        });
     }
 
-    // 🔹 6. Null check
     if (!user) {
       return res.status(401).json({
-        message: "User not found",
         success: false,
-        error: true
+        error: true,
+        message: "User not found.",
       });
     }
 
-    // 🔹 7. Attach user
     req.user = user;
     req.role = decoded.role;
 
-    next();
-
+    return next();
   } catch (error) {
-    console.log("AUTH ERROR MESSAGE:", error.message);
-    console.log("AUTH ERROR:", error);
+    console.log("OPTIONAL AUTH ERROR:", error.message);
 
     return res.status(401).json({
+      success: false,
+      error: true,
       message:
         error.name === "TokenExpiredError"
-          ? "Token expired"
-          : "Not authorized",
-      success: false,
-      error: true
+          ? "Token expired."
+          : "Not authorized.",
     });
   }
 };

@@ -16,12 +16,22 @@ const storyViewSchema = new mongoose.Schema(
 
     clientId: {
       type: mongoose.Schema.Types.ObjectId,
-      required: true,
+      required: function () {
+        return ["Client", "Escort"].includes(this.viewerRole);
+      },
     },
-    
+
+    guestViewerId: {
+      type: String,
+      trim: true,
+      required: function () {
+        return this.viewerRole === "Guest";
+      },
+    },
+
     viewerRole: {
       type: String,
-      enum: ["Client", "Escort"],
+      enum: ["Client", "Escort", "Guest"],
       required: true,
     },
   },
@@ -30,8 +40,29 @@ const storyViewSchema = new mongoose.Schema(
   },
 );
 
-// One client can view one story only once
-storyViewSchema.index({ storyId: 1, clientId: 1, viewerRole: 1 }, { unique: true });
+// Logged-in users: one view per story
+storyViewSchema.index(
+  { storyId: 1, clientId: 1, viewerRole: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      clientId: { $type: "objectId" },
+    },
+    name: "unique_logged_in_story_view",
+  },
+);
+
+// Guest users: one view per story per browser ID
+storyViewSchema.index(
+  { storyId: 1, guestViewerId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      guestViewerId: { $type: "string" },
+    },
+    name: "unique_guest_story_view",
+  },
+);
 
 const StoryViewModel = mongoose.model("StoryView", storyViewSchema);
 

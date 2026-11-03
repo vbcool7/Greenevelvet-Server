@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { protect } from "../middleware/auth.js";
+import { protect, optionalProtect } from "../middleware/auth.js";
 import {
   addStoryView,
   createStory,
@@ -29,13 +29,9 @@ storyRouter.delete("/delete-story/:storyId", protect(["Escort"]), deleteStory);
 
 //------------------ Story view rotes-------------//
 
-storyRouter.post("/add-view", protect(["Client", "Escort"]), addStoryView);
+storyRouter.post("/add-view", optionalProtect, addStoryView);
 storyRouter.get("/viewers/:storyId", protect(["Escort"]), getStoryViewers);
-storyRouter.get(
-  "/my-viewed-stories",
-  protect(["Client", "Escort"]),
-  getMyViewedStories,
-);
+storyRouter.get("/my-viewed-stories", optionalProtect, getMyViewedStories);
 
 //------------------ Story like rotes-------------//
 storyRouter.post(
