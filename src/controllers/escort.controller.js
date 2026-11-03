@@ -5384,6 +5384,15 @@ export const fetchSelectedNewsTourComments = async (request, response) => {
 };
 
 // ==============================================< Blog controlls >==============================================
+// helper function generateSlug
+const generateSlug = (title) => {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+};
 
 // Create Blog
 export const createBlog = async (request, response) => {
@@ -5496,6 +5505,17 @@ export const createBlog = async (request, response) => {
       }),
     );
 
+    // Generate unique slug
+    const baseSlug = generateSlug(title);
+
+    let slug = baseSlug;
+    let count = 1;
+
+    while (await BlogModel.exists({ slug })) {
+      slug = `${baseSlug}-${count}`;
+      count++;
+    }
+
     const post = await BlogModel.create({
       escortId,
       userId,
@@ -5504,6 +5524,7 @@ export const createBlog = async (request, response) => {
       country,
       name,
       title,
+      slug,
       description,
       status: "active",
       media: mediaUploads,
