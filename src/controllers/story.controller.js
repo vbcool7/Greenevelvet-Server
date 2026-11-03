@@ -582,7 +582,7 @@ export const getStoryViewers = async (req, res) => {
     const { role = "All" } = req.query;
 
     // Validate role filter
-    if (!["All", "Client", "Escort"].includes(role)) {
+    if (!["All", "Client", "Escort", "Guest"].includes(role)) {
       return res.status(400).json({
         success: false,
         error: true,
