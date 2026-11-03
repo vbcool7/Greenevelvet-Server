@@ -5871,20 +5871,24 @@ export const fetchAllBlogs = async (request, response) => {
 };
 
 // fetch selected Blog by post Id
+
+// Fetch selected Blog by slug
 export const fetchSelectBlog = async (request, response) => {
   try {
-    const { _id } = request.query;
+    const { slug } = request.query;
 
-    // check id exist
-    if (!_id) {
+    if (!slug) {
       return response.status(400).json({
-        message: "_id is required",
+        message: "Slug is required",
         success: false,
         error: true,
       });
     }
 
-    const post = await BlogModel.findById(_id)
+    const post = await BlogModel.findOne({
+      slug: slug,
+      status: "active",
+    })
       .populate({
         path: "blogLikes",
       })
@@ -5896,7 +5900,6 @@ export const fetchSelectBlog = async (request, response) => {
         select: "name avatar",
       });
 
-    // check blog exist
     if (!post) {
       return response.status(404).json({
         message: "Blog not found",
@@ -5915,7 +5918,7 @@ export const fetchSelectBlog = async (request, response) => {
     console.error("fetchSelectBlog error:", error);
 
     return response.status(500).json({
-      message: "Something went wrong while fetching data!" || "Server error",
+      message: "Something went wrong while fetching data!",
       success: false,
       error: true,
     });
