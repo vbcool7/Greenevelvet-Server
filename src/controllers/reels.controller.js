@@ -88,7 +88,7 @@ export async function getReelsController(request, response) {
           reelId: video._id || video.public_id,
           escortId: escort.escortId,
           escortName: escort.name,
-          escortAvatar: escort.avatar,
+          escortAvatar: escort.avatar?.url,
 
           video: {
             public_id: video.public_id,
