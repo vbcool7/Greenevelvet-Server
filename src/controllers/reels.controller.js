@@ -63,7 +63,7 @@ export async function getReelsController(request, response) {
     }
 
     let escorts = await EscortModel.find(filter)
-      .select("_id escortId name gallery.videos")
+      .select("_id escortId avatar name gallery.videos")
       .sort({ _id: direction === "next" ? -1 : 1 })
       .limit(limit)
       .lean();
