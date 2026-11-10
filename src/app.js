@@ -24,6 +24,7 @@ import imageVoteRouter from "./routes/imageVote.route.js";
 import partnerApplicationRouter from "./routes/partnerApplication.route.js";
 import bannerRouter from "./routes/banner.route.js";
 import reelsRouter from "./routes/reels.route.js";
+import feedbackRouter from "./routes/feeback.route.js";
 
 const app = express();
 
@@ -92,6 +93,7 @@ app.use("/poll", imageVoteRouter);
 app.use("/partner", partnerApplicationRouter);
 app.use("/banner", bannerRouter);
 app.use("/reels", reelsRouter);
+app.use("/feedback", feedbackRouter);
 
 /* Global Error Handler */
 app.use((err, req, res, next) => {
