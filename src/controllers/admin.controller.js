@@ -1394,57 +1394,38 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
       },
 
       isEmailVerified: true,
+
       lastCompletedStep: 7,
 
-      $and: [
-        // Uploaded documents OR skipped verification
-        {
-          $or: [
-            {
-              docsuploadStatus: "skipped",
-            },
-            {
-              verificationselfie: {
-                $exists: true,
-                $type: "string",
-                $ne: "",
-              },
-              verificationgovtId: {
-                $exists: true,
-                $type: "string",
-                $ne: "",
-              },
-            },
-          ],
-        },
+      // Verification selfie required
+      verificationselfie: {
+        $exists: true,
+        $type: "string",
+        $ne: "",
+      },
 
-        // Avatar condition
+      // Avatar condition
+      $or: [
         {
-          $or: [
-            {
-              "pendingAvatar.url": {
-                $exists: true,
-                $type: "string",
-                $ne: "",
-              },
-            },
-            {
-              "avatar.url": {
-                $exists: true,
-                $type: "string",
-                $ne: "",
-              },
-            },
-          ],
-        },
-
-        // Minimum 3 gallery photos
-        {
-          "gallery.photos.2": {
+          "pendingAvatar.url": {
             $exists: true,
+            $type: "string",
+            $ne: "",
+          },
+        },
+        {
+          "avatar.url": {
+            $exists: true,
+            $type: "string",
+            $ne: "",
           },
         },
       ],
+
+      // Minimum 3 gallery photos
+      "gallery.photos.2": {
+        $exists: true,
+      },
     };
 
     if (status && ["Pending", "Suspended", "Rejected"].includes(status)) {
@@ -1511,7 +1492,7 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
     const [escorts, totalEscorts] = await Promise.all([
       EscortModel.find(filter)
         .select(
-          "escortId name email country city status isVerified isEmailVerified docsuploadStatus verificationSelfie verificationgovtId avatar pendingAvatar gallery adverties_category createdAt",
+          "escortId name email country city status isVerified isEmailVerified verificationSelfie avatar pendingAvatar gallery adverties_category createdAt",
         )
         .sort({
           createdAt: -1,
@@ -1548,7 +1529,6 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
     });
   }
 };
-
 //-------------------- fetch Verified escort with search filter data -----------------------------------//
 export async function getVerifiedEscorts(req, res) {
   try {
