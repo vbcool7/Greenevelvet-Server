@@ -109,15 +109,9 @@ escortRouter.post(
       name: "verificationselfie",
       maxCount: 1,
     },
-    {
-      name: "verificationgovtId",
-      maxCount: 1,
-    },
   ]),
   escortUploadverification,
 );
-
-escortRouter.post("/skipped-verification", escortSkipIdVerification);
 
 escortRouter.post(
   "/register-gallery-upload",

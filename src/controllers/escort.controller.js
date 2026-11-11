@@ -1271,20 +1271,15 @@ export async function escortUploadverification(request, response) {
       });
     }
 
-    if (
-      !request.files?.verificationselfie ||
-      !request.files?.verificationgovtId
-    ) {
+    if (!request.files?.verificationselfie?.[0]) {
       return response.status(400).json({
-        message: "Selfie and Govt Id required",
+        message: "Selfie is required",
         success: false,
         error: true,
       });
     }
 
-    const escort = await EscortModel.findOne({
-      escortId,
-    });
+    const escort = await EscortModel.findOne({ escortId });
 
     if (!escort) {
       return response.status(404).json({
@@ -1298,94 +1293,38 @@ export async function escortUploadverification(request, response) {
       request.files.verificationselfie[0],
       "verification/verificationselfie",
     );
-    const govtIdUpload = await uploadImageCloudinary(
-      request.files.verificationgovtId[0],
-      "verification/verificationgovtId",
-    );
 
-    const uploadEscort = await EscortModel.findOneAndUpdate(
-      {
-        escortId,
-      },
+    await EscortModel.findOneAndUpdate(
+      { escortId },
       {
         verificationselfie: selfieUpload.secure_url,
-        verificationgovtId: govtIdUpload.secure_url,
         docsuploadStatus: "uploaded",
         hasAcceptedDocsOwnership: true,
         docsOwnershipAcceptedAt: new Date(),
         lastCompletedStep: 5,
       },
-      {
-        new: true,
-      },
+      { new: true },
     );
 
     return response.json({
-      message: "Verification documents uploaded successfully",
+      message: "Verification selfie uploaded successfully",
       success: true,
       error: false,
       data: {
         verificationselfie: selfieUpload.secure_url,
-        verificationgovtId: govtIdUpload.secure_url,
       },
     });
   } catch (error) {
     console.log("docs upload error ", error);
 
     return response.status(500).json({
-      message: "Documnets upload failed!",
+      message: "Verification selfie upload failed!",
       error: true,
       success: false,
     });
   }
 }
 
-// Escort skipped selfie and document upload step-5
-export async function escortSkipIdVerification(request, response) {
-  try {
-    const { escortId } = request.body;
-
-    if (!escortId) {
-      return response.status(400).json({
-        message: "escort Id required",
-        success: false,
-        error: true,
-      });
-    }
-
-    const escort = await EscortModel.findOneAndUpdate(
-      { escortId },
-      {
-        docsuploadStatus: "skipped",
-        hasAcceptedDocsOwnership: false,
-        lastCompletedStep: 5,
-      },
-      { new: true },
-    );
-
-    if (!escort) {
-      return response.status(404).json({
-        message: "Escort not found",
-        success: false,
-        error: true,
-      });
-    }
-
-    return response.json({
-      message: "Verification skipped successfully",
-      success: true,
-      error: false,
-    });
-  } catch (error) {
-    console.log("Skip verification error:", error);
-
-    return response.status(500).json({
-      message: "Verification skip failed",
-      success: false,
-      error: true,
-    });
-  }
-}
 
 // upload Avatar step-6
 export async function uploadAvatarcontroller(request, response) {

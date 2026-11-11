@@ -1641,7 +1641,7 @@ export async function getVerifiedEscorts(req, res) {
     ] = await Promise.all([
       EscortModel.find(filter)
         .select(
-          "escortId name avatar email country city status isVerified adverties_category createdAt",
+          "escortId name avatar email country city status isVerified docsuploadStatus adverties_category createdAt",
         )
         .sort({
           createdAt: -1,
@@ -1860,7 +1860,7 @@ export const getPendingEscortMedia = async (req, res) => {
     const [escorts, total] = await Promise.all([
       EscortModel.find(filter)
         .select(
-          "escortId name email country city status avatar pendingAvatar gallery.photos gallery.videos createdAt updatedAt",
+          "escortId name email country city status avatar pendingAvatar docsuploadStatus gallery.photos gallery.videos createdAt updatedAt",
         )
         .sort({
           updatedAt: -1,
