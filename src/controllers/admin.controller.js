@@ -1394,42 +1394,59 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
       },
 
       isEmailVerified: true,
-
       lastCompletedStep: 7,
 
-      verificationselfie: {
-        $exists: true,
-        $type: "string",
-        $ne: "",
-      },
-
-      verificationgovtId: {
-        $exists: true,
-        $type: "string",
-        $ne: "",
-      },
-
-      $or: [
+      $and: [
+        // Uploaded documents OR skipped verification
         {
-          "pendingAvatar.url": {
-            $exists: true,
-            $type: "string",
-            $ne: "",
-          },
+          $or: [
+            {
+              docsuploadStatus: "skipped",
+            },
+            {
+              verificationselfie: {
+                $exists: true,
+                $type: "string",
+                $ne: "",
+              },
+              verificationgovtId: {
+                $exists: true,
+                $type: "string",
+                $ne: "",
+              },
+            },
+          ],
         },
+
+        // Avatar condition
         {
-          "avatar.url": {
+          $or: [
+            {
+              "pendingAvatar.url": {
+                $exists: true,
+                $type: "string",
+                $ne: "",
+              },
+            },
+            {
+              "avatar.url": {
+                $exists: true,
+                $type: "string",
+                $ne: "",
+              },
+            },
+          ],
+        },
+
+        // Minimum 3 gallery photos
+        {
+          "gallery.photos.2": {
             $exists: true,
-            $type: "string",
-            $ne: "",
           },
         },
       ],
-
-      "gallery.photos.2": {
-        $exists: true,
-      },
     };
+
     if (status && ["Pending", "Suspended", "Rejected"].includes(status)) {
       filter.status = status;
     }
