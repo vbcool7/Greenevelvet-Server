@@ -27,7 +27,6 @@ import {
   escortRatescontroller,
   escortResetPassword,
   escortServicescontroller,
-  escortSkipIdVerification,
   escortUploadverification,
   escortVerifyOtp,
   fetchAllBlogs,
