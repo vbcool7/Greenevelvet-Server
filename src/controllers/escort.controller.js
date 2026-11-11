@@ -1310,7 +1310,7 @@ export async function escortUploadverification(request, response) {
       {
         verificationselfie: selfieUpload.secure_url,
         verificationgovtId: govtIdUpload.secure_url,
-        docsuploadStatus: "pending",
+        docsuploadStatus: "uploaded",
         hasAcceptedDocsOwnership: true,
         docsOwnershipAcceptedAt: new Date(),
         lastCompletedStep: 5,
@@ -1336,6 +1336,53 @@ export async function escortUploadverification(request, response) {
       message: "Documnets upload failed!",
       error: true,
       success: false,
+    });
+  }
+}
+
+// Escort skipped selfie and document upload step-5
+export async function escortSkipIdVerification(request, response) {
+  try {
+    const { escortId } = request.body;
+
+    if (!escortId) {
+      return response.status(400).json({
+        message: "escort Id required",
+        success: false,
+        error: true,
+      });
+    }
+
+    const escort = await EscortModel.findOneAndUpdate(
+      { escortId },
+      {
+        docsuploadStatus: "skipped",
+        hasAcceptedDocsOwnership: false,
+        lastCompletedStep: 5,
+      },
+      { new: true },
+    );
+
+    if (!escort) {
+      return response.status(404).json({
+        message: "Escort not found",
+        success: false,
+        error: true,
+      });
+    }
+
+    return response.json({
+      message: "Verification skipped successfully",
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    console.log("Skip verification error:", error);
+
+    return response.status(500).json({
+      message: "Verification skip failed",
+      success: false,
+      error: true,
     });
   }
 }

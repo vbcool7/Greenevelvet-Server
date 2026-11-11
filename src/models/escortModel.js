@@ -143,8 +143,10 @@ const EscortSchema = new mongoose.Schema(
     docsOwnershipAcceptedAt: {
       type: Date,
     },
+
     docsuploadStatus: {
       type: String,
+      enum: ["Not uploaded", "pending", "approved", "rejected", "skipped"],
       default: "Not uploaded",
     },
 
