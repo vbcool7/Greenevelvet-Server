@@ -1398,11 +1398,11 @@ export const getAwaitingVerificationEscorts = async (req, res) => {
       lastCompletedStep: 7,
 
       // Verification selfie required
-      verificationselfie: {
-        $exists: true,
-        $type: "string",
-        $ne: "",
-      },
+      // verificationselfie: {
+      //   $exists: true,
+      //   $type: "string",
+      //   $ne: "",
+      // },
 
       // Avatar condition
       $or: [
