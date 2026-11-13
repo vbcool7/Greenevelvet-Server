@@ -11,13 +11,13 @@ const locationContentSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      index: true
+      index: true,
     },
     slug: {
       type: String,
       required: true,
       unique: true,
-      index: true
+      index: true,
     },
     title: {
       type: String,
@@ -33,8 +33,11 @@ const locationContentSchema = new mongoose.Schema(
       default: "active",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-const CmsLocationModel = mongoose.model("LocationContent", locationContentSchema);
+const CmsLocationModel = mongoose.model(
+  "LocationContent",
+  locationContentSchema,
+);
 export default CmsLocationModel;

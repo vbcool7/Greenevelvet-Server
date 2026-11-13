@@ -6,7 +6,7 @@ const cmsSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      index: true
+      index: true,
     },
     title: {
       type: String,
@@ -22,7 +22,7 @@ const cmsSchema = new mongoose.Schema(
       default: "active",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const CmsModel = mongoose.model("cms", cmsSchema);
