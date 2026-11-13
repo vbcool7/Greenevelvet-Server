@@ -2294,20 +2294,79 @@ export async function deleteClient(request, response) {
 // fetch tours
 export async function fetchTours(request, response) {
   try {
-    const tours = await TourModel.find().populate("userId", "name").sort({
-      createdAt: -1,
-    });
+    const {
+      search,
+      status,
+      startDate,
+      endDate,
+      page = 1,
+      limit = 10,
+    } = request.query;
+
+    let filter = {};
+
+    // 1. Status Filter
+    if (status && status !== "all") {
+      filter.status = status;
+    }
+
+    // 2. Search Filter (City, escortId, or tourNotes matching)
+    if (search) {
+      filter.$or = [
+        { city: { $regex: search, $options: "i" } },
+        { escortId: { $regex: search, $options: "i" } },
+        { tourNotes: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // 3. Date Range Filter (createdAt)
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) {
+        filter.createdAt.$gte = new Date(
+          new Date(startDate).setHours(0, 0, 0, 0),
+        );
+      }
+      if (endDate) {
+        filter.createdAt.$lte = new Date(
+          new Date(endDate).setHours(23, 59, 59, 999),
+        );
+      }
+    }
+
+    const pageNumber = parseInt(page, 10) || 1;
+    const limitNumber = parseInt(limit, 10) || 10;
+    const skip = (pageNumber - 1) * limitNumber;
+
+    // Total count for pagination metadata
+    const totalCount = await TourModel.countDocuments(filter);
+    const totalPages = Math.ceil(totalCount / limitNumber) || 1;
+
+    // Fetch filtered & paginated tours with populated userId
+    const tours = await TourModel.find(filter)
+      .populate("userId", "name")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNumber);
 
     const formattedTours = tours.map((tour) => ({
       ...tour.toObject(),
-      escortName: tour.userId?.name,
+      escortName: tour.userId?.name || "N/A",
     }));
 
     return response.status(200).json({
-      message: tours.length ? "Tours list fetched" : "No tour found",
+      message: formattedTours.length ? "Tours list fetched" : "No tour found",
       error: false,
       success: true,
-      data: formattedTours || [],
+      data: {
+        tours: formattedTours || [],
+        pagination: {
+          total: totalCount,
+          totalPages: totalPages,
+          page: pageNumber,
+          limit: limitNumber,
+        },
+      },
     });
   } catch (error) {
     return response.status(500).json({
