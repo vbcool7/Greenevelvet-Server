@@ -1898,24 +1898,85 @@ export const getPendingEscortMedia = async (req, res) => {
 
 //==========================================================< Clients >======================================================================
 
-// fetch clients
+// fetch clients with search filters
 export async function fetchClients(request, response) {
   try {
-    const { role } = request.query;
+    const {
+      role,
+      search,
+      status,
+      startDate,
+      endDate,
+      page = 1,
+      limit = 10,
+    } = request.query;
 
     let filter = {};
 
-    if (role) filter.role = role;
+    // 1. Role filter
+    if (role) {
+      filter.role = role;
+    }
 
-    const clients = await ClientModel.find(filter).sort({
-      createdAt: -1,
-    });
+    // 2. Status filter
+    if (status && status !== "all") {
+      filter.status = status;
+    }
+
+    // 3. Search filter (Name or City - case-insensitive regex)
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { city: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } }, // Optional: Email search bhi include kar sakte hain
+      ];
+    }
+
+    // 4. Date Range filter (createdAt)
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) {
+        // Start of the day
+        filter.createdAt.$gte = new Date(
+          new Date(startDate).setHours(0, 0, 0, 0),
+        );
+      }
+      if (endDate) {
+        // End of the day
+        filter.createdAt.$lte = new Date(
+          new Date(endDate).setHours(23, 59, 59, 999),
+        );
+      }
+    }
+
+    // Pagination calculations
+    const pageNumber = parseInt(page, 10) || 1;
+    const limitNumber = parseInt(limit, 10) || 10;
+    const skip = (pageNumber - 1) * limitNumber;
+
+    // Total count for pagination metadata
+    const totalCount = await ClientModel.countDocuments(filter);
+    const totalPages = Math.ceil(totalCount / limitNumber) || 1;
+
+    // Fetch filtered & paginated clients
+    const clients = await ClientModel.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNumber);
 
     return response.status(200).json({
       message: clients.length ? "clients list fetched" : "No clients found",
       error: false,
       success: true,
-      data: clients || [],
+      data: {
+        clients: clients || [],
+        pagination: {
+          total: totalCount,
+          totalPages: totalPages,
+          page: pageNumber,
+          limit: limitNumber,
+        },
+      },
     });
   } catch (error) {
     return response.status(500).json({
