@@ -2422,12 +2422,64 @@ export async function deleteTour(request, response) {
 // fetch blogs
 export async function fetchBlogs(request, response) {
   try {
-    const blogs = await BlogModel.find().populate("userId", "name").sort({
-      createdAt: -1,
-    });
+    const {
+      search,
+      status,
+      startDate,
+      endDate,
+      page = 1,
+      limit = 10,
+    } = request.query;
+
+    let filter = {};
+
+    // 1. Status Filter
+    if (status && status !== "all") {
+      filter.status = status;
+    }
+
+    // 2. Search Filter (Title, Description, or city matching)
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { city: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // 3. Date Range Filter (createdAt)
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) {
+        filter.createdAt.$gte = new Date(
+          new Date(startDate).setHours(0, 0, 0, 0),
+        );
+      }
+      if (endDate) {
+        filter.createdAt.$lte = new Date(
+          new Date(endDate).setHours(23, 59, 59, 999),
+        );
+      }
+    }
+
+    const pageNumber = parseInt(page, 10) || 1;
+    const limitNumber = parseInt(limit, 10) || 10;
+    const skip = (pageNumber - 1) * limitNumber;
+
+    // Total count for pagination metadata
+    const totalCount = await BlogModel.countDocuments(filter);
+    const totalPages = Math.ceil(totalCount / limitNumber) || 1;
+
+    // Fetch filtered & paginated blogs with populated userId
+    const blogs = await BlogModel.find(filter)
+      .populate("userId", "name")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNumber);
 
     const formattedBlogs = blogs.map((blog) => ({
       ...blog.toObject(),
+      name: blog.userId?.name || blog.name, // Agar blog document me name hai ya userId me, dono handle ho jayenge
       userName: blog.userId?.name,
     }));
 
@@ -2435,7 +2487,15 @@ export async function fetchBlogs(request, response) {
       message: formattedBlogs.length ? "Blogs list fetched" : "No blog found",
       error: false,
       success: true,
-      data: formattedBlogs,
+      data: {
+        blogs: formattedBlogs || [],
+        pagination: {
+          total: totalCount,
+          totalPages: totalPages,
+          page: pageNumber,
+          limit: limitNumber,
+        },
+      },
     });
   } catch (error) {
     return response.status(500).json({
@@ -2613,15 +2673,64 @@ export async function deleteBlog(request, response) {
 // fetch newsandtours
 export async function fetchNewsandtours(request, response) {
   try {
-    const newsandtours = await NewsAndTourModel.find()
+    const {
+      search,
+      status,
+      startDate,
+      endDate,
+      page = 1,
+      limit = 10,
+    } = request.query;
+
+    let filter = {};
+
+    // 1. Status Filter
+    if (status && status !== "all") {
+      filter.status = status;
+    }
+
+    // 2. Search Filter (Title, description, or city matching)
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { city: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // 3. Date Range Filter (createdAt)
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) {
+        filter.createdAt.$gte = new Date(
+          new Date(startDate).setHours(0, 0, 0, 0),
+        );
+      }
+      if (endDate) {
+        filter.createdAt.$lte = new Date(
+          new Date(endDate).setHours(23, 59, 59, 999),
+        );
+      }
+    }
+
+    const pageNumber = parseInt(page, 10) || 1;
+    const limitNumber = parseInt(limit, 10) || 10;
+    const skip = (pageNumber - 1) * limitNumber;
+
+    // Total count for pagination metadata
+    const totalCount = await NewsAndTourModel.countDocuments(filter);
+    const totalPages = Math.ceil(totalCount / limitNumber) || 1;
+
+    // Fetch filtered & paginated records with populated userId
+    const newsandtours = await NewsAndTourModel.find(filter)
       .populate("userId", "name")
-      .sort({
-        createdAt: -1,
-      });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNumber);
 
     const formattedNewsandtours = newsandtours.map((newsandtour) => ({
       ...newsandtour.toObject(),
-      escortName: newsandtour.userId?.name,
+      escortName: newsandtour.userId?.name || newsandtour.escortName,
     }));
 
     return response.status(200).json({
@@ -2630,7 +2739,15 @@ export async function fetchNewsandtours(request, response) {
         : "No Newsandtour found",
       error: false,
       success: true,
-      data: formattedNewsandtours || [],
+      data: {
+        newsandtours: formattedNewsandtours || [],
+        pagination: {
+          total: totalCount,
+          totalPages: totalPages,
+          page: pageNumber,
+          limit: limitNumber,
+        },
+      },
     });
   } catch (error) {
     return response.status(500).json({
