@@ -1325,7 +1325,6 @@ export async function escortUploadverification(request, response) {
   }
 }
 
-
 // upload Avatar step-6
 export async function uploadAvatarcontroller(request, response) {
   try {
@@ -4835,6 +4834,8 @@ export const createNewsTourcontroller = async (request, response) => {
       data: post,
     });
   } catch (error) {
+    console.log("add new news and tour error ", error);
+
     return response.status(500).json({
       message: "Something went wrong! Newsand Tour creation failed",
       success: false,
@@ -5146,7 +5147,7 @@ export const fetchSelectNewsTourController = async (request, response) => {
 // Toggle NewsTour Like controller
 export const toggleNewstourLikeController = async (request, response) => {
   try {
-    const { postId, userId } = request.body;
+    const { postId, userId, userType } = request.body;
 
     if (!userId) {
       return response.status(401).json({
@@ -5203,23 +5204,41 @@ export const toggleNewstourLikeController = async (request, response) => {
     const postUpdated = await NewsAndTourModel.findOne({
       _id: postId,
     });
-    const Client = await ClientModel.findOne({
-      clientId: userId,
-    });
 
-    if (!postUpdated.userId) {
-      console.error("❌ Notification skipped: No Escort found in database.");
+    // ================= CREATE NOTIFICATION =================
+
+    // userType must be Client or Escort
+    if (!["Client", "Escort"].includes(userType)) {
+      console.error("Invalid liker userType:", userType);
+    } else if (!postUpdated?.userId) {
+      console.error("Notification skipped: News and tour owner not found.");
     } else {
-      const load = await createAndSendNotification(request.app, {
-        recipientId: postUpdated?.userId,
-        recipientModel: "Escort",
-        senderId: Client?._id,
-        senderModel: "Client",
-        type: "NEW LIKE",
-        title: "New Like on News and Tour",
-        message: `${Client?.name} has like your news and tour. Click to view.`,
-        link: `/escortnewstour/${postUpdated?._id}`,
-      });
+      // Get commenter's profile according to role
+      const senderProfile =
+        userType === "Client"
+          ? await ClientModel.findOne({ userId })
+          : await EscortModel.findOne({ userId });
+
+      if (!senderProfile) {
+        console.error(`${userType} profile not found for userId:`, userId);
+      } else {
+        // Blog owner is an Escort
+        // Avoid sending notification to the same user
+        if (String(postUpdated.userId) !== String(userId)) {
+          await createAndSendNotification(request.app, {
+            recipientId: postUpdated.userId,
+            recipientModel: "Escort",
+
+            senderId: senderProfile._id,
+            senderModel: userType,
+
+            type: "NEW COMMENTS",
+            title: "New Comments on News and tour",
+            message: `${senderProfile.name || userType} commented on your News and tour. Click to view.`,
+            link: `/escortnewstour/${postUpdated?._id}`,
+          });
+        }
+      }
     }
 
     response.status(201).json({
@@ -5229,6 +5248,7 @@ export const toggleNewstourLikeController = async (request, response) => {
       like,
     });
   } catch (error) {
+    console.log("add/remove like on news and tour error ", error);
     response.status(500).json({
       message: error.message || "Server error",
       success: false,
@@ -5296,23 +5316,40 @@ export const addNewstourCommentController = async (request, response) => {
 
     const post = await NewsAndTourModel.findById(postId);
 
-    const Client = await ClientModel.findOne({
-      userId,
-    });
+    // ================= CREATE NOTIFICATION =================
 
-    if (!post.userId) {
-      console.error("❌ Notification skipped: No Escort found in database.");
+    // userType must be Client or Escort
+    if (!["Client", "Escort"].includes(userType)) {
+      console.error("Invalid commenter userType:", userType);
+    } else if (!post?.userId) {
+      console.error("Notification skipped: News and tour owner not found.");
     } else {
-      const load = await createAndSendNotification(request.app, {
-        recipientId: post.userId,
-        recipientModel: "Escort",
-        senderId: Client._id,
-        senderModel: "Client",
-        type: "NEW Comments",
-        title: "New Comments on News and Tour",
-        message: `${Client.name} has Comments your news and tour. Click to view.`,
-        link: `/escortnewstour/${post._id}`,
-      });
+      // Get commenter's profile according to role
+      const senderProfile =
+        userType === "Client"
+          ? await ClientModel.findOne({ userId })
+          : await EscortModel.findOne({ userId });
+
+      if (!senderProfile) {
+        console.error(`${userType} profile not found for userId:`, userId);
+      } else {
+        // Blog owner is an Escort
+        // Avoid sending notification to the same user
+        if (String(post.userId) !== String(userId)) {
+          await createAndSendNotification(request.app, {
+            recipientId: post.userId,
+            recipientModel: "Escort",
+
+            senderId: senderProfile._id,
+            senderModel: userType,
+
+            type: "NEW COMMENTS",
+            title: "New Comments on news and tour",
+            message: `${senderProfile.name || userType} commented on your news and tour. Click to view.`,
+            link: `/escortnewstour/${post._id}`,
+          });
+        }
+      }
     }
 
     return response.status(200).json({
@@ -5322,6 +5359,7 @@ export const addNewstourCommentController = async (request, response) => {
       comment: newComment,
     });
   } catch (error) {
+    console.log("add comment on news and tour error ", error);
     return response.status(500).json({
       message: error.message || "Server error",
       success: false,
@@ -5550,7 +5588,7 @@ export const createBlog = async (request, response) => {
       data: post,
     });
   } catch (error) {
-    console.log("🔥 ERROR:", error);
+    console.log("🔥new blog create  ERROR:", error);
 
     if (uploadedMedia.length > 0) {
       await Promise.all(
@@ -5961,7 +5999,7 @@ export const fetchEscortBlog = async (request, response) => {
 // Toggle Blog Like controller
 export const toggleBlogLike = async (request, response) => {
   try {
-    const { postId, userId } = request.body;
+    const { postId, userId, userType } = request.body;
 
     console.log("like request body : ", request.body);
 
@@ -6023,23 +6061,40 @@ export const toggleBlogLike = async (request, response) => {
 
     const post = await BlogModel.findById(postId);
 
-    const Client = await ClientModel.findOne({
-      userId,
-    });
+    // ================= CREATE NOTIFICATION =================
 
-    if (!post.userId) {
-      console.error("❌ Notification skipped: No Escort found in database.");
+    // userType must be Client or Escort
+    if (!["Client", "Escort"].includes(userType)) {
+      console.error("Invalid commenter userType:", userType);
+    } else if (!post?.userId) {
+      console.error("Notification skipped: Blog owner not found.");
     } else {
-      const load = await createAndSendNotification(request.app, {
-        recipientId: post.userId,
-        recipientModel: "Escort",
-        senderId: Client._id,
-        senderModel: "Client",
-        type: "NEW LIKE",
-        title: "New Like on blog",
-        message: `${Client.name} has Like your blog. Click to view.`,
-        link: `/blog`,
-      });
+      // Get commenter's profile according to role
+      const senderProfile =
+        userType === "Client"
+          ? await ClientModel.findOne({ userId })
+          : await EscortModel.findOne({ userId });
+
+      if (!senderProfile) {
+        console.error(`${userType} profile not found for userId:`, userId);
+      } else {
+        // Blog owner is an Escort
+        // Avoid sending notification to the same user
+        if (String(post.userId) !== String(userId)) {
+          await createAndSendNotification(request.app, {
+            recipientId: post.userId,
+            recipientModel: "Escort",
+
+            senderId: senderProfile._id,
+            senderModel: userType,
+
+            type: "NEW LIKE",
+            title: "New Like on blog",
+            message: `${senderProfile.name || userType} has Like your blog. Click to view.`,
+            link: `/blog`,
+          });
+        }
+      }
     }
 
     response.status(201).json({
@@ -6118,23 +6173,40 @@ export const addBlogComment = async (request, response) => {
 
     const post = await BlogModel.findById(postId);
 
-    const Client = await ClientModel.findOne({
-      userId,
-    });
+    // ================= CREATE NOTIFICATION =================
 
-    if (!post.userId) {
-      console.error("❌ Notification skipped: No Escort found in database.");
+    // userType must be Client or Escort
+    if (!["Client", "Escort"].includes(userType)) {
+      console.error("Invalid commenter userType:", userType);
+    } else if (!post?.userId) {
+      console.error("Notification skipped: Blog owner not found.");
     } else {
-      const load = await createAndSendNotification(request.app, {
-        recipientId: post.userId,
-        recipientModel: "Escort",
-        senderId: Client._id,
-        senderModel: "Client",
-        type: "NEW COMMENTS",
-        title: "New Comments on blog",
-        message: `${Client.name} has Comments your blog. Click to view.`,
-        link: `/blog`,
-      });
+      // Get commenter's profile according to role
+      const senderProfile =
+        userType === "Client"
+          ? await ClientModel.findOne({ userId })
+          : await EscortModel.findOne({ userId });
+
+      if (!senderProfile) {
+        console.error(`${userType} profile not found for userId:`, userId);
+      } else {
+        // Blog owner is an Escort
+        // Avoid sending notification to the same user
+        if (String(post.userId) !== String(userId)) {
+          await createAndSendNotification(request.app, {
+            recipientId: post.userId,
+            recipientModel: "Escort",
+
+            senderId: senderProfile._id,
+            senderModel: userType,
+
+            type: "NEW COMMENTS",
+            title: "New Comments on blog",
+            message: `${senderProfile.name || userType} commented on your blog. Click to view.`,
+            link: `/blog`,
+          });
+        }
+      }
     }
 
     return response.status(200).json({
