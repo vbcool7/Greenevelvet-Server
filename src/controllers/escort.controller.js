@@ -5756,7 +5756,7 @@ export const deleteBlog = async (request, response) => {
 // Block blog commnets
 export const blockBlogComments = async (request, response) => {
   try {
-    const { _id, userId } = request.body;
+    const { _id } = request.body;
 
     if (!_id) {
       return response.status(400).json({
@@ -5790,7 +5790,7 @@ export const blockBlogComments = async (request, response) => {
       data: blog,
     });
   } catch (error) {
-    console.log("deleteNewsTourController error:", error);
+    console.log("blog comments block/unblock error:", error);
 
     return response.status(500).json({
       message: "comments blocked/unblocked action failed!" || "Server error",
@@ -6049,7 +6049,7 @@ export const toggleBlogLike = async (request, response) => {
       like,
     });
   } catch (error) {
-    console.log("like error: ", error);
+    console.log("blog add/remove like error: ", error);
 
     response.status(500).json({
       message: "Something went wrong while post liked!" || "Server error",
@@ -6144,6 +6144,8 @@ export const addBlogComment = async (request, response) => {
       comment: newComment,
     });
   } catch (error) {
+    console.log("blog add copmmet error : ", error);
+
     return response.status(500).json({
       message: "Something went wrong while add coments" || "Server error",
       success: false,
