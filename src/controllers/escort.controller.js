@@ -5179,7 +5179,7 @@ export const toggleNewstourLikeController = async (request, response) => {
       );
 
       return response.status(200).json({
-        message: "Like removed",
+        message: "You have successfully removed your like from this news and tour.",
         success: true,
         error: false,
       });
@@ -5233,8 +5233,8 @@ export const toggleNewstourLikeController = async (request, response) => {
             senderModel: userType,
 
             type: "NEW COMMENTS",
-            title: "New Comments on News and tour",
-            message: `${senderProfile.name || userType} commented on your News and tour. Click to view.`,
+            title: "New lik on News and tour",
+            message: `${senderProfile.name || userType} liked on your News and tour. Click to view.`,
             link: `/escortnewstour/${postUpdated?._id}`,
           });
         }
@@ -5242,7 +5242,7 @@ export const toggleNewstourLikeController = async (request, response) => {
     }
 
     response.status(201).json({
-      message: "Post liked",
+      message: "You have successfully liked this news and tour.",
       success: true,
       error: false,
       like,
@@ -5353,7 +5353,7 @@ export const addNewstourCommentController = async (request, response) => {
     }
 
     return response.status(200).json({
-      message: "Comment added",
+      message: "Comment added successfully",
       success: true,
       error: false,
       comment: newComment,
@@ -6035,7 +6035,7 @@ export const toggleBlogLike = async (request, response) => {
       );
 
       return response.status(200).json({
-        message: "Like removed",
+        message: "You have successfully removed your like from this blog.",
         success: true,
         error: false,
       });
@@ -6090,7 +6090,7 @@ export const toggleBlogLike = async (request, response) => {
 
             type: "NEW LIKE",
             title: "New Like on blog",
-            message: `${senderProfile.name || userType} has Like your blog. Click to view.`,
+            message: `${senderProfile.name || userType} liked your blog. Click to view.`,
             link: `/blog`,
           });
         }
@@ -6098,7 +6098,7 @@ export const toggleBlogLike = async (request, response) => {
     }
 
     response.status(201).json({
-      message: "Post liked",
+      message: "You have successfully liked this blog.",
       success: true,
       error: false,
       like,
@@ -6210,7 +6210,7 @@ export const addBlogComment = async (request, response) => {
     }
 
     return response.status(200).json({
-      message: "Comment added",
+      message: "Comment added successfully",
       success: true,
       error: false,
       comment: newComment,
