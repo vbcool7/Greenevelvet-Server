@@ -14,7 +14,9 @@ import {
     getAllPurchasedExtraPlans,
     getSelectExtraPlan,
     manualProfileBoost,
+    oneTimeMonthlyElite,
     oneTimeUpdateEscort,
+    oneTimeWeeklyElite,
     startAvailability,
     updateExtraPlan,
 } from "../controllers/extra.controller.js";
@@ -55,6 +57,9 @@ extraRouter.get("/get-all-purchased-extra-plans", protect(["Admin"]), getAllPurc
 //---------------- Test controller ------------------//
 
 extraRouter.patch("/one-time-escort-update", oneTimeUpdateEscort);
+extraRouter.put("/weekly-elite", oneTimeWeeklyElite);
+extraRouter.put("/monthly-elite", oneTimeMonthlyElite);
+
 
 
 //-------------------------- Extra plan active route ---------------------------//
