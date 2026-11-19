@@ -155,7 +155,6 @@ export const createStory = async (req, res) => {
 };
 
 // fetch created active story escorts
-
 export const fetchStoryEscorts = async (req, res) => {
   try {
     const now = new Date();
@@ -324,7 +323,7 @@ export const fetchEscortStories = async (req, res) => {
       },
     })
       .select(
-        "_id escortId mediaType mediaUrl caption createdAt expiresAt likeCount totalViews",
+        "_id escortId city mediaType mediaUrl caption createdAt expiresAt likeCount totalViews",
       )
       .sort({
         createdAt: 1,
