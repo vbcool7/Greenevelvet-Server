@@ -11,7 +11,7 @@ import {
   checkChatRateLimit,
   filterProhibitedContent,
   isViewerChatSuspended,
-} from "../services/chatSafetyService.js";
+} from "../service/chatSafetyService.js";
 
 async function authenticateSocket(socket) {
   const rawToken =
