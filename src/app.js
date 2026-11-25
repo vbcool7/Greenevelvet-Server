@@ -16,7 +16,6 @@ import uglymugsRouter from "./routes/uglymugs.route.js";
 import extraRouter from "./routes/extra.route.js";
 import dashboardRouter from "./routes/dashboard.route.js";
 import notificationRouter from "./routes/notification.route.js";
-import chatRouter from "./routes/chatRoutes.js";
 import prioritySupportRouter from "./routes/prioritySupport.route.js";
 import reviewRouter from "./routes/review.route.js";
 import storyRouter from "./routes/story.route.js";
