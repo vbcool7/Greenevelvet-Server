@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { protect } from "../middleware/auth.js"; // apna exact middleware path check kar lena
+import { protect } from "../middleware/auth.js";
 import {
   checkGeoRestriction,
   requireAgeAssurance,
