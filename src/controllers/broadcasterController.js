@@ -24,6 +24,12 @@ function computeDurationSeconds(startedAt, endedAt = new Date()) {
 
 // Get or initialize broadcaster stream profile (syncs read-only verification status from Escort)
 export const getOrUpdateBroadcasterProfile = async (req, res) => {
+  console.log("[BroadcasterController] getOrUpdateBroadcasterProfile called", {
+    method: req.method,
+    userId: req.user?._id,
+    bodyKeys: Object.keys(req.body || {}),
+  });
+
   try {
     const escortId = req.user._id;
     const escortDoc = await EscortModel.findById(escortId)
@@ -153,6 +159,10 @@ export const getOrUpdateBroadcasterProfile = async (req, res) => {
       },
     });
   } catch (err) {
+    console.error(
+      "[BroadcasterController] getOrUpdateBroadcasterProfile error:",
+      err,
+    );
     return res.status(500).json({
       success: false,
       error: true,
@@ -163,6 +173,11 @@ export const getOrUpdateBroadcasterProfile = async (req, res) => {
 
 // Prepare studio & issue signed broadcaster LiveKit token (recording disabled)
 export const prepareLiveStudio = async (req, res) => {
+  console.log("[BroadcasterController] prepareLiveStudio called", {
+    userId: req.user?._id,
+    body: req.body,
+  });
+
   try {
     const escortId = req.user._id;
     const {
@@ -264,6 +279,7 @@ export const prepareLiveStudio = async (req, res) => {
       livekit,
     });
   } catch (err) {
+    console.error("[BroadcasterController] prepareLiveStudio error:", err);
     return res.status(500).json({
       success: false,
       error: true,
@@ -274,6 +290,11 @@ export const prepareLiveStudio = async (req, res) => {
 
 // Start broadcast session
 export const startBroadcast = async (req, res) => {
+  console.log("[BroadcasterController] startBroadcast called", {
+    userId: req.user?._id,
+    body: req.body,
+  });
+
   try {
     const escortId = req.user._id;
     const {
@@ -403,6 +424,7 @@ export const startBroadcast = async (req, res) => {
       livekit,
     });
   } catch (err) {
+    console.error("[BroadcasterController] startBroadcast error:", err);
     return res.status(500).json({
       success: false,
       error: true,
@@ -413,6 +435,11 @@ export const startBroadcast = async (req, res) => {
 
 // Update connection quality / health during active stream
 export const updateStreamHealth = async (req, res) => {
+  console.log("[BroadcasterController] updateStreamHealth called", {
+    userId: req.user?._id,
+    body: req.body,
+  });
+
   try {
     const escortId = req.user._id;
     const { sessionId, connectionHealth } = req.body || {};
@@ -445,6 +472,7 @@ export const updateStreamHealth = async (req, res) => {
       connectionHealth: session.connectionHealth,
     });
   } catch (err) {
+    console.error("[BroadcasterController] updateStreamHealth error:", err);
     return res.status(500).json({
       success: false,
       error: true,
@@ -455,6 +483,11 @@ export const updateStreamHealth = async (req, res) => {
 
 // End / immediately terminate broadcast session & update analytics summary
 export const endBroadcast = async (req, res) => {
+  console.log("[BroadcasterController] endBroadcast called", {
+    userId: req.user?._id,
+    body: req.body,
+  });
+
   try {
     const escortId = req.user._id;
     const { sessionId, immediate = false } = req.body || {};
@@ -517,6 +550,7 @@ export const endBroadcast = async (req, res) => {
       session,
     });
   } catch (err) {
+    console.error("[BroadcasterController] endBroadcast error:", err);
     return res.status(500).json({
       success: false,
       error: true,
@@ -527,6 +561,11 @@ export const endBroadcast = async (req, res) => {
 
 // Block a viewer from broadcaster's rooms/interactions
 export const blockViewer = async (req, res) => {
+  console.log("[BroadcasterController] blockViewer called", {
+    userId: req.user?._id,
+    body: req.body,
+  });
+
   try {
     const escortId = req.user._id;
     const { viewerId } = req.body || {};
@@ -551,6 +590,7 @@ export const blockViewer = async (req, res) => {
       message: "Viewer blocked successfully.",
     });
   } catch (err) {
+    console.error("[BroadcasterController] blockViewer error:", err);
     return res.status(500).json({
       success: false,
       error: true,
@@ -561,6 +601,11 @@ export const blockViewer = async (req, res) => {
 
 // Report an abusive viewer during or after a session
 export const reportViewer = async (req, res) => {
+  console.log("[BroadcasterController] reportViewer called", {
+    userId: req.user?._id,
+    body: req.body,
+  });
+
   try {
     const escortId = req.user._id;
     const { viewerId, sessionId, reason, details } = req.body || {};
@@ -590,6 +635,7 @@ export const reportViewer = async (req, res) => {
       report,
     });
   } catch (err) {
+    console.error("[BroadcasterController] reportViewer error:", err);
     return res.status(500).json({
       success: false,
       error: true,
@@ -600,6 +646,10 @@ export const reportViewer = async (req, res) => {
 
 // Broadcaster analytics & historical session reports
 export const getBroadcasterAnalytics = async (req, res) => {
+  console.log("[BroadcasterController] getBroadcasterAnalytics called", {
+    userId: req.user?._id,
+  });
+
   try {
     const escortId = req.user._id;
 
@@ -645,6 +695,10 @@ export const getBroadcasterAnalytics = async (req, res) => {
       sessions,
     });
   } catch (err) {
+    console.error(
+      "[BroadcasterController] getBroadcasterAnalytics error:",
+      err,
+    );
     return res.status(500).json({
       success: false,
       error: true,
