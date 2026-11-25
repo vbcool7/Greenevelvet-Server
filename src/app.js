@@ -25,23 +25,37 @@ import partnerApplicationRouter from "./routes/partnerApplication.route.js";
 import bannerRouter from "./routes/banner.route.js";
 import reelsRouter from "./routes/reels.route.js";
 import feedbackRouter from "./routes/feeback.route.js";
+import liveCamRouter from "./routes/livecamRouter.js";
 
 const app = express();
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "https://admin.greenevelvet.com",
+  "https://greenevelvet.com",
+  "https://www.greenevelvet.com",
+];
 
 app.use(
   cors({
     credentials: true,
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "https://admin.greenevelvet.com",
-      "https://greenevelvet.com",
-      "https://www.greenevelvet.com",
-    ],
+    origin: allowedOrigins,
   }),
 );
 
-app.use(express.json());
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      if (
+        req.originalUrl?.includes("/livecam/monetization/webhook/nowpayments")
+      ) {
+        req.rawBody = buf;
+      }
+    },
+  }),
+);
+
 app.use(
   express.urlencoded({
     extended: true,
@@ -85,7 +99,6 @@ app.use("/nowpayments", subcribedRouter);
 app.use("/uglymugs", uglymugsRouter);
 app.use("/extra", extraRouter);
 app.use("/notification", notificationRouter);
-app.use("/chat", chatRouter);
 app.use("/support", prioritySupportRouter);
 app.use("/review", reviewRouter);
 app.use("/story", storyRouter);
@@ -94,6 +107,10 @@ app.use("/partner", partnerApplicationRouter);
 app.use("/banner", bannerRouter);
 app.use("/reels", reelsRouter);
 app.use("/feedback", feedbackRouter);
+
+// Live Cam Module Routes
+app.use("/livecam", liveCamRouter);
+app.use("/api/livecam", liveCamRouter);
 
 /* Global Error Handler */
 app.use((err, req, res, next) => {

@@ -1,31 +1,63 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const chatMessageSchema = new mongoose.Schema({
-    chatRoomId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'ChatRoom',
-        required: true
+const ChatMessageSchema = new mongoose.Schema(
+  {
+    sessionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "StreamSession",
+      required: true,
+      index: true,
     },
-    clientId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Client',
-        required: true
+    senderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      index: true,
     },
-    escortId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Escort',
-        required: true
+    senderRole: {
+      type: String,
+      enum: ["Escort", "Client", "Moderator", "Admin"],
+      required: true,
+    },
+    senderName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    senderAvatar: {
+      type: String,
+      default: "",
     },
     message: {
-        type: String,
-        required: true
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 500,
     },
-    isRead: {
-        type: Boolean,
-        default: false
-    }
-}, { timestamps: true }); // Iska createdAt field hi message ka sent time banta hai
+    isDeleted: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    deletedBy: {
+      role: { type: String, default: null },
+      actorId: { type: mongoose.Schema.Types.ObjectId, default: null },
+      at: { type: Date, default: null },
+    },
+    isPinned: {
+      type: Boolean,
+      default: false,
+    },
+    isReported: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+  },
+  { timestamps: true },
+);
 
-const ChatMessageModel = mongoose.model('ChatMessage', chatMessageSchema);
+ChatMessageSchema.index({ sessionId: 1, createdAt: -1 });
 
-export default ChatMessageModel;
+const chatMessageModel = mongoose.model("ChatMessage", ChatMessageSchema);
+
+export default chatMessageModel;
