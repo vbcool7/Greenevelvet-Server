@@ -163,12 +163,24 @@ export const getStreamDetails = async (req, res) => {
   }
 };
 
+const PREVIEW_DURATION_SECONDS = 25;
+const PREVIEW_TOKEN_TTL_SECONDS = 35;
+
 // Authorize viewer and issue signed playback token for live stream
 export const joinStreamSession = async (req, res) => {
   try {
     const { sessionId } = req.params;
-    const userId = req.user._id;
+    const userId = req.user?._id;
     const role = req.role;
+
+    if (!userId || !role) {
+      return res.status(401).json({
+        success: false,
+        error: true,
+        code: "LOGIN_REQUIRED",
+        message: "Please log in to watch live streams.",
+      });
+    }
 
     const session = await StreamSessionModel.findById(sessionId);
     if (!session) {
@@ -191,6 +203,21 @@ export const joinStreamSession = async (req, res) => {
             : "This broadcast is currently offline.",
       });
     }
+
+    // Broadcaster uses Studio local preview rather than public viewer stream
+    if (
+      role === "Escort" &&
+      session.broadcasterId.toString() === userId.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        error: true,
+        code: "BROADCASTER_USE_STUDIO",
+        message: "Use the Broadcaster Studio to monitor your own stream.",
+      });
+    }
+
+    let isPreviewMode = false;
 
     if (role === "Client") {
       const viewerProfile = await ensureViewerProfile(userId);
@@ -232,7 +259,12 @@ export const joinStreamSession = async (req, res) => {
         });
       }
 
-      // Check Paid / Subscriber access rules
+      const existingHistoryIdx = viewerProfile.liveWatchHistory.findIndex(
+        (entry) => entry.sessionId.toString() === session._id.toString(),
+      );
+      const hasAlreadyPreviewed = existingHistoryIdx >= 0;
+
+      // Check Paid stream access rules (25s one-time preview for logged-in viewers)
       if (session.visibility === "paid" && session.entryFee > 0) {
         const paidTx = await LiveCamTransactionModel.findOne({
           payerId: userId,
@@ -243,16 +275,22 @@ export const joinStreamSession = async (req, res) => {
         }).lean();
 
         if (!paidTx) {
-          return res.status(402).json({
-            success: false,
-            error: true,
-            code: "PAID_STREAM_REQUIRED",
-            entryFee: session.entryFee,
-            message: "Payment is required to access this live stream.",
-          });
+          if (hasAlreadyPreviewed) {
+            return res.status(402).json({
+              success: false,
+              error: true,
+              code: "PAID_STREAM_REQUIRED",
+              previewExhausted: true,
+              entryFee: session.entryFee,
+              message:
+                "Your free preview has ended. Unlock this stream to continue watching.",
+            });
+          }
+          isPreviewMode = true;
         }
       }
 
+      // Check Subscriber-only stream access rules (25s one-time preview for logged-in viewers)
       if (session.visibility === "subscribers") {
         const activeSub = await LiveCamSubscriptionModel.findOne({
           viewerId: userId,
@@ -262,13 +300,17 @@ export const joinStreamSession = async (req, res) => {
         }).lean();
 
         if (!activeSub) {
-          return res.status(402).json({
-            success: false,
-            error: true,
-            code: "SUBSCRIPTION_REQUIRED",
-            message:
-              "An active monthly subscription is required for this stream.",
-          });
+          if (hasAlreadyPreviewed) {
+            return res.status(402).json({
+              success: false,
+              error: true,
+              code: "SUBSCRIPTION_REQUIRED",
+              previewExhausted: true,
+              message:
+                "Your free preview has ended. Subscribe to continue watching.",
+            });
+          }
+          isPreviewMode = true;
         }
       }
 
@@ -283,9 +325,6 @@ export const joinStreamSession = async (req, res) => {
       session.totalViewersCount = (session.totalViewersCount || 0) + 1;
       await session.save();
 
-      const existingHistoryIdx = viewerProfile.liveWatchHistory.findIndex(
-        (entry) => entry.sessionId.toString() === session._id.toString(),
-      );
       if (existingHistoryIdx >= 0) {
         viewerProfile.liveWatchHistory[existingHistoryIdx].lastWatchedAt =
           new Date();
@@ -313,7 +352,9 @@ export const joinStreamSession = async (req, res) => {
       identity,
       name: displayName,
       roomName: session.roomName,
-      role: "viewer",
+      role: isPreviewMode ? "viewer_preview" : "viewer",
+      ttl: isPreviewMode ? PREVIEW_TOKEN_TTL_SECONDS : "2h",
+      canPublishData: !isPreviewMode,
     });
 
     return res.status(200).json({
@@ -321,8 +362,16 @@ export const joinStreamSession = async (req, res) => {
       error: false,
       session,
       livekit,
+      access: {
+        mode: isPreviewMode ? "preview" : "full",
+        previewSeconds: isPreviewMode ? PREVIEW_DURATION_SECONDS : 0,
+        canChat: !isPreviewMode,
+        entryFee: session.entryFee || 0,
+        visibility: session.visibility,
+      },
     });
   } catch (err) {
+    console.error("[ViewerController] joinStreamSession error:", err);
     return res.status(500).json({
       success: false,
       error: true,

@@ -19,27 +19,32 @@ export async function createLiveKitToken({
   identity,
   name,
   roomName,
-  role = "viewer", // "broadcaster" | "viewer" | "private_participant"
+  role = "viewer", // "broadcaster" | "viewer" | "viewer_preview" | "private_participant"
   ttl = "2h",
+  canPublishData,
 }) {
   if (!LIVEKIT_API_KEY || !LIVEKIT_API_SECRET) {
     throw new Error("LiveKit API credentials missing");
   }
 
+  const isPreview = role === "viewer_preview";
+  const effectiveTtl = isPreview && ttl === "2h" ? 35 : ttl;
+  const canPublish = role === "broadcaster" || role === "private_participant";
+  const allowData =
+    typeof canPublishData === "boolean" ? canPublishData : !isPreview;
+
   const at = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
     identity: String(identity),
     name: name || String(identity),
-    ttl,
+    ttl: effectiveTtl,
   });
-
-  const canPublish = role === "broadcaster" || role === "private_participant";
 
   at.addGrant({
     roomJoin: true,
     room: roomName,
     canPublish,
     canSubscribe: true,
-    canPublishData: true,
+    canPublishData: allowData,
     roomRecord: false, // Recording disabled by compliance policy
   });
 
