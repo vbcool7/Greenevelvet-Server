@@ -13,6 +13,7 @@ import {
   writeAuditLog,
   sendLiveCamNotification,
 } from "../service/auditService.js";
+import { createAndSendNotification } from "../utils/notificationHelper.js";
 
 function computeDurationSeconds(startedAt, endedAt = new Date()) {
   if (!startedAt) return 0;
@@ -410,19 +411,36 @@ export const startBroadcast = async (req, res) => {
     if (favViewers.length) {
       const broadName =
         req.broadcasterProfile?.stageName || req.user.name || "A broadcaster";
+      const notifTitle = `${broadName} is Live Now`;
+      const notifMessage = `${broadName} just started streaming: "${session.title}"`;
+      const notifLink = `/live-cams/${session._id}`;
+
       await Promise.allSettled(
-        favViewers.map((v) =>
-          sendLiveCamNotification({
-            recipientId: v._id,
-            recipientModel: "Client",
-            senderId: escortId,
-            senderModel: "Escort",
-            type: "livecam_fav_live",
-            title: `${broadName} is Live Now`,
-            message: `${broadName} just started streaming: "${session.title}"`,
-            link: `/live-cams/${session._id}`,
-          }),
-        ),
+        favViewers.map(async (v) => {
+          if (typeof createAndSendNotification === "function") {
+            await createAndSendNotification(req.app, {
+              recipientId: v._id,
+              recipientModel: "Client",
+              senderId: escortId,
+              senderModel: "Escort",
+              type: "livecam_fav_live",
+              title: notifTitle,
+              message: notifMessage,
+              link: notifLink,
+            });
+          } else if (typeof sendLiveCamNotification === "function") {
+            await sendLiveCamNotification({
+              recipientId: v._id,
+              recipientModel: "Client",
+              senderId: escortId,
+              senderModel: "Escort",
+              type: "livecam_fav_live",
+              title: notifTitle,
+              message: notifMessage,
+              link: notifLink,
+            });
+          }
+        }),
       );
     }
 
