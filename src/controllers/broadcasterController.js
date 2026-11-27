@@ -148,10 +148,31 @@ export const getOrUpdateBroadcasterProfile = async (req, res) => {
       });
     }
 
+    // Restore currently active live session & LiveKit token across page refreshes
+    const activeSession = await StreamSessionModel.findOne({
+      broadcasterId: escortId,
+      status: "live",
+    })
+      .sort({ startedAt: -1 })
+      .lean();
+
+    let livekit = null;
+    if (activeSession?.roomName) {
+      await createRoomIfNeeded(activeSession.roomName);
+      livekit = await createLiveKitToken({
+        identity: `escort_${escortId.toString()}`,
+        name: profile?.stageName || escortDoc?.name || "Broadcaster",
+        roomName: activeSession.roomName,
+        role: "broadcaster",
+      });
+    }
+
     return res.status(200).json({
       success: true,
       error: false,
       profile,
+      activeSession: activeSession || null,
+      livekit,
       accountVerification: {
         isVerified: Boolean(escortDoc.isVerified),
         govtId: escortDoc.govtId || "Pending",
@@ -307,7 +328,6 @@ export const startBroadcast = async (req, res) => {
       entryFee,
     } = req.body || {};
 
-    // Ensure no other stale live session remains open for this broadcaster
     await StreamSessionModel.updateMany(
       {
         broadcasterId: escortId,
@@ -380,7 +400,6 @@ export const startBroadcast = async (req, res) => {
       role: "broadcaster",
     });
 
-    // Notify viewers who favorited this broadcaster (non-blocking)
     const favViewers = await ClientModel.find({
       favorites: escortId,
       status: "Active",
@@ -470,6 +489,7 @@ export const updateStreamHealth = async (req, res) => {
       success: true,
       error: false,
       connectionHealth: session.connectionHealth,
+      session,
     });
   } catch (err) {
     console.error("[BroadcasterController] updateStreamHealth error:", err);
