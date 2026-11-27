@@ -17,6 +17,10 @@ async function ensureViewerProfile(clientId) {
   return profile;
 }
 
+function escapeRegex(value = "") {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 // Discover live, featured, recently active & scheduled streams
 export const discoverStreams = async (req, res) => {
   try {
@@ -25,6 +29,9 @@ export const discoverStreams = async (req, res) => {
       city = "",
       category = "",
       language = "",
+      accessType = "", // "free" | "paid"
+      featured = "",
+      search = "",
       sort = "popularity", // "popularity" | "relevance"
       tab = "all", // "all" | "featured" | "recent" | "scheduled"
       page = 1,
@@ -36,26 +43,98 @@ export const discoverStreams = async (req, res) => {
     const skip = (pageNum - 1) * limitNum;
 
     const baseFilter = {};
+    const andConditions = [];
+
     if (tab === "scheduled") {
       baseFilter.status = "scheduled";
     } else {
       baseFilter.status = "live";
-      if (tab === "featured") {
+      if (
+        tab === "featured" ||
+        featured === true ||
+        String(featured).toLowerCase() === "true"
+      ) {
         baseFilter.isFeatured = true;
       }
     }
 
-    if (country.trim()) {
-      baseFilter.country = new RegExp(`^${country.trim()}$`, "i");
+    const normalizedAccess = String(accessType || "")
+      .trim()
+      .toLowerCase();
+
+    if (normalizedAccess === "free") {
+      andConditions.push({
+        $and: [
+          {
+            $or: [
+              { visibility: "free" },
+              { visibility: "public" },
+              { visibility: { $exists: false } },
+              { visibility: null },
+              { visibility: "" },
+            ],
+          },
+          {
+            $or: [
+              { entryFee: { $in: [0, null] } },
+              { entryFee: { $exists: false } },
+            ],
+          },
+        ],
+      });
+    } else if (
+      normalizedAccess === "paid" ||
+      normalizedAccess === "vip" ||
+      normalizedAccess === "subscribers"
+    ) {
+      andConditions.push({
+        $or: [
+          { visibility: { $in: ["paid", "subscribers"] } },
+          { entryFee: { $gt: 0 } },
+        ],
+      });
     }
-    if (city.trim()) {
-      baseFilter.city = new RegExp(`^${city.trim()}$`, "i");
+
+    if (String(country || "").trim()) {
+      baseFilter.country = new RegExp(`^${escapeRegex(country.trim())}$`, "i");
     }
-    if (category.trim() && category.toLowerCase() !== "all") {
-      baseFilter.category = new RegExp(`^${category.trim()}$`, "i");
+    if (String(city || "").trim()) {
+      baseFilter.city = new RegExp(`^${escapeRegex(city.trim())}$`, "i");
     }
-    if (language.trim() && language.toLowerCase() !== "all") {
-      baseFilter.language = new RegExp(`^${language.trim()}$`, "i");
+    if (
+      String(category || "").trim() &&
+      String(category).trim().toLowerCase() !== "all"
+    ) {
+      baseFilter.category = new RegExp(
+        `^${escapeRegex(category.trim())}$`,
+        "i",
+      );
+    }
+    if (
+      String(language || "").trim() &&
+      String(language).trim().toLowerCase() !== "all"
+    ) {
+      baseFilter.language = new RegExp(
+        `^${escapeRegex(language.trim())}$`,
+        "i",
+      );
+    }
+
+    if (String(search || "").trim()) {
+      const searchRegex = new RegExp(escapeRegex(search.trim()), "i");
+      andConditions.push({
+        $or: [
+          { title: searchRegex },
+          { description: searchRegex },
+          { category: searchRegex },
+          { city: searchRegex },
+          { country: searchRegex },
+        ],
+      });
+    }
+
+    if (andConditions.length > 0) {
+      baseFilter.$and = andConditions;
     }
 
     let sortSpec = {
@@ -464,11 +543,11 @@ export const getOrUpdateViewerProfile = async (req, res) => {
   }
 };
 
-// Toggle favorite broadcaster (reuses existing Client.favorites safely)
+// Toggle favorite broadcaster (supports URL param or request body)
 export const toggleFavoriteBroadcaster = async (req, res) => {
   try {
     const clientId = req.user._id;
-    const { broadcasterId } = req.body || {};
+    const broadcasterId = req.params?.broadcasterId || req.body?.broadcasterId;
 
     if (!broadcasterId) {
       return res.status(400).json({
